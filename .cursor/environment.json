@@ -1,0 +1,17 @@
+{
+  "name": "Cellar Rank",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "npm run dev -- --host 0.0.0.0 --port 5173",
+      "description": "Vite dev server for Cellar Rank, served on http://localhost:5173"
+    }
+  ],
+  "ports": [
+    {
+      "name": "vite",
+      "port": 5173
+    }
+  ]
+}
