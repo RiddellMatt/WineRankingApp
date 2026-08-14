@@ -1,8 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { WINE_TYPES, type SortKey, type Wine, type WineType } from './types'
 import { loadWines, saveWines, SAMPLE_WINES } from './storage'
+import { FREE_WINE_LIMIT } from './config'
+import { loadProStatus } from './pro'
 import { WineCard } from './components/WineCard'
 import { WineForm } from './components/WineForm'
+import { UpgradeModal } from './components/UpgradeModal'
+import { Insights } from './components/Insights'
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'rating', label: 'Rating' },
@@ -12,13 +16,20 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'addedAt', label: 'Recently added' },
 ]
 
+type View = 'cellar' | 'insights'
+type UpgradeReason = 'limit' | 'insights' | 'export' | 'generic'
+
 export default function App() {
   const [wines, setWines] = useState<Wine[]>(loadWines)
+  const [pro, setPro] = useState<boolean>(loadProStatus)
+  const [view, setView] = useState<View>('cellar')
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<WineType | 'All'>('All')
   const [sortKey, setSortKey] = useState<SortKey>('rating')
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Wine | null>(null)
+  const [upgradeReason, setUpgradeReason] = useState<UpgradeReason | null>(null)
+  const importInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     saveWines(wines)
@@ -66,9 +77,21 @@ export default function App() {
     return { count: wines.length, avg, best }
   }, [wines])
 
+  const atFreeLimit = !pro && wines.length >= FREE_WINE_LIMIT
+
+  function openAddForm() {
+    if (atFreeLimit) {
+      setUpgradeReason('limit')
+      return
+    }
+    setEditing(null)
+    setFormOpen(true)
+  }
+
   function handleSave(wine: Wine) {
     setWines((prev) => {
       const exists = prev.some((w) => w.id === wine.id)
+      if (!exists && !pro && prev.length >= FREE_WINE_LIMIT) return prev
       return exists ? prev.map((w) => (w.id === wine.id ? wine : w)) : [...prev, wine]
     })
     setFormOpen(false)
@@ -81,6 +104,44 @@ export default function App() {
     }
   }
 
+  function handleExport() {
+    if (!pro) {
+      setUpgradeReason('export')
+      return
+    }
+    const blob = new Blob([JSON.stringify(wines, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `cellar-rank-export-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function handleImportClick() {
+    if (!pro) {
+      setUpgradeReason('export')
+      return
+    }
+    importInputRef.current?.click()
+  }
+
+  async function handleImportFile(file: File) {
+    try {
+      const imported = JSON.parse(await file.text())
+      if (!Array.isArray(imported)) throw new Error('not an array')
+      setWines((prev) => {
+        const byId = new Map(prev.map((w) => [w.id, w]))
+        for (const w of imported as Wine[]) {
+          if (w && typeof w.id === 'string' && typeof w.name === 'string') byId.set(w.id, w)
+        }
+        return [...byId.values()]
+      })
+    } catch {
+      window.alert("That file doesn't look like a Cellar Rank export.")
+    }
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -90,117 +151,193 @@ export default function App() {
               🍷
             </span>
             <div>
-              <h1>Cellar Rank</h1>
+              <h1>
+                Cellar Rank
+                {pro && <span className="pro-badge inline"> PRO</span>}
+              </h1>
               <p className="tagline">Every bottle you've tried, ranked.</p>
             </div>
           </div>
-          <button
-            className="btn primary"
-            onClick={() => {
-              setEditing(null)
-              setFormOpen(true)
-            }}
-          >
-            + Add wine
-          </button>
+          <div className="header-actions">
+            {!pro && (
+              <button className="btn ghost" onClick={() => setUpgradeReason('generic')}>
+                Go Pro
+              </button>
+            )}
+            <button className="btn primary" onClick={openAddForm}>
+              + Add wine
+            </button>
+          </div>
         </div>
+        <nav className="tabs">
+          <button
+            className={`tab ${view === 'cellar' ? 'active' : ''}`}
+            onClick={() => setView('cellar')}
+          >
+            My cellar
+          </button>
+          <button
+            className={`tab ${view === 'insights' ? 'active' : ''}`}
+            onClick={() => setView('insights')}
+          >
+            Insights {!pro && <span className="pro-badge">PRO</span>}
+          </button>
+        </nav>
       </header>
 
       <main className="content">
-        {stats && (
-          <section className="stats">
-            <div className="stat">
-              <span className="stat-value">{stats.count}</span>
-              <span className="stat-label">{stats.count === 1 ? 'wine tried' : 'wines tried'}</span>
-            </div>
-            <div className="stat">
-              <span className="stat-value">{stats.avg.toFixed(1)}</span>
-              <span className="stat-label">average rating</span>
-            </div>
-            <div className="stat">
-              <span className="stat-value stat-best" title={stats.best.name}>
-                {stats.best.name}
+        {view === 'insights' ? (
+          pro ? (
+            <Insights wines={wines} />
+          ) : (
+            <section className="empty locked">
+              <span className="empty-icon" aria-hidden="true">
+                📊
               </span>
-              <span className="stat-label">current favorite</span>
-            </div>
-          </section>
-        )}
-
-        {wines.length > 0 && (
-          <section className="toolbar">
-            <input
-              className="search"
-              type="search"
-              placeholder="Search name, winery, region, notes…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <div className="type-filters">
-              {(['All', ...WINE_TYPES] as const).map((t) => (
-                <button
-                  key={t}
-                  className={`chip ${typeFilter === t ? 'active' : ''}`}
-                  onClick={() => setTypeFilter(t)}
-                >
-                  {t}
+              <h2>Your cellar, decoded</h2>
+              <p>
+                Total spend, best-value bottles, rating distribution, and your taste profile by
+                type, region, and varietal — all in Cellar Rank Pro.
+              </p>
+              <div className="empty-actions">
+                <button className="btn primary" onClick={() => setUpgradeReason('insights')}>
+                  Unlock Insights
                 </button>
-              ))}
-            </div>
-            <label className="sort-control">
-              Sort by
-              <select value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}>
-                {SORT_OPTIONS.map((o) => (
-                  <option key={o.key} value={o.key}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </section>
-        )}
-
-        {wines.length === 0 ? (
-          <section className="empty">
-            <span className="empty-icon" aria-hidden="true">
-              🍇
-            </span>
-            <h2>Your cellar is empty</h2>
-            <p>Add the wines you've tried and rate them to build your personal ranking.</p>
-            <div className="empty-actions">
-              <button
-                className="btn primary"
-                onClick={() => {
-                  setEditing(null)
-                  setFormOpen(true)
-                }}
-              >
-                Add your first wine
-              </button>
-              <button className="btn ghost" onClick={() => setWines(SAMPLE_WINES)}>
-                Load sample wines
-              </button>
-            </div>
-          </section>
-        ) : visible.length === 0 ? (
-          <section className="empty">
-            <h2>No matches</h2>
-            <p>No wines match your search or filter.</p>
-          </section>
+              </div>
+            </section>
+          )
         ) : (
-          <ol className="wine-list">
-            {visible.map((wine) => (
-              <WineCard
-                key={wine.id}
-                wine={wine}
-                rank={rankById.get(wine.id) ?? 0}
-                onEdit={() => {
-                  setEditing(wine)
-                  setFormOpen(true)
-                }}
-                onDelete={() => handleDelete(wine)}
-              />
-            ))}
-          </ol>
+          <>
+            {stats && (
+              <section className="stats">
+                <div className="stat">
+                  <span className="stat-value">
+                    {stats.count}
+                    {!pro && <span className="stat-limit"> / {FREE_WINE_LIMIT}</span>}
+                  </span>
+                  <span className="stat-label">
+                    {stats.count === 1 ? 'wine tried' : 'wines tried'}
+                  </span>
+                </div>
+                <div className="stat">
+                  <span className="stat-value">{stats.avg.toFixed(1)}</span>
+                  <span className="stat-label">average rating</span>
+                </div>
+                <div className="stat">
+                  <span className="stat-value stat-best" title={stats.best.name}>
+                    {stats.best.name}
+                  </span>
+                  <span className="stat-label">current favorite</span>
+                </div>
+              </section>
+            )}
+
+            {atFreeLimit && (
+              <div className="limit-banner">
+                <span>
+                  You've reached the free limit of {FREE_WINE_LIMIT} wines.
+                </span>
+                <button className="btn primary small" onClick={() => setUpgradeReason('limit')}>
+                  Go Pro for unlimited
+                </button>
+              </div>
+            )}
+
+            {wines.length > 0 && (
+              <section className="toolbar">
+                <input
+                  className="search"
+                  type="search"
+                  placeholder="Search name, winery, region, notes…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <div className="type-filters">
+                  {(['All', ...WINE_TYPES] as const).map((t) => (
+                    <button
+                      key={t}
+                      className={`chip ${typeFilter === t ? 'active' : ''}`}
+                      onClick={() => setTypeFilter(t)}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <div className="toolbar-bottom">
+                  <div className="data-actions">
+                    <button className="link-btn" onClick={handleExport}>
+                      Export{!pro && ' 🔒'}
+                    </button>
+                    <button className="link-btn" onClick={handleImportClick}>
+                      Import{!pro && ' 🔒'}
+                    </button>
+                    <input
+                      ref={importInputRef}
+                      type="file"
+                      accept="application/json"
+                      hidden
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleImportFile(file)
+                        e.target.value = ''
+                      }}
+                    />
+                  </div>
+                  <label className="sort-control">
+                    Sort by
+                    <select
+                      value={sortKey}
+                      onChange={(e) => setSortKey(e.target.value as SortKey)}
+                    >
+                      {SORT_OPTIONS.map((o) => (
+                        <option key={o.key} value={o.key}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </section>
+            )}
+
+            {wines.length === 0 ? (
+              <section className="empty">
+                <span className="empty-icon" aria-hidden="true">
+                  🍇
+                </span>
+                <h2>Your cellar is empty</h2>
+                <p>Add the wines you've tried and rate them to build your personal ranking.</p>
+                <div className="empty-actions">
+                  <button className="btn primary" onClick={openAddForm}>
+                    Add your first wine
+                  </button>
+                  <button className="btn ghost" onClick={() => setWines(SAMPLE_WINES)}>
+                    Load sample wines
+                  </button>
+                </div>
+              </section>
+            ) : visible.length === 0 ? (
+              <section className="empty">
+                <h2>No matches</h2>
+                <p>No wines match your search or filter.</p>
+              </section>
+            ) : (
+              <ol className="wine-list">
+                {visible.map((wine) => (
+                  <WineCard
+                    key={wine.id}
+                    wine={wine}
+                    rank={rankById.get(wine.id) ?? 0}
+                    onEdit={() => {
+                      setEditing(wine)
+                      setFormOpen(true)
+                    }}
+                    onDelete={() => handleDelete(wine)}
+                  />
+                ))}
+              </ol>
+            )}
+          </>
         )}
       </main>
 
@@ -212,6 +349,17 @@ export default function App() {
             setFormOpen(false)
             setEditing(null)
           }}
+        />
+      )}
+
+      {upgradeReason && (
+        <UpgradeModal
+          reason={upgradeReason}
+          onUnlocked={() => {
+            setPro(true)
+            setUpgradeReason(null)
+          }}
+          onClose={() => setUpgradeReason(null)}
         />
       )}
     </div>

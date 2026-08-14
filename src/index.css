@@ -113,6 +113,62 @@ textarea::placeholder {
   font-size: 0.9rem;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ── Tabs ───────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 1.4rem;
+  margin-bottom: -1.5rem;
+  transform: translateY(1px);
+}
+
+.tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.55rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.pro-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  background: linear-gradient(145deg, #f5cf6e, #c8901f);
+  color: #3a2a05;
+  border-radius: 5px;
+  padding: 0.12rem 0.4rem;
+  vertical-align: middle;
+}
+
+.pro-badge.inline {
+  font-size: 0.7rem;
+  transform: translateY(-3px);
+  display: inline-block;
+}
+
 /* ── Buttons ────────────────────────────────────────── */
 
 .btn {
@@ -168,6 +224,34 @@ textarea::placeholder {
   color: var(--danger);
 }
 
+a.icon-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.link-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.2rem 0.3rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--border);
+  transition: color 0.15s;
+}
+
+.link-btn:hover {
+  color: var(--text);
+}
+
+.btn.small {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+}
+
 /* ── Stats ──────────────────────────────────────────── */
 
 .stats {
@@ -210,6 +294,28 @@ textarea::placeholder {
   letter-spacing: 0.06em;
 }
 
+.stat-limit {
+  font-size: 0.95rem;
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+/* ── Free limit banner ──────────────────────────────── */
+
+.limit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 0.8rem 1.1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.92rem;
+}
+
 /* ── Toolbar ────────────────────────────────────────── */
 
 .toolbar {
@@ -217,6 +323,19 @@ textarea::placeholder {
   flex-direction: column;
   gap: 0.8rem;
   margin-bottom: 1.5rem;
+}
+
+.toolbar-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.data-actions {
+  display: flex;
+  gap: 0.8rem;
 }
 
 .search {
@@ -256,7 +375,6 @@ textarea::placeholder {
   gap: 0.6rem;
   font-size: 0.88rem;
   color: var(--text-dim);
-  align-self: flex-end;
 }
 
 .sort-control select {
@@ -586,10 +704,189 @@ textarea {
   margin-top: 1.3rem;
 }
 
+/* ── Upgrade modal ──────────────────────────────────── */
+
+.upgrade-modal {
+  max-width: 440px;
+}
+
+.upgrade-reason {
+  color: var(--text-dim);
+  margin: 0 0 1.2rem;
+  font-size: 0.95rem;
+}
+
+.upgrade-features {
+  list-style: none;
+  margin: 0 0 1.4rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.upgrade-features li {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+
+.feature-icon {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 0.95rem;
+  color: var(--star);
+}
+
+.upgrade-features strong {
+  display: block;
+  font-size: 0.94rem;
+}
+
+.upgrade-features p {
+  margin: 0.1rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.84rem;
+}
+
+.upgrade-cta {
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  font-size: 1rem;
+  padding: 0.75rem 1.25rem;
+}
+
+.upgrade-cta:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.upgrade-cta-placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.upgrade-note {
+  color: var(--text-faint);
+  font-size: 0.82rem;
+  text-align: center;
+  margin: 0;
+}
+
+.upgrade-modal .link-btn {
+  display: block;
+  margin: 0.9rem auto 0;
+}
+
+.code-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.code-row input {
+  flex: 1;
+  text-transform: uppercase;
+}
+
+/* ── Insights ───────────────────────────────────────── */
+
+.insights .stats {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.insight-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.3rem 1.2rem;
+  margin-bottom: 0.9rem;
+}
+
+.insight-card h3 {
+  font-family: var(--font-display);
+  margin: 0 0 0.9rem;
+  font-size: 1.05rem;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+
+.insight-grid .insight-card {
+  margin-bottom: 0;
+}
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr auto;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.84rem;
+}
+
+.bar-label {
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-track {
+  background: var(--bg-soft);
+  border-radius: 99px;
+  height: 0.65rem;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #8a2138, var(--accent));
+  transition: width 0.3s ease;
+}
+
+.bar-value {
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bar-value em {
+  font-style: normal;
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.empty.locked {
+  border-style: solid;
+  background: var(--surface);
+}
+
 /* ── Responsive ─────────────────────────────────────── */
 
 @media (max-width: 640px) {
-  .stats {
+  .stats,
+  .insights .stats,
+  .insight-grid {
     grid-template-columns: 1fr;
   }
 

@@ -1,4 +1,5 @@
 import type { Wine } from '../types'
+import { shopUrl } from '../config'
 import { StarDisplay } from './StarRating'
 
 interface Props {
@@ -46,6 +47,16 @@ export function WineCard({ wine, rank, onEdit, onDelete }: Props) {
         </div>
         {wine.price != null && <span className="wine-price">${wine.price.toFixed(0)}</span>}
         <div className="wine-actions">
+          <a
+            className="icon-btn"
+            href={shopUrl(wine)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Shop for ${wine.name}`}
+            title="Find this wine online"
+          >
+            🛒
+          </a>
           <button className="icon-btn" onClick={onEdit} aria-label={`Edit ${wine.name}`} title="Edit">
             ✎
           </button>
