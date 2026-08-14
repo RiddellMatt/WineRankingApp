@@ -26,6 +26,14 @@ The app ships with a freemium model plus an affiliate revenue channel. All knobs
 
 Note: Pro entitlement is stored client-side (localStorage), which is fine for validating the model but trivially bypassable. Before charging real money at scale, add accounts and server-side entitlement checks.
 
+## Live app & mobile install
+
+Every push to `main` deploys automatically to GitHub Pages via `.github/workflows/deploy.yml`:
+
+**https://riddellmatt.github.io/WineRankingApp/**
+
+The app is a PWA — on a phone, open the URL and use "Add to Home Screen" (Share menu on iOS, browser menu on Android) to install it like a native app. It works offline after the first load. Note that data still lives per-device in localStorage; syncing between devices requires accounts + a backend (future work).
+
 ## Getting started
 
 ```bash
