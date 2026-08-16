@@ -4,12 +4,16 @@ import { corsHeaders, jsonResponse } from '../_shared/cors.ts'
 const MONTHLY_LIMIT = 30
 const MAX_IMAGE_CHARS = 6_000_000
 
-/** Retired 2026-06-01. Tried in order when GEMINI_MODEL is unset. */
+/** Tried in order when GEMINI_MODEL is unset. Vision-capable generateContent models. */
 const MODEL_FALLBACKS = [
   'gemini-2.5-flash',
   'gemini-3.6-flash',
+  'gemini-3.7-flash',
+  'gemini-2.5-flash-lite',
   'gemini-3.5-flash-lite',
   'gemini-3.1-flash-lite',
+  'gemini-flash-latest',
+  'gemini-2.5-pro',
 ] as const
 
 const MENU_PROMPT = `You extract wines from restaurant menu photos.
