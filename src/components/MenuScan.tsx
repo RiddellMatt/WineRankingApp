@@ -72,11 +72,11 @@ export function MenuScan({ wines }: Props) {
             ? `Reading menu… ${state.pct}%`
             : '📷 Scan a menu'}
         </button>
+        {/* No `capture` attr: mobile browsers then offer camera roll AND camera. */}
         <input
           ref={inputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           hidden
           onChange={(e) => {
             const file = e.target.files?.[0]

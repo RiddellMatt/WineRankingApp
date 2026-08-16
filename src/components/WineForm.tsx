@@ -151,7 +151,6 @@ export function WineForm({ initial, onSave, onClose }: Props) {
               ref={scanInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               hidden
               onChange={(e) => {
                 const file = e.target.files?.[0]
