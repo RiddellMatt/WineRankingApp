@@ -12,7 +12,7 @@ export const AVATAR_BUCKET = 'avatars'
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024
 
 export const AVATAR_SETUP_MESSAGE =
-  'Profile photos need a one-time database update. In Supabase → SQL Editor, run the script: supabase/migrations/20260816_avatar_storage_fix.sql'
+  'Profile photos need a one-time database update. In Supabase → SQL Editor, copy/paste and run: supabase/run-in-sql-editor.sql'
 
 export interface UserProfile {
   id: string
