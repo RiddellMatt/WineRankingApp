@@ -3,37 +3,37 @@ import { REGIONS, VARIETALS } from './scanner'
 import { containsPhrase, findPhrase, findRegion } from './textMatch'
 
 export interface MenuMatch {
-  /** Cleaned menu line for the wine. */
   line: string
-  /** Menu description text printed under the wine, if any. */
   description?: string
   price: string | null
-  score: number // 0–100
+  score: number
   reasons: string[]
-  /** Set when the line matches a wine already in the cellar. */
   cellarWine?: Wine
+}
+
+interface ParsedWine {
+  vintage: string
+  name: string
+  price: string
+  description: string[]
 }
 
 const STOPWORDS = new Set([
   'the', 'and', 'with', 'wine', 'glass', 'bottle', 'from', 'les', 'las', 'los',
-  'del', 'della', 'di', 'de', 'la', 'le', 'du', 'des', 'red', 'white',
+  'del', 'della', 'di', 'de', 'la', 'le', 'du', 'des',
 ])
-
-const TASTING_RE =
-  /\b(cherry|berries|berry|blackberry|currant|cassis|plum|peach|apricot|citrus|grapefruit|lemon|lime|apple|pear|tropical|floral|vanilla|oak|cedar|tobacco|leather|graphite|mineral|minerality|tannin|tannins|acid|acidity|crisp|bright|supple|velvety|silky|elegant|structured|balanced|finish|palate|aroma|aromas|notes? of|hint of|hints of|undertones|full[- ]bodied|medium[- ]bodied|light[- ]bodied|dry|sweet|off[- ]dry|spice|spicy|herbal|earthy|smoky|brioche|butter|creamy|zesty|refreshing)\b/i
 
 const FOOD_RE =
   /\b(octopus|calamari|shrimp|prawn|scallop|lobster|crab|oyster|salmon|tuna|halibut|cod|snapper|branzino|chicken|beef|pork|lamb|duck|venison|steak|burger|meatball|pasta|risotto|pizza|salad|soup|appetizer|entree|bruschetta|charcuterie board)\b/i
 
-const SECTION_RE =
-  /^(bubbles?|whites?|reds?|ros[eé]s?|skin[- ]contact(?:\/funky stuff)?|funky stuff|sparkling|dessert|fortified|all bottles)$/i
+/** Category column headers — never wines, even when OCR merges columns ("Bubbles Rosé"). */
+const SECTION_WORDS = new Set([
+  'bubbles', 'bubble', 'white', 'whites', 'red', 'reds', 'rose', 'roses', 'rosé', 'rosés',
+  'skin-contact', 'skin', 'contact', 'funky', 'stuff', 'sparkling', 'dessert', 'fortified',
+  'all', 'bottles', 'corkage', 'wines', 'by', 'the', 'glass',
+])
 
-function significantTokens(text: string): string[] {
-  return text
-    .toLowerCase()
-    .split(/[^\p{L}\p{N}]+/u)
-    .filter((t) => t.length >= 4 && !STOPWORDS.has(t))
-}
+const VINTAGE_RE = /\b(NV|19[5-9]\d|20\d{2})\b/gi
 
 function cleanLine(raw: string): string {
   return raw
@@ -49,101 +49,141 @@ function cleanLine(raw: string): string {
 function isMostlyGarbage(line: string): boolean {
   if (!line) return true
   const clean = (line.match(/[\p{L}\p{N}\s,.'’\-–—&()/$%]/gu) ?? []).length
-  if (clean / line.length < 0.72) return true
-  const words = line.split(/\s+/)
-  const junk = words.filter((w) => w.length === 1 && !/\p{L}/u.test(w)).length
-  return junk >= 3 || (words.length <= 4 && junk >= 2)
+  return clean / line.length < 0.65
 }
 
-function extractPrice(line: string): string | null {
-  const m = line.match(
-    /(?<!\d)\$?\s?(\d{1,3}(?:\.\d{2})?)(\s*\/\s*\$?\s?\d{1,3}(?:\.\d{2})?)?\s*$/,
-  )
-  if (!m || !/\d\d/.test(m[0])) return null
-  return m[0].replace(/\s+/g, ' ').trim()
+function significantTokens(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((t) => t.length >= 4 && !STOPWORDS.has(t))
 }
 
-function wineTitle(line: string, price: string | null): string {
-  if (!price) return line
-  const idx = line.lastIndexOf(price.replace(/\s+/g, ' ').trim())
-  if (idx > 0) return line.slice(0, idx).replace(/[,\s]+$/, '')
-  return line.replace(
-    /(?<!\d)\$?\s?\d{1,3}(?:\.\d{2})?(\s*\/\s*\$?\s?\d{1,3}(?:\.\d{2})?)?\s*$/,
-    '',
-  ).trim()
+/**
+ * Restaurant wine lines: vintage (NV or year) + producer/name + trailing price.
+ * When OCR reads across two menu columns, one physical line may contain several
+ * of these — split them before anything else.
+ */
+function extractWineSegments(line: string): ParsedWine[] {
+  const segments: ParsedWine[] = []
+  const starts: number[] = []
+  VINTAGE_RE.lastIndex = 0
+  let m: RegExpExecArray | null
+  while ((m = VINTAGE_RE.exec(line)) !== null) {
+    starts.push(m.index)
+  }
+  if (starts.length === 0) return segments
+
+  for (let i = 0; i < starts.length; i++) {
+    const chunk = line.slice(starts[i], starts[i + 1] ?? line.length).trim()
+    const vm = chunk.match(/^(NV|19[5-9]\d|20\d{2})\s+/i)
+    if (!vm) continue
+
+    const vintage = vm[1].toUpperCase()
+    const rest = chunk.slice(vm[0].length)
+    const pm = rest.match(/\s(\d{1,3})\s*$/)
+    if (!pm) continue
+
+    const priceNum = Number(pm[1])
+    // Glass pours on this menu are $8–$99; skip years/prices that aren't menu pricing.
+    if (priceNum < 8 || priceNum > 99) continue
+
+    const name = rest.slice(0, rest.length - pm[0].length).replace(/[,\s]+$/, '').trim()
+    if (name.length < 4) continue
+    // Reject if the "name" is really a category header fragment.
+    if (isSectionHeaderLine(name)) continue
+
+    segments.push({ vintage, name, price: pm[1], description: [] })
+  }
+  return segments
 }
 
-function hasVintage(line: string): boolean {
-  return /\b(19[5-9]\d|20\d{2})\b/.test(line) || /^NV\b/i.test(line.trim())
+/** True when every word on the line is a known menu section label. */
+function isSectionHeaderLine(line: string): boolean {
+  if (/\b(NV|19[5-9]\d|20\d{2})\b/i.test(line)) return false
+
+  const words = line
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z\s-]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+
+  if (words.length === 0 || words.length > 6) return false
+  return words.every((w) => SECTION_WORDS.has(w))
 }
 
-function isSectionHeader(line: string, price: string | null): boolean {
-  if (price) return false
-  const stripped = line.replace(/[^a-zA-Z\s/-]/g, '').trim()
-  if (SECTION_RE.test(stripped)) return true
-  if (/\bcorkage\b/i.test(line)) return true
+/** Grape / region detail lines (line 2–3 under a wine on the reference menu). */
+function isDetailLine(line: string): boolean {
+  if (/\b(NV|19[5-9]\d|20\d{2})\s+\p{L}/iu.test(line)) return false
+  if (/\betc\.?\b/i.test(line)) return true
+  if (line.trim().endsWith('.') && (line.match(/,/g)?.length ?? 0) >= 1) return true
+
+  const words = line.split(/\s+/).filter((w) => /\p{L}/u.test(w))
+  if (words.length >= 2) {
+    const caps = words.filter((w) => w.length > 2 && w === w.toUpperCase()).length
+    if (caps / words.length > 0.6) return true
+  }
   return false
 }
 
 /**
- * Grape/region lines common on restaurant menus (often ALL CAPS, comma-heavy,
- * ending in a country — e.g. "ARINTO, TRAJADURA, ETC. VINHO VERDE, PORTUGAL.").
+ * Turn raw OCR text into discrete wine entries before scoring.
+ * Only lines matching vintage → name → price become wines; everything else
+ * is either skipped (headers) or attached as description.
  */
-function isMenuDetailLine(line: string, price: string | null): boolean {
-  if (price) return false
-  if (/\betc\.?\b/i.test(line)) return true
-  const trimmed = line.trim()
-  if (/,\s*[A-Z][A-Z\s.]+\.$/.test(trimmed)) return true
+export function parseMenuWines(menuText: string): ParsedWine[] {
+  const wines: ParsedWine[] = []
+  let recentBatch: ParsedWine[] = []
 
-  const commas = (line.match(/,/g)?.length ?? 0)
-  if (commas >= 1 && trimmed.endsWith('.')) return true
+  for (const raw of menuText.split('\n')) {
+    const line = cleanLine(raw)
+    if (line.length < 3 || isMostlyGarbage(line)) continue
+    if (FOOD_RE.test(line) || /\bcorkage\b/i.test(line)) continue
+    if (isSectionHeaderLine(line)) continue
 
-  const words = line.split(/\s+/).filter((w) => /\p{L}/u.test(w))
-  if (words.length >= 2 && commas >= 1) {
-    const allCaps = words.filter((w) => w.length > 2 && w === w.toUpperCase()).length
-    if (allCaps / words.length > 0.65) return true
+    const segments = extractWineSegments(line)
+
+    if (segments.length > 0) {
+      recentBatch = segments
+      for (const seg of segments) wines.push(seg)
+      continue
+    }
+
+    if (recentBatch.length > 0 && isDetailLine(line)) {
+      const parts = splitDetailLine(line)
+      const assigned =
+        parts.length === recentBatch.length
+          ? parts
+          : parts.length > recentBatch.length
+            ? mergeParts(parts, recentBatch.length)
+            : [line]
+      assigned.forEach((p, i) => recentBatch[i].description.push(p))
+      recentBatch = []
+    }
   }
-  return false
+
+  return wines
 }
 
-function isDescriptionLike(line: string, price: string | null): boolean {
-  if (price) return false
-  if (TASTING_RE.test(line)) return true
-
-  const commaCount = (line.match(/,/g)?.length ?? 0)
-  if (commaCount >= 2) return true
-
-  const words = line.split(/\s+/).filter((w) => /\p{L}/u.test(w))
-  if (words.length >= 10) return true
-
-  if (/^(notes? of|aromas? of|on the palate|pairs? with|a |an |the |with )/i.test(line)) {
-    return true
-  }
-
-  if (words.length < 8 && commaCount === 0) return false
-
-  if (words.length === 0) return true
-  const lowerStarts = words.filter((w) => {
-    const first = w.match(/\p{L}/u)?.[0] ?? ''
-    return first === first.toLowerCase() && first !== first.toUpperCase()
-  }).length
-  return lowerStarts / words.length > 0.45
+/** When OCR merges grape/region lines from two columns, split on sentence boundaries. */
+function splitDetailLine(line: string): string[] {
+  const parts = line
+    .split(/(?<=\.)\s+(?=[A-Z])/)
+    .map((p) => p.trim())
+    .filter((p) => p.length >= 6)
+  return parts.length > 0 ? parts : [line]
 }
 
-function looksLikeWineTitle(line: string, price: string | null): boolean {
-  if (price) return true
-  if (hasVintage(line)) return true
-
-  const words = line.split(/\s+/).filter((w) => /\p{L}/u.test(w))
-  if (words.length < 2) return false
-
-  const titleish = words.filter((w) => {
-    if (w.length >= 2 && w === w.toUpperCase()) return true
-    const first = w[0]
-    return first === first.toUpperCase() && first !== first.toLowerCase()
-  }).length
-
-  return titleish / words.length >= 0.55
+/** Merge over-split OCR fragments back into one description per wine. */
+function mergeParts(parts: string[], count: number): string[] {
+  if (count <= 0) return []
+  if (count === 1) return [parts.join(' ')]
+  const per = Math.ceil(parts.length / count)
+  return Array.from({ length: count }, (_, i) =>
+    parts.slice(i * per, (i + 1) * per).join(' '),
+  )
 }
 
 interface Preference {
@@ -164,11 +204,6 @@ function preferencesBy(wines: Wine[], key: (w: Wine) => string): Map<string, Pre
       { avg: ratings.reduce((s, r) => s + r, 0) / ratings.length, count: ratings.length },
     ]),
   )
-}
-
-function attachDescription(lastMatch: MenuMatch, line: string): void {
-  const merged = [lastMatch.description, line].filter(Boolean).join(' ')
-  lastMatch.description = merged.length > 160 ? `${merged.slice(0, 157)}…` : merged
 }
 
 export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
@@ -196,42 +231,26 @@ export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
     }
   }
 
+  const parsed = parseMenuWines(menuText)
   const matches: MenuMatch[] = []
-  let lastMatch: MenuMatch | null = null
 
-  for (const raw of menuText.split('\n')) {
-    const line = cleanLine(raw)
-    if (line.length < 6 || isMostlyGarbage(line)) continue
-    const letters = (line.match(/\p{L}/gu) ?? []).length
-    if (letters < 5 || letters / line.length < 0.45) continue
-
-    const lower = line.toLowerCase()
-    const price = extractPrice(line)
-
-    if (FOOD_RE.test(lower) || isSectionHeader(line, price)) continue
-
-    if (isMenuDetailLine(line, price) || isDescriptionLike(line, price)) {
-      if (lastMatch) attachDescription(lastMatch, line)
-      continue
-    }
+  for (const wine of parsed) {
+    const displayLine = `${wine.vintage} ${wine.name}`
+    const searchText = `${displayLine} ${wine.description.join(' ')}`.toLowerCase()
 
     let cellarWine: Wine | undefined
     for (const w of cellar) {
       const tokens = significantTokens(`${w.name} ${w.winery}`)
       if (tokens.length === 0) continue
-      const hits = tokens.filter((t) => containsPhrase(lower, t)).length
+      const hits = tokens.filter((t) => containsPhrase(searchText, t)).length
       if (hits >= Math.min(2, tokens.length)) {
         cellarWine = w
         break
       }
     }
 
-    const varietalHit = findPhrase(lower, VARIETALS)
-    const regionHit = findRegion(lower, REGIONS)
-
-    if (!looksLikeWineTitle(line, price) && !cellarWine) continue
-
-    if (!varietalHit && !regionHit && !cellarWine && !price && !hasVintage(line)) continue
+    const varietalHit = findPhrase(searchText, VARIETALS)
+    const regionHit = findRegion(searchText, REGIONS)
 
     let score: number
     const reasons: string[] = []
@@ -252,9 +271,7 @@ export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
         )
       } else if (typePref) {
         score = typePref.avg * 15 + 5
-        reasons.push(
-          `You average ${typePref.avg.toFixed(1)}★ on ${varietalHit![1]} wines`,
-        )
+        reasons.push(`You average ${typePref.avg.toFixed(1)}★ on ${varietalHit![1]} wines`)
       } else {
         score = 50
         reasons.push(
@@ -272,16 +289,15 @@ export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
       }
     }
 
-    const displayLine = wineTitle(line, price)
-    const match: MenuMatch = {
+    const desc = wine.description.join(' ')
+    matches.push({
       line: displayLine,
-      price,
+      description: desc || undefined,
+      price: wine.price,
       score: Math.round(Math.min(score, 100)),
       reasons,
       cellarWine,
-    }
-    matches.push(match)
-    lastMatch = match
+    })
   }
 
   return matches.sort((a, b) => b.score - a.score)
