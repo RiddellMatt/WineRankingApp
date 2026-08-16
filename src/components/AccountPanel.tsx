@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FREE_WINE_LIMIT, PRO_CONFIG } from '../config'
 import { redeemUnlockCode } from '../pro'
+import { Avatar } from './Avatar'
 import { updateDisplayName, type UserProfile } from '../lib/profileDb'
 
 const PRO_FEATURES = [
@@ -22,11 +23,6 @@ interface Props {
   onProUnlocked: () => void
   onSignOut: () => void
   onSignIn: () => void
-}
-
-function avatarInitial(name: string, email?: string): string {
-  const source = name.trim() || email?.split('@')[0] || '?'
-  return source.charAt(0).toUpperCase()
 }
 
 export function AccountPanel({
@@ -99,9 +95,12 @@ export function AccountPanel({
     <div className="account-panel">
       {signedIn && (
         <section className="account-hero">
-          <div className="account-avatar" aria-hidden="true">
-            {avatarInitial(resolvedName, resolvedEmail)}
-          </div>
+          <Avatar
+            displayName={resolvedName}
+            email={resolvedEmail}
+            seed={profile?.id}
+            size="md"
+          />
           <div className="account-hero-text">
             <h2 className="account-hero-name">{resolvedName}</h2>
             <p className="account-hero-email">{resolvedEmail}</p>
@@ -125,6 +124,9 @@ export function AccountPanel({
               />
             </label>
             <p className="account-hint">Shown on friend requests and shared cellars.</p>
+            <p className="account-hint account-avatar-note">
+              Friends see your initial in a colored circle — photo upload coming later.
+            </p>
             {profileInfo && <p className="auth-info">{profileInfo}</p>}
             {profileError && <p className="form-error">{profileError}</p>}
             <button type="submit" className="btn primary small" disabled={profileBusy}>

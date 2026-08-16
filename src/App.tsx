@@ -11,6 +11,7 @@ import { Insights } from './components/Insights'
 import { MenuScan } from './components/MenuScan'
 import { FriendsPanel } from './components/FriendsPanel'
 import { AccountPanel } from './components/AccountPanel'
+import { Avatar } from './components/Avatar'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
 import { fetchMyProfile, type UserProfile } from './lib/profileDb'
 import { isSupabaseConfigured } from './lib/supabase'
@@ -393,7 +394,10 @@ export default function App() {
               <button className="btn ghost friend-back" onClick={() => setFriendView(null)}>
                 ← Back to friends
               </button>
-              <h2 className="friend-cellar-title">{friendView.name}&apos;s cellar</h2>
+              <div className="friend-cellar-header">
+                <Avatar displayName={friendView.name} seed={friendView.id} size="lg" />
+                <h2 className="friend-cellar-title">{friendView.name}&apos;s cellar</h2>
+              </div>
               {friendWines.length === 0 ? (
                 <section className="empty">
                   <p>They haven&apos;t logged any wines yet.</p>
