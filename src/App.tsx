@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { WINE_TYPES, type SortKey, type Wine, type WineType } from './types'
 import { loadWines, saveWines, SAMPLE_WINES } from './storage'
 import { FREE_WINE_LIMIT } from './config'
+import { syncProSubscription } from './lib/checkoutApi'
 import { loadProStatus, syncProFromServer } from './pro'
 import { useAuth } from './context/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
@@ -164,6 +165,14 @@ export default function App() {
 
     async function pollPro() {
       try {
+        if (attempts === 0) {
+          try {
+            await syncProSubscription()
+          } catch {
+            // Webhook may still grant Pro; keep polling profile.
+          }
+        }
+
         const p = await fetchMyProfile()
         if (cancelled) return
         setProfile(p)
