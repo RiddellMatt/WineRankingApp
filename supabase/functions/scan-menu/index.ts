@@ -108,7 +108,8 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'File must be an image.' }, 400)
     }
 
-    const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.0-flash'
+    // gemini-2.0-flash was retired 2026-06-01; default to a current vision-capable model.
+    const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash'
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
