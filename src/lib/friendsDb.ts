@@ -1,4 +1,9 @@
 import { getSupabase, type FriendshipRow, type ProfileRow } from './supabase'
+import {
+  AVATAR_SETUP_MESSAGE,
+  fetchProfilesByIds,
+} from './profileDb'
+import { isMissingAvatarColumn } from './profileColumns'
 
 export interface FriendProfile {
   id: string
@@ -41,7 +46,12 @@ export async function findProfileByEmail(email: string): Promise<FriendProfile |
   const { data, error } = await getSupabase().rpc('find_profile_by_email', {
     lookup_email: email.trim(),
   })
-  if (error) throw error
+  if (error) {
+    if (isMissingAvatarColumn(error)) {
+      throw new Error(AVATAR_SETUP_MESSAGE)
+    }
+    throw error
+  }
   const row = (data as ProfileRow[] | null)?.[0]
   return row ? mapProfile(row) : null
 }
@@ -59,14 +69,10 @@ export async function fetchFriendships(userId: string): Promise<Friendship[]> {
     ...new Set(rows.map((r) => (r.requester_id === userId ? r.addressee_id : r.requester_id))),
   ]
 
-  let profiles = new Map<string, FriendProfile>()
+  const profiles = new Map<string, FriendProfile>()
   if (otherIds.length > 0) {
-    const { data: profileRows, error: profileError } = await getSupabase()
-      .from('profiles')
-      .select('id, display_name, email, avatar_url')
-      .in('id', otherIds)
-    if (profileError) throw profileError
-    for (const p of profileRows as ProfileRow[]) {
+    const profileRows = await fetchProfilesByIds(otherIds)
+    for (const p of profileRows) {
       profiles.set(p.id, mapProfile(p))
     }
   }
@@ -112,11 +118,6 @@ export async function removeFriendship(friendshipId: string): Promise<void> {
 }
 
 export async function fetchProfile(userId: string): Promise<FriendProfile | null> {
-  const { data, error } = await getSupabase()
-    .from('profiles')
-    .select('id, display_name, email, avatar_url')
-    .eq('id', userId)
-    .maybeSingle()
-  if (error) throw error
-  return data ? mapProfile(data as ProfileRow) : null
+  const rows = await fetchProfilesByIds([userId])
+  return rows[0] ? mapProfile(rows[0]) : null
 }

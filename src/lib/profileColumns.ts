@@ -1,0 +1,9 @@
+import type { PostgrestError } from '@supabase/supabase-js'
+
+export const PROFILE_COLUMNS_FULL = 'id, display_name, email, avatar_url'
+export const PROFILE_COLUMNS_BASE = 'id, display_name, email'
+
+export function isMissingAvatarColumn(error: PostgrestError | null): boolean {
+  if (!error) return false
+  return error.code === '42703' || error.message.includes('avatar_url')
+}

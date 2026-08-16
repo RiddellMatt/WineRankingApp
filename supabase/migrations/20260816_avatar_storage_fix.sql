@@ -1,13 +1,16 @@
--- Run in Supabase Dashboard → SQL Editor (after prior migrations)
--- Profile photos: avatar_url column + public avatars storage bucket
+-- FIX: Run this entire script in Supabase Dashboard → SQL Editor → Run
+-- Resolves "column profiles.avatar_url does not exist" and "bucket not found"
 
+-- 1) Column (required first)
 alter table public.profiles
   add column if not exists avatar_url text;
 
+-- 2) Storage bucket (minimal insert — works on all Supabase versions)
 insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)
 on conflict (id) do update set public = true;
 
+-- 3) Storage policies
 drop policy if exists avatars_select on storage.objects;
 create policy avatars_select on storage.objects
   for select
@@ -37,6 +40,7 @@ create policy avatars_delete on storage.objects
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 
+-- 4) Email lookup RPC — must DROP first when return type changes
 drop function if exists public.find_profile_by_email(text);
 
 create function public.find_profile_by_email(lookup_email text)
@@ -54,3 +58,8 @@ as $$
 $$;
 
 grant execute on function public.find_profile_by_email(text) to authenticated;
+
+-- 5) Verify (should return one row with public = true)
+-- select id, public from storage.buckets where id = 'avatars';
+-- select column_name from information_schema.columns
+--   where table_schema = 'public' and table_name = 'profiles' and column_name = 'avatar_url';
