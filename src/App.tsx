@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { WINE_TYPES, type SortKey, type Wine, type WineType } from './types'
 import { loadWines, saveWines, SAMPLE_WINES } from './storage'
 import { FREE_WINE_LIMIT } from './config'
-import { loadProStatus } from './pro'
+import { loadProStatus, syncProFromServer } from './pro'
 import { useAuth } from './context/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
 import { WineCard } from './components/WineCard'
@@ -125,7 +125,10 @@ export default function App() {
     let cancelled = false
     fetchMyProfile()
       .then((p) => {
-        if (!cancelled) setProfile(p)
+        if (!cancelled) {
+          setProfile(p)
+          setPro(syncProFromServer(p?.isPro))
+        }
       })
       .catch(() => {
         if (!cancelled) setProfile(null)
@@ -430,7 +433,13 @@ export default function App() {
             <FriendsPanel userId={cloudUser.id} onViewCellar={viewFriendCellar} />
           )
         ) : view === 'sommelier' ? (
-          <MenuScan wines={wines} />
+          <MenuScan
+            wines={wines}
+            pro={pro}
+            signedIn={Boolean(cloudUser)}
+            cloudConfigured={configured}
+            onUpgrade={() => goToAccount(true)}
+          />
         ) : view === 'insights' ? (
           pro ? (
             <Insights wines={wines} />

@@ -22,6 +22,11 @@ export const PRO_CONFIG = {
   unlockCodes: ['CELLAR-PRO-2026'],
 }
 
+export const MENU_SCAN_CONFIG = {
+  /** Monthly AI menu scans per Pro account (must match scan-menu Edge Function). */
+  monthlyLimit: 30,
+}
+
 export const SHOP_CONFIG = {
   /** Retailer search URL. `{query}` is replaced with the wine description. */
   urlTemplate: 'https://www.wine-searcher.com/find/{query}',

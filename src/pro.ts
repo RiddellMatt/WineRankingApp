@@ -24,3 +24,12 @@ export function redeemUnlockCode(code: string): boolean {
   }
   return false
 }
+
+/** Merge server-side Pro entitlement into local storage when signed in. */
+export function syncProFromServer(isPro: boolean | undefined): boolean {
+  if (isPro) {
+    activatePro()
+    return true
+  }
+  return loadProStatus()
+}

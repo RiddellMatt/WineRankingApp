@@ -22,6 +22,7 @@ export interface ProfileRow {
   display_name: string
   email: string
   avatar_url: string | null
+  is_pro?: boolean | null
 }
 
 export interface WineRow {

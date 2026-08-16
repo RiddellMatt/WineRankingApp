@@ -2,6 +2,13 @@ import type { Wine } from './types'
 import { REGIONS, VARIETALS } from './scanner'
 import { containsPhrase, findPhrase, findRegion } from './textMatch'
 
+export interface ParsedMenuWine {
+  vintage: string
+  name: string
+  price: string | null
+  description?: string
+}
+
 export interface MenuMatch {
   line: string
   description?: string
@@ -206,7 +213,10 @@ function preferencesBy(wines: Wine[], key: (w: Wine) => string): Map<string, Pre
   )
 }
 
-export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
+export function matchParsedMenuWines(
+  parsed: ParsedMenuWine[],
+  cellar: Wine[],
+): MenuMatch[] {
   const varietalPrefs = new Map<string, Preference>()
   for (const w of cellar) {
     const v = w.varietal.toLowerCase().trim()
@@ -231,12 +241,11 @@ export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
     }
   }
 
-  const parsed = parseMenuWines(menuText)
   const matches: MenuMatch[] = []
 
   for (const wine of parsed) {
-    const displayLine = `${wine.vintage} ${wine.name}`
-    const searchText = `${displayLine} ${wine.description.join(' ')}`.toLowerCase()
+    const displayLine = `${wine.vintage} ${wine.name}`.trim()
+    const searchText = `${displayLine} ${wine.description ?? ''}`.toLowerCase()
 
     let cellarWine: Wine | undefined
     for (const w of cellar) {
@@ -289,10 +298,9 @@ export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
       }
     }
 
-    const desc = wine.description.join(' ')
     matches.push({
       line: displayLine,
-      description: desc || undefined,
+      description: wine.description || undefined,
       price: wine.price,
       score: Math.round(Math.min(score, 100)),
       reasons,
@@ -301,4 +309,15 @@ export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
   }
 
   return matches.sort((a, b) => b.score - a.score)
+}
+
+export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
+  const parsedRaw = parseMenuWines(menuText)
+  const parsed: ParsedMenuWine[] = parsedRaw.map((w) => ({
+    vintage: w.vintage,
+    name: w.name,
+    price: w.price,
+    description: w.description.join(' ') || undefined,
+  }))
+  return matchParsedMenuWines(parsed, cellar)
 }

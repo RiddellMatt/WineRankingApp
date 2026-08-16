@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FREE_WINE_LIMIT, PRO_CONFIG } from '../config'
-import { redeemUnlockCode } from '../pro'
+import { activatePro, redeemUnlockCode } from '../pro'
+import { redeemProOnServer } from '../lib/proApi'
 import { Avatar } from './Avatar'
 import { removeAvatar, updateDisplayName, uploadAvatar, type UserProfile } from '../lib/profileDb'
 
@@ -8,6 +9,7 @@ const PRO_FEATURES = [
   'Unlimited wines',
   'Insights dashboard',
   'Export & import your cellar',
+  'AI menu scan (30/month)',
 ] as const
 
 interface Props {
@@ -81,9 +83,22 @@ export function AccountPanel({
     }
   }
 
-  function handleRedeem(e: FormEvent) {
+  async function handleRedeem(e: FormEvent) {
     e.preventDefault()
     setCodeError('')
+    if (signedIn && cloudConfigured) {
+      try {
+        await redeemProOnServer(code)
+        activatePro()
+        onProUnlocked()
+        setCode('')
+        setShowCode(false)
+        return
+      } catch (err) {
+        setCodeError(String((err as Error).message ?? err))
+        return
+      }
+    }
     if (redeemUnlockCode(code)) {
       onProUnlocked()
       setCode('')
@@ -239,11 +254,17 @@ export function AccountPanel({
           </div>
           <p className="account-plan-detail">
             {pro
-              ? 'Unlimited wines, Insights, and export on this device.'
+              ? signedIn
+                ? 'Unlimited wines, Insights, export, and AI menu scan on your account.'
+                : 'Unlimited wines, Insights, and export on this device.'
               : `${wineCount} / ${FREE_WINE_LIMIT} wines · Insights and export locked`}
           </p>
           {!pro && (
-            <p className="account-hint">Pro status is saved on this device only.</p>
+            <p className="account-hint">
+              {signedIn
+                ? 'Redeem a code here to unlock Pro on your account.'
+                : 'Pro status is saved on this device only. Sign in to sync Pro and AI menu scan.'}
+            </p>
           )}
         </div>
 

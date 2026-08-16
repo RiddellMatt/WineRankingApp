@@ -1,8 +1,11 @@
 import { getSupabase, type ProfileRow } from './supabase'
 import {
   isMissingAvatarColumn,
+  isMissingProColumn,
   PROFILE_COLUMNS_BASE,
   PROFILE_COLUMNS_FULL,
+  PROFILE_COLUMNS_NO_AVATAR,
+  PROFILE_COLUMNS_NO_PRO,
 } from './profileColumns'
 
 export const AVATAR_BUCKET = 'avatars'
@@ -16,6 +19,7 @@ export interface UserProfile {
   displayName: string
   email: string
   avatarUrl?: string
+  isPro?: boolean
 }
 
 export function mapProfileRow(row: ProfileRow): UserProfile {
@@ -24,30 +28,39 @@ export function mapProfileRow(row: ProfileRow): UserProfile {
     displayName: row.display_name,
     email: row.email,
     avatarUrl: row.avatar_url ?? undefined,
+    isPro: row.is_pro ?? undefined,
   }
 }
 
-export async function fetchMyProfile(): Promise<UserProfile | null> {
-  const { data: { user } } = await getSupabase().auth.getUser()
-  if (!user) return null
-
+async function selectMyProfileRow() {
   const supabase = getSupabase()
-  let result = await supabase
-    .from('profiles')
-    .select(PROFILE_COLUMNS_FULL)
-    .eq('id', user.id)
-    .maybeSingle()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { row: null as ProfileRow | null, error: null as Error | null }
 
-  if (isMissingAvatarColumn(result.error)) {
-    result = await supabase
-      .from('profiles')
-      .select(PROFILE_COLUMNS_BASE)
-      .eq('id', user.id)
-      .maybeSingle()
+  const attempts = [
+    PROFILE_COLUMNS_FULL,
+    PROFILE_COLUMNS_NO_PRO,
+    PROFILE_COLUMNS_NO_AVATAR,
+    PROFILE_COLUMNS_BASE,
+  ]
+
+  for (const columns of attempts) {
+    const result = await supabase.from('profiles').select(columns).eq('id', user.id).maybeSingle()
+    if (!result.error) {
+      return { row: result.data as ProfileRow | null, error: null }
+    }
+    if (!isMissingAvatarColumn(result.error) && !isMissingProColumn(result.error)) {
+      return { row: null, error: result.error }
+    }
   }
 
-  if (result.error) throw result.error
-  return result.data ? mapProfileRow(result.data as ProfileRow) : null
+  return { row: null, error: new Error('Could not load profile.') }
+}
+
+export async function fetchMyProfile(): Promise<UserProfile | null> {
+  const { row, error } = await selectMyProfileRow()
+  if (error) throw error
+  return row ? mapProfileRow(row) : null
 }
 
 export async function updateDisplayName(displayName: string): Promise<UserProfile> {
@@ -65,7 +78,15 @@ export async function updateDisplayName(displayName: string): Promise<UserProfil
     .select(PROFILE_COLUMNS_FULL)
     .single()
 
-  if (isMissingAvatarColumn(result.error)) {
+  if (isMissingAvatarColumn(result.error) || isMissingProColumn(result.error)) {
+    result = await supabase
+      .from('profiles')
+      .update({ display_name: trimmed })
+      .eq('id', user.id)
+      .select(PROFILE_COLUMNS_NO_PRO)
+      .single()
+  }
+  if (isMissingProColumn(result.error)) {
     result = await supabase
       .from('profiles')
       .update({ display_name: trimmed })
@@ -115,15 +136,24 @@ export async function uploadAvatar(file: File): Promise<UserProfile> {
   const { data: urlData } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path)
   const avatarUrl = `${urlData.publicUrl}?v=${Date.now()}`
 
-  const { data, error } = await supabase
+  let result = await supabase
     .from('profiles')
     .update({ avatar_url: avatarUrl })
     .eq('id', user.id)
     .select(PROFILE_COLUMNS_FULL)
     .single()
 
-  if (error) throw wrapAvatarSetupError(error)
-  return mapProfileRow(data as ProfileRow)
+  if (isMissingProColumn(result.error)) {
+    result = await supabase
+      .from('profiles')
+      .update({ avatar_url: avatarUrl })
+      .eq('id', user.id)
+      .select(PROFILE_COLUMNS_NO_PRO)
+      .single()
+  }
+
+  if (result.error) throw wrapAvatarSetupError(result.error)
+  return mapProfileRow(result.data as ProfileRow)
 }
 
 export async function removeAvatar(): Promise<UserProfile> {
@@ -141,29 +171,39 @@ export async function removeAvatar(): Promise<UserProfile> {
     if (removeError) throw wrapAvatarSetupError(removeError)
   }
 
-  const { data, error } = await supabase
+  let result = await supabase
     .from('profiles')
     .update({ avatar_url: null })
     .eq('id', user.id)
     .select(PROFILE_COLUMNS_FULL)
     .single()
 
-  if (error) throw wrapAvatarSetupError(error)
-  return mapProfileRow(data as ProfileRow)
+  if (isMissingProColumn(result.error)) {
+    result = await supabase
+      .from('profiles')
+      .update({ avatar_url: null })
+      .eq('id', user.id)
+      .select(PROFILE_COLUMNS_NO_PRO)
+      .single()
+  }
+
+  if (result.error) throw wrapAvatarSetupError(result.error)
+  return mapProfileRow(result.data as ProfileRow)
 }
 
 export async function fetchProfilesByIds(ids: string[]): Promise<ProfileRow[]> {
   if (ids.length === 0) return []
 
   const supabase = getSupabase()
-  const full = await supabase.from('profiles').select(PROFILE_COLUMNS_FULL).in('id', ids)
+  const attempts = [PROFILE_COLUMNS_FULL, PROFILE_COLUMNS_NO_PRO, PROFILE_COLUMNS_BASE]
 
-  if (!isMissingAvatarColumn(full.error)) {
-    if (full.error) throw full.error
-    return (full.data ?? []) as ProfileRow[]
+  for (const columns of attempts) {
+    const result = await supabase.from('profiles').select(columns).in('id', ids)
+    if (!result.error) return (result.data ?? []) as unknown as ProfileRow[]
+    if (!isMissingAvatarColumn(result.error) && !isMissingProColumn(result.error)) {
+      throw result.error
+    }
   }
 
-  const base = await supabase.from('profiles').select(PROFILE_COLUMNS_BASE).in('id', ids)
-  if (base.error) throw base.error
-  return (base.data ?? []) as ProfileRow[]
+  return []
 }

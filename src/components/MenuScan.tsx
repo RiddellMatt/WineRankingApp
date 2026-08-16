@@ -1,15 +1,21 @@
 import { useRef, useState } from 'react'
+import { MENU_SCAN_CONFIG } from '../config'
+import { matchMenu, matchParsedMenuWines, type MenuMatch } from '../menuMatch'
+import { MenuScanError, scanMenuWithAi } from '../lib/menuScanApi'
 import type { Wine } from '../types'
-import { matchMenu, type MenuMatch } from '../menuMatch'
 
 interface Props {
   wines: Wine[]
+  pro: boolean
+  signedIn: boolean
+  cloudConfigured: boolean
+  onUpgrade: () => void
 }
 
 type State =
   | { phase: 'idle' }
-  | { phase: 'scanning'; pct: number }
-  | { phase: 'results'; matches: MenuMatch[] }
+  | { phase: 'scanning'; pct: number; mode: 'ai' | 'basic' }
+  | { phase: 'results'; matches: MenuMatch[]; remaining?: number }
   | { phase: 'failed'; message: string }
 
 function scoreClass(score: number): string {
@@ -18,17 +24,34 @@ function scoreClass(score: number): string {
   return ''
 }
 
-export function MenuScan({ wines }: Props) {
+export function MenuScan({ wines, pro, signedIn, cloudConfigured, onUpgrade }: Props) {
   const [state, setState] = useState<State>({ phase: 'idle' })
   const inputRef = useRef<HTMLInputElement>(null)
   const ratedCount = wines.length
+  const aiAvailable = pro && signedIn && cloudConfigured
 
-  async function handleFile(file: File) {
-    setState({ phase: 'scanning', pct: 0 })
+  async function runBasicScan(file: File) {
+    setState({ phase: 'scanning', pct: 0, mode: 'basic' })
+    const { ocrImage } = await import('../scanner')
+    const text = await ocrImage(file, (pct) => setState({ phase: 'scanning', pct, mode: 'basic' }))
+    const matches = matchMenu(text, wines)
+    if (matches.length === 0) {
+      setState({
+        phase: 'failed',
+        message:
+          "Couldn't spot any wines on that photo. Try a closer, straighter shot of the wine list in good light.",
+      })
+    } else {
+      setState({ phase: 'results', matches })
+    }
+  }
+
+  async function runAiScan(file: File) {
+    setState({ phase: 'scanning', pct: 15, mode: 'ai' })
     try {
-      const { ocrImage } = await import('../scanner')
-      const text = await ocrImage(file, (pct) => setState({ phase: 'scanning', pct }))
-      const matches = matchMenu(text, wines)
+      const { wines: parsed, remaining } = await scanMenuWithAi(file)
+      setState({ phase: 'scanning', pct: 85, mode: 'ai' })
+      const matches = matchParsedMenuWines(parsed, wines)
       if (matches.length === 0) {
         setState({
           phase: 'failed',
@@ -36,7 +59,52 @@ export function MenuScan({ wines }: Props) {
             "Couldn't spot any wines on that photo. Try a closer, straighter shot of the wine list in good light.",
         })
       } else {
-        setState({ phase: 'results', matches })
+        setState({ phase: 'results', matches, remaining })
+      }
+    } catch (err) {
+      if (err instanceof MenuScanError) {
+        if (err.code === 'pro_required') {
+          onUpgrade()
+          setState({
+            phase: 'failed',
+            message: 'AI menu scan is a Pro feature. Upgrade in Account to unlock it.',
+          })
+          return
+        }
+        if (err.code === 'auth_required') {
+          setState({
+            phase: 'failed',
+            message: 'Sign in to use AI menu scan.',
+          })
+          return
+        }
+        if (err.code === 'quota_exceeded') {
+          setState({
+            phase: 'failed',
+            message: `You've used all ${MENU_SCAN_CONFIG.monthlyLimit} AI menu scans this month.`,
+          })
+          return
+        }
+        if (err.code === 'not_configured') {
+          await runBasicScan(file)
+          return
+        }
+        setState({ phase: 'failed', message: err.message })
+        return
+      }
+      setState({
+        phase: 'failed',
+        message: 'AI scan failed. Try again or use a different photo.',
+      })
+    }
+  }
+
+  async function handleFile(file: File) {
+    try {
+      if (aiAvailable) {
+        await runAiScan(file)
+      } else {
+        await runBasicScan(file)
       }
     } catch {
       setState({
@@ -46,6 +114,13 @@ export function MenuScan({ wines }: Props) {
     }
   }
 
+  const scanningLabel =
+    state.phase === 'scanning'
+      ? state.mode === 'ai'
+        ? 'AI sommelier is reading your menu…'
+        : `Reading menu… ${state.pct}%`
+      : null
+
   return (
     <div className="menu-scan">
       <section className="menu-scan-hero">
@@ -53,26 +128,50 @@ export function MenuScan({ wines }: Props) {
           📖
         </span>
         <h2>Point me at the wine list</h2>
-        <p>
-          Photograph a restaurant menu and I'll rank it against your cellar — using your own
-          ratings, favorite varietals, and go-to regions.
-        </p>
+        {aiAvailable ? (
+          <p>
+            Pro AI reads the menu photo directly — even two-column lists — then ranks every wine
+            against your cellar using your ratings, favorite varietals, and go-to regions.
+          </p>
+        ) : (
+          <p>
+            Photograph a restaurant menu and I&apos;ll rank it against your cellar — using your own
+            ratings, favorite varietals, and go-to regions.
+            {!pro && (
+              <>
+                {' '}
+                <button type="button" className="link-btn" onClick={onUpgrade}>
+                  Upgrade to Pro
+                </button>{' '}
+                for sharper AI menu reading ({MENU_SCAN_CONFIG.monthlyLimit}/month).
+              </>
+            )}
+            {pro && !signedIn && (
+              <> Sign in to unlock AI menu scan on this account.</>
+            )}
+          </p>
+        )}
+        {aiAvailable && state.phase === 'results' && state.remaining != null && (
+          <p className="menu-scan-quota">
+            {state.remaining} AI scan{state.remaining === 1 ? '' : 's'} left this month
+          </p>
+        )}
         {ratedCount === 0 && (
           <p className="menu-scan-warning">
             Your cellar is empty, so recommendations will be generic. Rate a few wines first for
             personal picks.
           </p>
         )}
+        {!aiAvailable && pro && signedIn && (
+          <p className="menu-scan-note">Using on-device OCR — connect Supabase for AI menu scan.</p>
+        )}
         <button
           className="btn primary"
           disabled={state.phase === 'scanning'}
           onClick={() => inputRef.current?.click()}
         >
-          {state.phase === 'scanning'
-            ? `Reading menu… ${state.pct}%`
-            : '📷 Scan a menu'}
+          {state.phase === 'scanning' ? scanningLabel : aiAvailable ? '✨ Scan with AI' : '📷 Scan a menu'}
         </button>
-        {/* No `capture` attr: mobile browsers then offer camera roll AND camera. */}
         <input
           ref={inputRef}
           type="file"
