@@ -52,11 +52,14 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  meta_name text := nullif(trim(new.raw_user_meta_data->>'display_name'), '');
+  email_name text := nullif(split_part(new.email, '@', 1), '');
 begin
   insert into public.profiles (id, display_name, email)
   values (
     new.id,
-    coalesce(nullif(split_part(new.email, '@', 1), ''), 'Wine lover'),
+    coalesce(meta_name, email_name, 'Wine lover'),
     coalesce(new.email, '')
   );
   return new;
@@ -110,13 +113,30 @@ alter table public.profiles enable row level security;
 alter table public.wines enable row level security;
 alter table public.friendships enable row level security;
 
--- Profiles: read self + accepted friends; update own
+-- Profiles: read self, accepted friends, and pending friend-request parties
+create or replace function public.can_view_profile(viewer uuid, profile_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select viewer = profile_id
+    or public.are_friends(viewer, profile_id)
+    or exists (
+      select 1
+      from public.friendships f
+      where f.status = 'pending'
+        and (
+          (f.requester_id = viewer and f.addressee_id = profile_id)
+          or (f.requester_id = profile_id and f.addressee_id = viewer)
+        )
+    );
+$$;
+
 create policy profiles_select on public.profiles
   for select to authenticated
-  using (
-    auth.uid() = id
-    or public.are_friends(auth.uid(), id)
-  );
+  using (public.can_view_profile(auth.uid(), id));
 
 create policy profiles_update on public.profiles
   for update to authenticated

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 export function AuthScreen() {
   const { signIn, signUp, continueOffline } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -17,7 +18,7 @@ export function AuthScreen() {
     setBusy(true)
     const err =
       mode === 'signup'
-        ? await signUp(email.trim(), password)
+        ? await signUp(email.trim(), password, displayName.trim())
         : await signIn(email.trim(), password)
     setBusy(false)
     if (err) {
@@ -42,6 +43,21 @@ export function AuthScreen() {
         </p>
 
         <form className="auth-form" onSubmit={handleSubmit}>
+          {mode === 'signup' && (
+            <label className="field">
+              <span>Display name</span>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                autoComplete="nickname"
+                placeholder="How friends will see you"
+                minLength={2}
+                maxLength={40}
+                required
+              />
+            </label>
+          )}
           <label className="field">
             <span>Email</span>
             <input

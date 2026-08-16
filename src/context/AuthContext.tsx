@@ -14,7 +14,7 @@ interface AuthState {
   session: Session | null
   user: User | null
   offlineMode: boolean
-  signUp: (email: string, password: string) => Promise<string | null>
+  signUp: (email: string, password: string, displayName?: string) => Promise<string | null>
   signIn: (email: string, password: string) => Promise<string | null>
   signOut: () => Promise<void>
   continueOffline: () => void
@@ -57,8 +57,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe()
   }, [configured])
 
-  async function signUp(email: string, password: string): Promise<string | null> {
-    const { error } = await getSupabase().auth.signUp({ email, password })
+  async function signUp(
+    email: string,
+    password: string,
+    displayName?: string,
+  ): Promise<string | null> {
+    const trimmedName = displayName?.trim()
+    const { error } = await getSupabase().auth.signUp({
+      email,
+      password,
+      options: trimmedName
+        ? { data: { display_name: trimmedName } }
+        : undefined,
+    })
     return error?.message ?? null
   }
 

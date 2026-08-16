@@ -11,7 +11,9 @@ import { UpgradeModal } from './components/UpgradeModal'
 import { Insights } from './components/Insights'
 import { MenuScan } from './components/MenuScan'
 import { FriendsPanel } from './components/FriendsPanel'
+import { ProfileModal } from './components/ProfileModal'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
+import { fetchMyProfile, type UserProfile } from './lib/profileDb'
 import { isSupabaseConfigured } from './lib/supabase'
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
@@ -58,6 +60,8 @@ export default function App() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Wine | null>(null)
   const [upgradeReason, setUpgradeReason] = useState<UpgradeReason | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [profileOpen, setProfileOpen] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
 
   // Load cloud cellar when signed in.
@@ -96,6 +100,25 @@ export default function App() {
       cancelled = true
     }
   }, [cloudUser?.id, offlineMode])
+
+  // Load profile for signed-in users.
+  useEffect(() => {
+    if (!cloudUser) {
+      setProfile(null)
+      return
+    }
+    let cancelled = false
+    fetchMyProfile()
+      .then((p) => {
+        if (!cancelled) setProfile(p)
+      })
+      .catch(() => {
+        if (!cancelled) setProfile(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [cloudUser?.id])
 
   // Persist offline cellar locally.
   useEffect(() => {
@@ -264,16 +287,23 @@ export default function App() {
               </h1>
               <p className="tagline">
                 {showAccountBar
-                  ? `Signed in as ${user.email}`
+                  ? profile?.displayName
+                    ? `Signed in as ${profile.displayName}`
+                    : `Signed in as ${user.email}`
                   : "Every bottle you've tried, ranked."}
               </p>
             </div>
           </div>
           <div className="header-actions">
             {showAccountBar && (
-              <button className="btn ghost" onClick={() => signOut()}>
-                Sign out
-              </button>
+              <>
+                <button className="btn ghost" onClick={() => setProfileOpen(true)}>
+                  Profile
+                </button>
+                <button className="btn ghost" onClick={() => signOut()}>
+                  Sign out
+                </button>
+              </>
             )}
             {!pro && (
               <button className="btn ghost" onClick={() => setUpgradeReason('generic')}>
@@ -545,6 +575,20 @@ export default function App() {
             setUpgradeReason(null)
           }}
           onClose={() => setUpgradeReason(null)}
+        />
+      )}
+
+      {profileOpen && cloudUser && (
+        <ProfileModal
+          profile={
+            profile ?? {
+              id: cloudUser.id,
+              displayName: cloudUser.email?.split('@')[0] ?? '',
+              email: cloudUser.email ?? '',
+            }
+          }
+          onSaved={setProfile}
+          onClose={() => setProfileOpen(false)}
         />
       )}
 

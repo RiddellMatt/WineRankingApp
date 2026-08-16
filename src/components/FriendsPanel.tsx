@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   fetchFriendships,
   findProfileByEmail,
+  friendDisplayLabel,
   removeFriendship,
   respondToRequest,
   sendFriendRequest,
@@ -112,7 +113,12 @@ export function FriendsPanel({ userId, onViewCellar }: Props) {
           <ul className="friends-list">
             {incoming.map((f) => (
               <li className="friends-row" key={f.id}>
-                <span>{f.friend?.displayName ?? f.friend?.email ?? 'Someone'}</span>
+                <div className="friends-identity">
+                  <span className="friends-name">{friendDisplayLabel(f.friend)}</span>
+                  {f.friend?.email && (
+                    <span className="friends-email">{f.friend.email}</span>
+                  )}
+                </div>
                 <div className="friends-row-actions">
                   <button className="btn primary small" onClick={() => handleRespond(f.id, 'accepted')}>
                     Accept
@@ -133,7 +139,12 @@ export function FriendsPanel({ userId, onViewCellar }: Props) {
           <ul className="friends-list">
             {outgoing.map((f) => (
               <li className="friends-row" key={f.id}>
-                <span>{f.friend?.displayName ?? f.friend?.email ?? 'Pending'}</span>
+                <div className="friends-identity">
+                  <span className="friends-name">{friendDisplayLabel(f.friend, 'Pending')}</span>
+                  {f.friend?.email && (
+                    <span className="friends-email">{f.friend.email}</span>
+                  )}
+                </div>
                 <button className="btn ghost small" onClick={() => handleRemove(f.id)}>
                   Cancel
                 </button>
@@ -150,11 +161,16 @@ export function FriendsPanel({ userId, onViewCellar }: Props) {
         ) : (
           <ul className="friends-list">
             {friends.map((f) => {
-              const name = f.friend?.displayName ?? f.friend?.email ?? 'Friend'
+              const name = friendDisplayLabel(f.friend, 'Friend')
               const friendId = f.friend?.id ?? (f.requesterId === userId ? f.addresseeId : f.requesterId)
               return (
                 <li className="friends-row" key={f.id}>
-                  <span>{name}</span>
+                  <div className="friends-identity">
+                    <span className="friends-name">{name}</span>
+                    {f.friend?.email && f.friend.displayName.trim() && (
+                      <span className="friends-email">{f.friend.email}</span>
+                    )}
+                  </div>
                   <div className="friends-row-actions">
                     <button
                       className="btn primary small"

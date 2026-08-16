@@ -20,6 +20,17 @@ function mapProfile(row: ProfileRow): FriendProfile {
   return { id: row.id, displayName: row.display_name, email: row.email }
 }
 
+/** Label shown in friends UI — prefers display name, never exposes raw email to addressee of pending requests unless needed. */
+export function friendDisplayLabel(
+  friend: FriendProfile | undefined,
+  fallback = 'Someone',
+): string {
+  if (!friend) return fallback
+  const name = friend.displayName.trim()
+  if (name) return name
+  return friend.email || fallback
+}
+
 export async function findProfileByEmail(email: string): Promise<FriendProfile | null> {
   const { data, error } = await getSupabase().rpc('find_profile_by_email', {
     lookup_email: email.trim(),
