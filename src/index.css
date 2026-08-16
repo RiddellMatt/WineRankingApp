@@ -1249,6 +1249,202 @@ textarea {
   background: var(--surface);
 }
 
+/* ── Auth ───────────────────────────────────────────── */
+
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 2rem 1.6rem;
+  text-align: center;
+}
+
+.auth-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.auth-card h1 {
+  font-family: var(--font-display);
+  margin: 0 0 0.35rem;
+}
+
+.auth-tagline {
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  margin: 0 0 1.4rem;
+}
+
+.auth-form {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: 0.3rem;
+}
+
+.auth-toggle {
+  display: block;
+  margin: 1rem auto 0;
+}
+
+.auth-offline {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.auth-offline-note {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  margin: 0.6rem 0 0;
+}
+
+.auth-info {
+  color: var(--star);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.app-footer-note {
+  text-align: center;
+  padding: 1rem;
+}
+
+/* ── Friends ────────────────────────────────────────── */
+
+.friends-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.friends-add h2,
+.friends-section h3 {
+  font-family: var(--font-display);
+  margin: 0 0 0.4rem;
+}
+
+.friends-hint {
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  margin: 0 0 0.8rem;
+}
+
+.friends-add-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.friends-add-row input {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.friends-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.friends-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+}
+
+.friends-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.friends-name {
+  font-weight: 600;
+}
+
+.friends-email {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-modal .modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.profile-email {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.friends-row-actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.friends-empty {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.friend-back {
+  margin-bottom: 1rem;
+}
+
+.friend-cellar-title {
+  font-family: var(--font-display);
+  margin: 0 0 1rem;
+}
+
 /* ── Responsive ─────────────────────────────────────── */
 
 @media (max-width: 640px) {
