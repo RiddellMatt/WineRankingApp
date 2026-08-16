@@ -4,15 +4,17 @@ import { corsHeaders, jsonResponse } from '../_shared/cors.ts'
 const MONTHLY_LIMIT = 30
 const MAX_IMAGE_CHARS = 6_000_000
 
-/** Tried in order when GEMINI_MODEL is unset. Vision-capable generateContent models. */
+/** Tried in order when GEMINI_MODEL is unset. Newer keys may 404 on retired 2.x models. */
 const MODEL_FALLBACKS = [
-  'gemini-2.5-flash',
-  'gemini-3.6-flash',
   'gemini-3.7-flash',
-  'gemini-2.5-flash-lite',
+  'gemini-3.6-flash',
+  'gemini-flash-latest',
   'gemini-3.5-flash-lite',
   'gemini-3.1-flash-lite',
-  'gemini-flash-latest',
+  'gemini-flash-lite-latest',
+  'gemini-3-flash-preview',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash',
   'gemini-2.5-pro',
 ] as const
 
