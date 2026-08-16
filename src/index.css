@@ -790,6 +790,13 @@ a.icon-btn {
   vertical-align: middle;
 }
 
+.menu-desc {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
 .menu-reasons {
   display: flex;
   flex-wrap: wrap;

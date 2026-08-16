@@ -100,6 +100,7 @@ export function MenuScan({ wines }: Props) {
                   {i === 0 && <span className="best-pick">Top pick</span>}
                   {m.line}
                 </p>
+                {m.description && <p className="menu-desc">{m.description}</p>}
                 <div className="menu-reasons">
                   {m.reasons.map((r) => (
                     <span className="menu-reason" key={r}>
