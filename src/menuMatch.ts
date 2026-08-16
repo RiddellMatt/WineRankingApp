@@ -18,6 +18,14 @@ const STOPWORDS = new Set([
   'del', 'della', 'di', 'de', 'la', 'le', 'du', 'des', 'red', 'white',
 ])
 
+/** Tasting-note vocabulary — strong signal this is prose, not a wine title. */
+const TASTING_RE =
+  /\b(cherry|berries|berry|blackberry|currant|cassis|plum|peach|apricot|citrus|grapefruit|lemon|lime|apple|pear|tropical|floral|vanilla|oak|cedar|tobacco|leather|graphite|mineral|minerality|tannin|tannins|acid|acidity|crisp|bright|supple|velvety|silky|elegant|structured|balanced|finish|palate|aroma|aromas|notes? of|hint of|hints of|undertones|full[- ]bodied|medium[- ]bodied|light[- ]bodied|dry|sweet|off[- ]dry|spice|spicy|herbal|earthy|smoky|brioche|butter|creamy|zesty|refreshing)\b/i
+
+/** Food menu lines OCR'd alongside wine lists — never wines or descriptions. */
+const FOOD_RE =
+  /\b(octopus|calamari|shrimp|prawn|scallop|lobster|crab|oyster|salmon|tuna|halibut|cod|snapper|branzino|chicken|beef|pork|lamb|duck|venison|steak|burger|meatball|pasta|risotto|pizza|salad|soup|appetizer|entree|bruschetta|charcuterie board)\b/i
+
 function significantTokens(text: string): string[] {
   return text
     .toLowerCase()
@@ -25,18 +33,29 @@ function significantTokens(text: string): string[] {
     .filter((t) => t.length >= 4 && !STOPWORDS.has(t))
 }
 
-/** Strip OCR junk characters and dot leaders that were never on the menu. */
+/** Strip OCR junk and characters that rarely appear on printed menus. */
 function cleanLine(raw: string): string {
   return raw
+    .normalize('NFKC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/[|¦‖\\`~^*#@+=<>[\]{}]/g, ' ')
     .replace(/[^\p{L}\p{N}\s,.'’\-–—&()/$%]/gu, ' ')
     .replace(/\.{2,}/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
 
+/** Reject lines that are mostly symbols / single-char noise from OCR. */
+function isMostlyGarbage(line: string): boolean {
+  if (!line) return true
+  const clean = (line.match(/[\p{L}\p{N}\s,.'’\-–—&()/$%]/gu) ?? []).length
+  if (clean / line.length < 0.72) return true
+  const words = line.split(/\s+/)
+  const junk = words.filter((w) => w.length === 1 && !/\p{L}/u.test(w)).length
+  return junk >= 3 || (words.length <= 4 && junk >= 2)
+}
+
 function extractPrice(line: string): string | null {
-  // "$18", "18.50", "14 / 52" (glass/bottle) at the end of the line.
-  // (?<!\d) keeps a trailing vintage like "2016" from matching as "016".
   const m = line.match(
     /(?<!\d)\$?\s?(\d{1,3}(?:\.\d{2})?)(\s*\/\s*\$?\s?\d{1,3}(?:\.\d{2})?)?\s*$/,
   )
@@ -44,19 +63,68 @@ function extractPrice(line: string): string | null {
   return m[0].replace(/\s+/g, ' ').trim()
 }
 
+/** Wine title without trailing price (for display). */
+function wineTitle(line: string, price: string | null): string {
+  if (!price) return line
+  const idx = line.lastIndexOf(price.replace(/\s+/g, ' ').trim())
+  if (idx > 0) return line.slice(0, idx).replace(/[,\s]+$/, '')
+  return line.replace(
+    /(?<!\d)\$?\s?\d{1,3}(?:\.\d{2})?(\s*\/\s*\$?\s?\d{1,3}(?:\.\d{2})?)?\s*$/,
+    '',
+  ).trim()
+}
+
+function hasVintage(line: string): boolean {
+  return /\b(19[5-9]\d|20\d{2})\b/.test(line)
+}
+
 /**
  * Menus print wine names in Title Case or CAPS; tasting-note descriptions
- * are mostly lowercase prose ("bright cherry, supple tannins…").
+ * are mostly lowercase prose, comma-heavy, or use tasting vocabulary.
  */
 function isDescriptionLike(line: string, price: string | null): boolean {
   if (price) return false
-  const words = line.split(' ').filter((w) => /\p{L}/u.test(w))
+  if (TASTING_RE.test(line)) return true
+
+  const commaCount = (line.match(/,/g)?.length ?? 0)
+  if (commaCount >= 2) return true
+
+  const words = line.split(/\s+/).filter((w) => /\p{L}/u.test(w))
+  if (words.length >= 10) return true
+
+  if (/^(notes? of|aromas? of|on the palate|pairs? with|a |an |the |with )/i.test(line)) {
+    return true
+  }
+
+  // Short lines without tasting vocabulary or commas are OCR noise, not prose.
+  if (words.length < 8 && commaCount === 0) return false
+
   if (words.length === 0) return true
   const lowerStarts = words.filter((w) => {
     const first = w.match(/\p{L}/u)?.[0] ?? ''
     return first === first.toLowerCase() && first !== first.toUpperCase()
   }).length
-  return lowerStarts / words.length > 0.5
+  return lowerStarts / words.length > 0.45
+}
+
+/**
+ * A real menu wine line usually has a price, a vintage year, or reads like
+ * a title (Title Case / ALL CAPS). Prose without those signals is not a wine.
+ */
+function looksLikeWineTitle(line: string, price: string | null): boolean {
+  if (price) return true
+  if (hasVintage(line)) return true
+
+  const words = line.split(/\s+/).filter((w) => /\p{L}/u.test(w))
+  if (words.length < 2) return false
+
+  const titleish = words.filter((w) => {
+    if (w.length >= 2 && w === w.toUpperCase()) return true
+    const first = w[0]
+    return first === first.toUpperCase() && first !== first.toLowerCase()
+  }).length
+
+  return titleish / words.length >= 0.55
 }
 
 interface Preference {
@@ -77,6 +145,11 @@ function preferencesBy(wines: Wine[], key: (w: Wine) => string): Map<string, Pre
       { avg: ratings.reduce((s, r) => s + r, 0) / ratings.length, count: ratings.length },
     ]),
   )
+}
+
+function attachDescription(lastMatch: MenuMatch, line: string): void {
+  const merged = [lastMatch.description, line].filter(Boolean).join(' ')
+  lastMatch.description = merged.length > 160 ? `${merged.slice(0, 157)}…` : merged
 }
 
 /**
@@ -114,27 +187,22 @@ export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
   let lastMatch: MenuMatch | null = null
 
   for (const raw of menuText.split('\n')) {
-    // Note: OCR often inserts blank lines between a wine and its description,
-    // so blanks do NOT end a wine block.
     const line = cleanLine(raw)
-    if (line.length < 6) continue
+    if (line.length < 6 || isMostlyGarbage(line)) continue
     const letters = (line.match(/\p{L}/gu) ?? []).length
-    if (letters < 5 || letters / line.length < 0.4) continue
+    if (letters < 5 || letters / line.length < 0.45) continue
+
     const lower = line.toLowerCase()
     const price = extractPrice(line)
 
-    // Tasting-note prose under a wine belongs to that wine, even when it
-    // name-drops a varietal or region — never a new entry.
+    if (FOOD_RE.test(lower)) continue
+
+    // Tasting-note prose under a wine — never a new entry, even if it
+    // name-drops a varietal ("notes of Cabernet and cherry").
     if (isDescriptionLike(line, price)) {
-      if (lastMatch) {
-        const merged = [lastMatch.description, line].filter(Boolean).join(' ')
-        lastMatch.description = merged.length > 160 ? `${merged.slice(0, 157)}…` : merged
-      }
+      if (lastMatch) attachDescription(lastMatch, line)
       continue
     }
-
-    const varietalHit = VARIETALS.find(([keyword]) => lower.includes(keyword))
-    const regionHit = REGIONS.find((region) => lower.includes(region))
 
     // Direct cellar match: enough distinctive tokens from name+winery on the line.
     let cellarWine: Wine | undefined
@@ -148,7 +216,21 @@ export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
       }
     }
 
-    if (!varietalHit && !regionHit && !cellarWine) continue
+    const varietalHit = VARIETALS.find(([keyword]) => lower.includes(keyword))
+    const regionHit = REGIONS.find((region) => lower.includes(region))
+
+    // Without a price, vintage, or title shape, treat as description — varietal
+    // keywords in prose must not spawn a second wine row.
+    if (!looksLikeWineTitle(line, price) && !cellarWine) {
+      if (lastMatch && isDescriptionLike(line, price)) attachDescription(lastMatch, line)
+      continue
+    }
+
+    if (!varietalHit && !regionHit && !cellarWine) {
+      // Only merge prose; skip food, garbage, and other non-wine lines.
+      if (lastMatch && isDescriptionLike(line, price)) attachDescription(lastMatch, line)
+      continue
+    }
 
     let score: number
     const reasons: string[] = []
@@ -189,8 +271,9 @@ export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
       }
     }
 
+    const displayLine = wineTitle(line, price)
     const match: MenuMatch = {
-      line,
+      line: displayLine,
       price,
       score: Math.round(Math.min(score, 100)),
       reasons,
