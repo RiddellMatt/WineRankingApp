@@ -3,11 +3,16 @@ import { WINE_TYPES, type SortKey, type Wine, type WineType } from './types'
 import { loadWines, saveWines, SAMPLE_WINES } from './storage'
 import { FREE_WINE_LIMIT } from './config'
 import { loadProStatus } from './pro'
+import { useAuth } from './context/AuthContext'
+import { AuthScreen } from './components/AuthScreen'
 import { WineCard } from './components/WineCard'
 import { WineForm } from './components/WineForm'
 import { UpgradeModal } from './components/UpgradeModal'
 import { Insights } from './components/Insights'
 import { MenuScan } from './components/MenuScan'
+import { FriendsPanel } from './components/FriendsPanel'
+import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
+import { isSupabaseConfigured } from './lib/supabase'
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'rating', label: 'Rating' },
@@ -17,11 +22,34 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'addedAt', label: 'Recently added' },
 ]
 
-type View = 'cellar' | 'sommelier' | 'insights'
+type View = 'cellar' | 'sommelier' | 'insights' | 'friends'
 type UpgradeReason = 'limit' | 'insights' | 'export' | 'generic'
 
+function sortWines(list: Wine[], sortKey: SortKey): Wine[] {
+  return [...list].sort((a, b) => {
+    switch (sortKey) {
+      case 'name':
+        return a.name.localeCompare(b.name)
+      case 'vintage':
+        return (b.vintage ?? 0) - (a.vintage ?? 0)
+      case 'price':
+        return (b.price ?? -1) - (a.price ?? -1)
+      case 'addedAt':
+        return b.addedAt - a.addedAt
+      default:
+        return b.rating - a.rating || a.name.localeCompare(b.name)
+    }
+  })
+}
+
 export default function App() {
-  const [wines, setWines] = useState<Wine[]>(loadWines)
+  const { loading: authLoading, user, offlineMode, signOut, configured } = useAuth()
+  const cloudUser = user && !offlineMode ? user : null
+
+  const [wines, setWines] = useState<Wine[]>(() => (offlineMode ? loadWines() : []))
+  const [friendWines, setFriendWines] = useState<Wine[]>([])
+  const [friendView, setFriendView] = useState<{ id: string; name: string } | null>(null)
+  const [cellarLoading, setCellarLoading] = useState(false)
   const [pro, setPro] = useState<boolean>(loadProStatus)
   const [view, setView] = useState<View>('cellar')
   const [search, setSearch] = useState('')
@@ -32,17 +60,61 @@ export default function App() {
   const [upgradeReason, setUpgradeReason] = useState<UpgradeReason | null>(null)
   const importInputRef = useRef<HTMLInputElement>(null)
 
+  // Load cloud cellar when signed in.
   useEffect(() => {
-    saveWines(wines)
-  }, [wines])
+    if (!cloudUser) {
+      if (offlineMode) setWines(loadWines())
+      return
+    }
+    let cancelled = false
+    setCellarLoading(true)
+    ;(async () => {
+      try {
+        const cloud = await fetchWines(cloudUser.id)
+        const local = loadWines()
+        if (!cancelled && cloud.length === 0 && local.length > 0) {
+          const upload = window.confirm(
+            `Upload ${local.length} wine${local.length === 1 ? '' : 's'} from this device to your account?`,
+          )
+          if (upload) {
+            const uploaded = await bulkUpsertWines(cloudUser.id, local)
+            if (!cancelled) setWines(uploaded)
+            return
+          }
+        }
+        if (!cancelled) setWines(cloud.length > 0 ? cloud : local)
+      } catch (e) {
+        if (!cancelled) {
+          window.alert(`Could not load your cellar: ${(e as Error).message}`)
+          setWines(loadWines())
+        }
+      } finally {
+        if (!cancelled) setCellarLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [cloudUser?.id, offlineMode])
 
-  // Rank against the full cellar so filtering/search doesn't renumber wines.
+  // Persist offline cellar locally.
+  useEffect(() => {
+    if (offlineMode) saveWines(wines)
+  }, [wines, offlineMode])
+
   const rankById = useMemo(() => {
     const ordered = [...wines].sort(
       (a, b) => b.rating - a.rating || a.name.localeCompare(b.name),
     )
     return new Map(ordered.map((w, i) => [w.id, i + 1]))
   }, [wines])
+
+  const friendRankById = useMemo(() => {
+    const ordered = [...friendWines].sort(
+      (a, b) => b.rating - a.rating || a.name.localeCompare(b.name),
+    )
+    return new Map(ordered.map((w, i) => [w.id, i + 1]))
+  }, [friendWines])
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -54,21 +126,7 @@ export default function App() {
         .toLowerCase()
         .includes(q)
     })
-    list = [...list].sort((a, b) => {
-      switch (sortKey) {
-        case 'name':
-          return a.name.localeCompare(b.name)
-        case 'vintage':
-          return (b.vintage ?? 0) - (a.vintage ?? 0)
-        case 'price':
-          return (b.price ?? -1) - (a.price ?? -1)
-        case 'addedAt':
-          return b.addedAt - a.addedAt
-        default:
-          return b.rating - a.rating || a.name.localeCompare(b.name)
-      }
-    })
-    return list
+    return sortWines(list, sortKey)
   }, [wines, search, typeFilter, sortKey])
 
   const stats = useMemo(() => {
@@ -89,7 +147,7 @@ export default function App() {
     setFormOpen(true)
   }
 
-  function handleSave(wine: Wine) {
+  async function handleSave(wine: Wine) {
     setWines((prev) => {
       const exists = prev.some((w) => w.id === wine.id)
       if (!exists && !pro && prev.length >= FREE_WINE_LIMIT) return prev
@@ -97,11 +155,27 @@ export default function App() {
     })
     setFormOpen(false)
     setEditing(null)
+    if (cloudUser) {
+      try {
+        const synced = await upsertWine(cloudUser.id, wine)
+        if (synced.id !== wine.id) {
+          setWines((prev) => prev.map((w) => (w.id === wine.id ? synced : w)))
+        }
+      } catch (e) {
+        window.alert(`Saved locally but cloud sync failed: ${(e as Error).message}`)
+      }
+    }
   }
 
-  function handleDelete(wine: Wine) {
-    if (window.confirm(`Remove “${wine.name}” from your cellar?`)) {
-      setWines((prev) => prev.filter((w) => w.id !== wine.id))
+  async function handleDelete(wine: Wine) {
+    if (!window.confirm(`Remove “${wine.name}” from your cellar?`)) return
+    setWines((prev) => prev.filter((w) => w.id !== wine.id))
+    if (cloudUser) {
+      try {
+        await deleteWine(wine.id)
+      } catch (e) {
+        window.alert(`Removed locally but cloud delete failed: ${(e as Error).message}`)
+      }
     }
   }
 
@@ -131,17 +205,49 @@ export default function App() {
     try {
       const imported = JSON.parse(await file.text())
       if (!Array.isArray(imported)) throw new Error('not an array')
-      setWines((prev) => {
-        const byId = new Map(prev.map((w) => [w.id, w]))
-        for (const w of imported as Wine[]) {
-          if (w && typeof w.id === 'string' && typeof w.name === 'string') byId.set(w.id, w)
-        }
-        return [...byId.values()]
-      })
+      const merged = [...wines]
+      const byId = new Map(merged.map((w) => [w.id, w]))
+      for (const w of imported as Wine[]) {
+        if (w && typeof w.id === 'string' && typeof w.name === 'string') byId.set(w.id, w)
+      }
+      const next = [...byId.values()]
+      setWines(next)
+      if (cloudUser) {
+        const synced = await bulkUpsertWines(cloudUser.id, next)
+        setWines(synced)
+      }
     } catch {
       window.alert("That file doesn't look like a Cellar Rank export.")
     }
   }
+
+  async function viewFriendCellar(friendId: string, friendName: string) {
+    setCellarLoading(true)
+    try {
+      const list = await fetchWines(friendId)
+      setFriendWines(list)
+      setFriendView({ id: friendId, name: friendName })
+      setView('friends')
+    } catch (e) {
+      window.alert(`Could not load their cellar: ${(e as Error).message}`)
+    } finally {
+      setCellarLoading(false)
+    }
+  }
+
+  if (configured && authLoading) {
+    return (
+      <div className="auth-screen">
+        <p className="auth-tagline">Loading…</p>
+      </div>
+    )
+  }
+
+  if (configured && !offlineMode && !user) {
+    return <AuthScreen />
+  }
+
+  const showAccountBar = cloudUser && user
 
   return (
     <div className="app">
@@ -156,36 +262,64 @@ export default function App() {
                 Cellar Rank
                 {pro && <span className="pro-badge inline"> PRO</span>}
               </h1>
-              <p className="tagline">Every bottle you've tried, ranked.</p>
+              <p className="tagline">
+                {showAccountBar
+                  ? `Signed in as ${user.email}`
+                  : "Every bottle you've tried, ranked."}
+              </p>
             </div>
           </div>
           <div className="header-actions">
+            {showAccountBar && (
+              <button className="btn ghost" onClick={() => signOut()}>
+                Sign out
+              </button>
+            )}
             {!pro && (
               <button className="btn ghost" onClick={() => setUpgradeReason('generic')}>
                 Go Pro
               </button>
             )}
-            <button className="btn primary" onClick={openAddForm}>
-              + Add wine
-            </button>
+            {!friendView && (
+              <button className="btn primary" onClick={openAddForm}>
+                + Add wine
+              </button>
+            )}
           </div>
         </div>
         <nav className="tabs">
           <button
             className={`tab ${view === 'cellar' ? 'active' : ''}`}
-            onClick={() => setView('cellar')}
+            onClick={() => {
+              setFriendView(null)
+              setView('cellar')
+            }}
           >
             My cellar
           </button>
           <button
             className={`tab ${view === 'sommelier' ? 'active' : ''}`}
-            onClick={() => setView('sommelier')}
+            onClick={() => {
+              setFriendView(null)
+              setView('sommelier')
+            }}
           >
             Sommelier
           </button>
+          {cloudUser && (
+            <button
+              className={`tab ${view === 'friends' ? 'active' : ''}`}
+              onClick={() => setView('friends')}
+            >
+              Friends
+            </button>
+          )}
           <button
             className={`tab ${view === 'insights' ? 'active' : ''}`}
-            onClick={() => setView('insights')}
+            onClick={() => {
+              setFriendView(null)
+              setView('insights')
+            }}
           >
             Insights {!pro && <span className="pro-badge">PRO</span>}
           </button>
@@ -193,7 +327,38 @@ export default function App() {
       </header>
 
       <main className="content">
-        {view === 'sommelier' ? (
+        {cellarLoading && <p className="auth-info">Syncing cellar…</p>}
+
+        {view === 'friends' && cloudUser ? (
+          friendView ? (
+            <>
+              <button className="btn ghost friend-back" onClick={() => setFriendView(null)}>
+                ← Back to friends
+              </button>
+              <h2 className="friend-cellar-title">{friendView.name}&apos;s cellar</h2>
+              {friendWines.length === 0 ? (
+                <section className="empty">
+                  <p>They haven&apos;t logged any wines yet.</p>
+                </section>
+              ) : (
+                <ol className="wine-list">
+                  {sortWines(friendWines, 'rating').map((wine) => (
+                    <WineCard
+                      key={wine.id}
+                      wine={wine}
+                      rank={friendRankById.get(wine.id) ?? 0}
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                      readOnly
+                    />
+                  ))}
+                </ol>
+              )}
+            </>
+          ) : (
+            <FriendsPanel userId={cloudUser.id} onViewCellar={viewFriendCellar} />
+          )
+        ) : view === 'sommelier' ? (
           <MenuScan wines={wines} />
         ) : view === 'insights' ? (
           pro ? (
@@ -243,9 +408,7 @@ export default function App() {
 
             {atFreeLimit && (
               <div className="limit-banner">
-                <span>
-                  You've reached the free limit of {FREE_WINE_LIMIT} wines.
-                </span>
+                <span>You&apos;ve reached the free limit of {FREE_WINE_LIMIT} wines.</span>
                 <button className="btn primary small" onClick={() => setUpgradeReason('limit')}>
                   Go Pro for unlimited
                 </button>
@@ -315,12 +478,25 @@ export default function App() {
                   🍇
                 </span>
                 <h2>Your cellar is empty</h2>
-                <p>Add the wines you've tried and rate them to build your personal ranking.</p>
+                <p>Add the wines you&apos;ve tried and rate them to build your personal ranking.</p>
                 <div className="empty-actions">
                   <button className="btn primary" onClick={openAddForm}>
                     Add your first wine
                   </button>
-                  <button className="btn ghost" onClick={() => setWines(SAMPLE_WINES)}>
+                  <button
+                    className="btn ghost"
+                    onClick={async () => {
+                      setWines(SAMPLE_WINES)
+                      if (cloudUser) {
+                        try {
+                          const synced = await bulkUpsertWines(cloudUser.id, SAMPLE_WINES)
+                          setWines(synced)
+                        } catch (e) {
+                          window.alert(`Loaded samples but cloud sync failed: ${(e as Error).message}`)
+                        }
+                      }
+                    }}
+                  >
                     Load sample wines
                   </button>
                 </div>
@@ -370,6 +546,12 @@ export default function App() {
           }}
           onClose={() => setUpgradeReason(null)}
         />
+      )}
+
+      {!isSupabaseConfigured && (
+        <p className="auth-offline-note app-footer-note">
+          Cloud sync disabled — add Supabase keys to enable accounts and friends.
+        </p>
       )}
     </div>
   )

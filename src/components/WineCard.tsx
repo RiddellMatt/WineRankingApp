@@ -10,6 +10,7 @@ interface Props {
   rank: number
   onEdit: () => void
   onDelete: () => void
+  readOnly?: boolean
 }
 
 const TYPE_CLASS: Record<string, string> = {
@@ -22,7 +23,7 @@ const TYPE_CLASS: Record<string, string> = {
   Fortified: 'type-fortified',
 }
 
-export function WineCard({ wine, rank, onEdit, onDelete }: Props) {
+export function WineCard({ wine, rank, onEdit, onDelete, readOnly = false }: Props) {
   const medal = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : ''
   const meta = [wine.varietal, wine.region].filter(Boolean).join(' · ')
 
@@ -35,13 +36,17 @@ export function WineCard({ wine, rank, onEdit, onDelete }: Props) {
 
   return (
     <li
-      className="wine-card clickable"
-      onClick={onEdit}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' && e.target === e.currentTarget) onEdit()
-      }}
-      tabIndex={0}
-      aria-label={`Edit ${wine.name}`}
+      className={`wine-card ${readOnly ? '' : 'clickable'}`}
+      onClick={readOnly ? undefined : onEdit}
+      onKeyDown={
+        readOnly
+          ? undefined
+          : (e) => {
+              if (e.key === 'Enter' && e.target === e.currentTarget) onEdit()
+            }
+      }
+      tabIndex={readOnly ? undefined : 0}
+      aria-label={readOnly ? undefined : `Edit ${wine.name}`}
     >
       <div className={`rank-badge ${medal}`}>{rank}</div>
 
@@ -75,13 +80,14 @@ export function WineCard({ wine, rank, onEdit, onDelete }: Props) {
         </div>
       </div>
 
-      <div className="wine-side" onClick={(e) => e.stopPropagation()}>
+      <div className="wine-side" onClick={readOnly ? undefined : (e) => e.stopPropagation()}>
         <div className="wine-rating">
           <StarDisplay value={wine.rating} />
           <span className="rating-number">{wine.rating.toFixed(1)}</span>
         </div>
         {wine.price != null && <span className="wine-price">${wine.price.toFixed(0)}</span>}
-        <div className="wine-actions">
+        {!readOnly && (
+          <div className="wine-actions">
           <a
             className="icon-btn"
             href={shopUrl(wine)}
@@ -104,6 +110,7 @@ export function WineCard({ wine, rank, onEdit, onDelete }: Props) {
             🗑
           </button>
         </div>
+        )}
       </div>
     </li>
   )

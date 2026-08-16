@@ -6,6 +6,7 @@ on:
       - main
       # Deploys from the feature branch too until it is merged; remove after merging.
       - cursor/wine-features-v2-29b9
+      - cursor/supabase-auth-friends-29b9
   workflow_dispatch:
 
 permissions:
@@ -28,6 +29,8 @@ jobs:
       - run: npm run build
         env:
           GITHUB_PAGES: 'true'
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       # Publishes dist/ to the gh-pages branch; GitHub serves it via Pages.
       - uses: peaceiris/actions-gh-pages@v4
         with:
