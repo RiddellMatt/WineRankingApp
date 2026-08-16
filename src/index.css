@@ -113,48 +113,6 @@ textarea::placeholder {
   font-size: 0.9rem;
 }
 
-.tagline-profile {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.tagline-profile:hover .tagline-edit,
-.tagline-profile:focus-visible .tagline-edit {
-  color: var(--accent);
-}
-
-.tagline-name {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.tagline-edit {
-  color: var(--text-faint);
-  font-size: 0.85rem;
-}
-
-.profile-modal-lead {
-  margin: 0.35rem 0 0;
-  font-size: 0.9rem;
-  color: var(--text-dim);
-  flex: 1 1 100%;
-}
-
-.profile-modal .modal-header {
-  flex-wrap: wrap;
-  align-items: flex-start;
-}
-
-.profile-modal .modal-close {
-  margin-left: auto;
-}
-
 .header-actions {
   display: flex;
   align-items: center;
@@ -1438,35 +1396,6 @@ textarea {
   white-space: nowrap;
 }
 
-.profile-modal .modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.profile-email {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--text-dim);
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0.2rem 0.4rem;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
 .friends-row-actions {
   display: flex;
   gap: 0.45rem;
@@ -1485,6 +1414,171 @@ textarea {
 .friend-cellar-title {
   font-family: var(--font-display);
   margin: 0 0 1rem;
+}
+
+/* ── Account tab ─────────────────────────────────────── */
+
+.account-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 520px;
+}
+
+.account-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 1.2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.account-avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(145deg, var(--accent), #8a1f3a);
+  flex-shrink: 0;
+}
+
+.account-hero-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+}
+
+.account-hero-email {
+  margin: 0.2rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.account-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+}
+
+.account-section-highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(182, 44, 74, 0.25);
+}
+
+.account-section h3 {
+  margin: 0 0 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.account-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.account-readonly input {
+  color: var(--text-dim);
+}
+
+.account-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+}
+
+.account-cloud-cta p {
+  margin: 0 0 0.85rem;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+}
+
+.account-plan {
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+}
+
+.account-plan.pro {
+  border-color: rgba(200, 144, 31, 0.45);
+  background: rgba(200, 144, 31, 0.08);
+}
+
+.account-plan-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.account-plan-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.account-plan-detail {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+}
+
+.account-pro-features {
+  margin: 0.85rem 0;
+  padding-left: 1.1rem;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+}
+
+.account-pro-features li + li {
+  margin-top: 0.35rem;
+}
+
+.account-upgrade {
+  display: inline-flex;
+  margin-bottom: 0.75rem;
+}
+
+.account-code-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.account-code-row input {
+  flex: 1;
+  min-width: 10rem;
+}
+
+.account-signout {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.account-signout-btn {
+  width: 100%;
+  justify-content: center;
+  color: var(--text-dim);
+}
+
+.account-signout-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ── Responsive ─────────────────────────────────────── */
