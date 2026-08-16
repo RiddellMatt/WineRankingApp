@@ -1,6 +1,8 @@
 import type { Wine } from '../types'
 import { shopUrl } from '../config'
+import { getPairings } from '../pairings'
 import { StarDisplay } from './StarRating'
+import { TasteDisplay } from './TasteProfile'
 
 interface Props {
   wine: Wine
@@ -37,7 +39,21 @@ export function WineCard({ wine, rank, onEdit, onDelete }: Props) {
         </div>
         {wine.winery && <p className="wine-winery">{wine.winery}</p>}
         {meta && <p className="wine-meta">{meta}</p>}
+        {wine.purchasedAt && (
+          <p className="wine-purchased">
+            <span aria-hidden="true">🛍</span> {wine.purchasedAt}
+          </p>
+        )}
         {wine.notes && <p className="wine-notes">“{wine.notes}”</p>}
+        <TasteDisplay taste={wine.taste ?? {}} />
+        <div className="pairings">
+          <span className="pairings-label">Pairs with</span>
+          {getPairings(wine).map((dish) => (
+            <span className="pairing-chip" key={dish}>
+              {dish}
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className="wine-side">

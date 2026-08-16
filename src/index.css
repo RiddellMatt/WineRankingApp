@@ -496,11 +496,212 @@ a.icon-btn {
   font-size: 0.85rem;
 }
 
+.wine-purchased {
+  margin: 0.15rem 0 0;
+  color: var(--text-faint);
+  font-size: 0.83rem;
+}
+
 .wine-notes {
   margin: 0.5rem 0 0;
   color: var(--text-dim);
   font-size: 0.88rem;
   font-style: italic;
+}
+
+/* ── Taste characteristics ──────────────────────────── */
+
+.taste-display {
+  margin-top: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-width: 26rem;
+}
+
+.taste-track-row,
+.taste-slider-row {
+  display: grid;
+  grid-template-columns: 4.2rem 1fr 4.2rem;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.taste-slider-row {
+  grid-template-columns: 4.2rem 1fr 4.2rem 1.6rem;
+}
+
+.taste-end {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+
+.taste-end.right {
+  text-align: right;
+}
+
+.taste-end.strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.taste-track {
+  position: relative;
+  height: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-soft);
+}
+
+.taste-pill {
+  position: absolute;
+  top: 50%;
+  width: 1.7rem;
+  height: 0.62rem;
+  border-radius: 999px;
+  background: var(--star);
+  transform: translate(-50%, -50%);
+  max-width: 100%;
+}
+
+.taste-section {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-top: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.taste-section-title {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.7rem;
+}
+
+.taste-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.taste-slider-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.taste-slider-track input[type='range'] {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  height: 1.1rem;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.taste-slider-track input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.8rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  background: var(--star-empty);
+  border: none;
+}
+
+.taste-slider-track input[type='range']::-moz-range-thumb {
+  width: 1.8rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  background: var(--star-empty);
+  border: none;
+}
+
+.taste-slider-row.set input[type='range']::-webkit-slider-thumb {
+  background: var(--star);
+}
+
+.taste-slider-row.set input[type='range']::-moz-range-thumb {
+  background: var(--star);
+}
+
+.taste-unset-hint {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.taste-clear {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.3rem;
+}
+
+.taste-clear.hidden {
+  visibility: hidden;
+}
+
+/* ── Pairings ───────────────────────────────────────── */
+
+.pairings {
+  margin-top: 0.7rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pairings-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  margin-right: 0.15rem;
+}
+
+.pairing-chip {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.16rem 0.6rem;
+  white-space: nowrap;
+}
+
+/* ── Label scanner ──────────────────────────────────── */
+
+.scan-box {
+  margin-bottom: 1rem;
+}
+
+.scan-btn {
+  width: 100%;
+  border-style: dashed;
+}
+
+.scan-summary {
+  margin: 0.55rem 0 0;
+  font-size: 0.85rem;
+  color: var(--star);
+}
+
+.scan-summary.failed {
+  color: var(--danger);
 }
 
 .wine-side {

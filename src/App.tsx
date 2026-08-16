@@ -48,7 +48,7 @@ export default function App() {
     let list = wines.filter((w) => {
       if (typeFilter !== 'All' && w.type !== typeFilter) return false
       if (!q) return true
-      return [w.name, w.winery, w.varietal, w.region, w.notes]
+      return [w.name, w.winery, w.varietal, w.region, w.notes, w.purchasedAt]
         .join(' ')
         .toLowerCase()
         .includes(q)
