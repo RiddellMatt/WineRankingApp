@@ -1,3 +1,4 @@
+import { readFunctionError } from './functionError'
 import { getSupabase } from './supabase'
 
 interface RedeemPayload {
@@ -10,8 +11,12 @@ export async function redeemProOnServer(code: string): Promise<void> {
     body: { code: code.trim() },
   })
 
+  if (error) {
+    const { message } = await readFunctionError(error, data)
+    throw new Error(message)
+  }
+
   const payload = (data ?? {}) as RedeemPayload
   if (payload.error) throw new Error(payload.error)
-  if (error) throw new Error(error.message)
   if (!payload.ok) throw new Error('Could not redeem code.')
 }

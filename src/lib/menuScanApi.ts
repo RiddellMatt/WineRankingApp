@@ -1,4 +1,5 @@
 import type { ParsedMenuWine } from '../menuMatch'
+import { readFunctionError } from './functionError'
 import { getSupabase } from './supabase'
 import { resizeImageForUpload } from './imageResize'
 
@@ -35,12 +36,14 @@ export async function scanMenuWithAi(file: File): Promise<MenuScanResult> {
     body: { imageBase64: base64, mimeType },
   })
 
+  if (error) {
+    const { message, code } = await readFunctionError(error, data)
+    throw new MenuScanError(message, code)
+  }
+
   const payload = parsePayload(data)
   if (payload.error) {
     throw new MenuScanError(payload.error, payload.code)
-  }
-  if (error) {
-    throw new MenuScanError(error.message)
   }
 
   return {
