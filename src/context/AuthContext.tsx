@@ -18,6 +18,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<string | null>
   signOut: () => Promise<void>
   continueOffline: () => void
+  exitOffline: () => void
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -88,6 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(OFFLINE_KEY, 'true')
   }
 
+  function exitOffline(): void {
+    setOfflineMode(false)
+    localStorage.removeItem(OFFLINE_KEY)
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -100,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signOut,
         continueOffline,
+        exitOffline,
       }}
     >
       {children}

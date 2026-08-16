@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Avatar } from './Avatar'
 import {
   fetchFriendships,
   findProfileByEmail,
@@ -11,7 +12,41 @@ import {
 
 interface Props {
   userId: string
-  onViewCellar: (friendId: string, friendName: string) => void
+  onViewCellar: (friendId: string, friendName: string, avatarUrl?: string) => void
+}
+
+function FriendIdentity({
+  friendship,
+  userId,
+  fallbackLabel,
+}: {
+  friendship: Friendship
+  userId: string
+  fallbackLabel?: string
+}) {
+  const name = friendDisplayLabel(friendship.friend, fallbackLabel ?? 'Someone')
+  const friend = friendship.friend
+  const otherId =
+    friend?.id ??
+    (friendship.requesterId === userId ? friendship.addresseeId : friendship.requesterId)
+
+  return (
+    <div className="friends-row-main">
+      <Avatar
+        displayName={name}
+        email={friend?.email}
+        avatarUrl={friend?.avatarUrl}
+        seed={otherId}
+        size="sm"
+      />
+      <div className="friends-identity">
+        <span className="friends-name">{name}</span>
+        {friend?.email && (
+          <span className="friends-email">{friend.email}</span>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export function FriendsPanel({ userId, onViewCellar }: Props) {
@@ -113,12 +148,7 @@ export function FriendsPanel({ userId, onViewCellar }: Props) {
           <ul className="friends-list">
             {incoming.map((f) => (
               <li className="friends-row" key={f.id}>
-                <div className="friends-identity">
-                  <span className="friends-name">{friendDisplayLabel(f.friend)}</span>
-                  {f.friend?.email && (
-                    <span className="friends-email">{f.friend.email}</span>
-                  )}
-                </div>
+                <FriendIdentity friendship={f} userId={userId} />
                 <div className="friends-row-actions">
                   <button className="btn primary small" onClick={() => handleRespond(f.id, 'accepted')}>
                     Accept
@@ -139,12 +169,7 @@ export function FriendsPanel({ userId, onViewCellar }: Props) {
           <ul className="friends-list">
             {outgoing.map((f) => (
               <li className="friends-row" key={f.id}>
-                <div className="friends-identity">
-                  <span className="friends-name">{friendDisplayLabel(f.friend, 'Pending')}</span>
-                  {f.friend?.email && (
-                    <span className="friends-email">{f.friend.email}</span>
-                  )}
-                </div>
+                <FriendIdentity friendship={f} userId={userId} fallbackLabel="Pending" />
                 <button className="btn ghost small" onClick={() => handleRemove(f.id)}>
                   Cancel
                 </button>
@@ -165,16 +190,11 @@ export function FriendsPanel({ userId, onViewCellar }: Props) {
               const friendId = f.friend?.id ?? (f.requesterId === userId ? f.addresseeId : f.requesterId)
               return (
                 <li className="friends-row" key={f.id}>
-                  <div className="friends-identity">
-                    <span className="friends-name">{name}</span>
-                    {f.friend?.email && f.friend.displayName.trim() && (
-                      <span className="friends-email">{f.friend.email}</span>
-                    )}
-                  </div>
+                  <FriendIdentity friendship={f} userId={userId} fallbackLabel="Friend" />
                   <div className="friends-row-actions">
                     <button
                       className="btn primary small"
-                      onClick={() => onViewCellar(friendId, name)}
+                      onClick={() => onViewCellar(friendId, name, f.friend?.avatarUrl)}
                     >
                       View cellar
                     </button>

@@ -2,16 +2,16 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { WINE_TYPES, type SortKey, type Wine, type WineType } from './types'
 import { loadWines, saveWines, SAMPLE_WINES } from './storage'
 import { FREE_WINE_LIMIT } from './config'
-import { loadProStatus } from './pro'
+import { loadProStatus, syncProFromServer } from './pro'
 import { useAuth } from './context/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
 import { WineCard } from './components/WineCard'
 import { WineForm } from './components/WineForm'
-import { UpgradeModal } from './components/UpgradeModal'
 import { Insights } from './components/Insights'
 import { MenuScan } from './components/MenuScan'
 import { FriendsPanel } from './components/FriendsPanel'
-import { ProfileModal } from './components/ProfileModal'
+import { AccountPanel } from './components/AccountPanel'
+import { Avatar } from './components/Avatar'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
 import { fetchMyProfile, type UserProfile } from './lib/profileDb'
 import { isSupabaseConfigured } from './lib/supabase'
@@ -24,8 +24,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'addedAt', label: 'Recently added' },
 ]
 
-type View = 'cellar' | 'sommelier' | 'insights' | 'friends'
-type UpgradeReason = 'limit' | 'insights' | 'export' | 'generic'
+type View = 'cellar' | 'sommelier' | 'insights' | 'friends' | 'account'
 
 function sortWines(list: Wine[], sortKey: SortKey): Wine[] {
   return [...list].sort((a, b) => {
@@ -45,24 +44,40 @@ function sortWines(list: Wine[], sortKey: SortKey): Wine[] {
 }
 
 export default function App() {
-  const { loading: authLoading, user, offlineMode, signOut, configured } = useAuth()
+  const {
+    loading: authLoading,
+    user,
+    offlineMode,
+    signOut,
+    exitOffline,
+    configured,
+  } = useAuth()
   const cloudUser = user && !offlineMode ? user : null
 
   const [wines, setWines] = useState<Wine[]>(() => (offlineMode ? loadWines() : []))
   const [friendWines, setFriendWines] = useState<Wine[]>([])
-  const [friendView, setFriendView] = useState<{ id: string; name: string } | null>(null)
+  const [friendView, setFriendView] = useState<{
+    id: string
+    name: string
+    avatarUrl?: string
+  } | null>(null)
   const [cellarLoading, setCellarLoading] = useState(false)
   const [pro, setPro] = useState<boolean>(loadProStatus)
   const [view, setView] = useState<View>('cellar')
+  const [accountHighlight, setAccountHighlight] = useState(false)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<WineType | 'All'>('All')
   const [sortKey, setSortKey] = useState<SortKey>('rating')
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Wine | null>(null)
-  const [upgradeReason, setUpgradeReason] = useState<UpgradeReason | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [profileOpen, setProfileOpen] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
+
+  function goToAccount(highlightSubscription = false) {
+    setFriendView(null)
+    setView('account')
+    setAccountHighlight(highlightSubscription)
+  }
 
   // Load cloud cellar when signed in.
   useEffect(() => {
@@ -110,7 +125,10 @@ export default function App() {
     let cancelled = false
     fetchMyProfile()
       .then((p) => {
-        if (!cancelled) setProfile(p)
+        if (!cancelled) {
+          setProfile(p)
+          setPro(syncProFromServer(p?.isPro))
+        }
       })
       .catch(() => {
         if (!cancelled) setProfile(null)
@@ -119,6 +137,21 @@ export default function App() {
       cancelled = true
     }
   }, [cloudUser?.id])
+
+  // Nudge existing accounts that still use the auto-generated email prefix as their name.
+  useEffect(() => {
+    if (!cloudUser?.email || !profile?.displayName) return
+    const emailPrefix = cloudUser.email.split('@')[0]?.toLowerCase()
+    if (!emailPrefix || profile.displayName.toLowerCase() !== emailPrefix) return
+    const key = 'cellar-rank.profile-name-prompt'
+    if (sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, '1')
+    goToAccount(false)
+  }, [cloudUser?.email, profile?.displayName])
+
+  useEffect(() => {
+    if (view !== 'account') setAccountHighlight(false)
+  }, [view])
 
   // Persist offline cellar locally.
   useEffect(() => {
@@ -163,7 +196,7 @@ export default function App() {
 
   function openAddForm() {
     if (atFreeLimit) {
-      setUpgradeReason('limit')
+      goToAccount(true)
       return
     }
     setEditing(null)
@@ -204,7 +237,7 @@ export default function App() {
 
   function handleExport() {
     if (!pro) {
-      setUpgradeReason('export')
+      goToAccount(true)
       return
     }
     const blob = new Blob([JSON.stringify(wines, null, 2)], { type: 'application/json' })
@@ -218,7 +251,7 @@ export default function App() {
 
   function handleImportClick() {
     if (!pro) {
-      setUpgradeReason('export')
+      goToAccount(true)
       return
     }
     importInputRef.current?.click()
@@ -244,12 +277,12 @@ export default function App() {
     }
   }
 
-  async function viewFriendCellar(friendId: string, friendName: string) {
+  async function viewFriendCellar(friendId: string, friendName: string, avatarUrl?: string) {
     setCellarLoading(true)
     try {
       const list = await fetchWines(friendId)
       setFriendWines(list)
-      setFriendView({ id: friendId, name: friendName })
+      setFriendView({ id: friendId, name: friendName, avatarUrl })
       setView('friends')
     } catch (e) {
       window.alert(`Could not load their cellar: ${(e as Error).message}`)
@@ -270,8 +303,6 @@ export default function App() {
     return <AuthScreen />
   }
 
-  const showAccountBar = cloudUser && user
-
   return (
     <div className="app">
       <header className="header">
@@ -285,31 +316,10 @@ export default function App() {
                 Cellar Rank
                 {pro && <span className="pro-badge inline"> PRO</span>}
               </h1>
-              <p className="tagline">
-                {showAccountBar
-                  ? profile?.displayName
-                    ? `Signed in as ${profile.displayName}`
-                    : `Signed in as ${user.email}`
-                  : "Every bottle you've tried, ranked."}
-              </p>
+              <p className="tagline">Every bottle you&apos;ve tried, ranked.</p>
             </div>
           </div>
           <div className="header-actions">
-            {showAccountBar && (
-              <>
-                <button className="btn ghost" onClick={() => setProfileOpen(true)}>
-                  Profile
-                </button>
-                <button className="btn ghost" onClick={() => signOut()}>
-                  Sign out
-                </button>
-              </>
-            )}
-            {!pro && (
-              <button className="btn ghost" onClick={() => setUpgradeReason('generic')}>
-                Go Pro
-              </button>
-            )}
             {!friendView && (
               <button className="btn primary" onClick={openAddForm}>
                 + Add wine
@@ -353,19 +363,53 @@ export default function App() {
           >
             Insights {!pro && <span className="pro-badge">PRO</span>}
           </button>
+          <button
+            className={`tab ${view === 'account' ? 'active' : ''}`}
+            onClick={() => {
+              setFriendView(null)
+              setView('account')
+            }}
+          >
+            Account
+          </button>
         </nav>
       </header>
 
       <main className="content">
-        {cellarLoading && <p className="auth-info">Syncing cellar…</p>}
+        {cellarLoading && view !== 'account' && (
+          <p className="auth-info">Syncing cellar…</p>
+        )}
 
-        {view === 'friends' && cloudUser ? (
+        {view === 'account' ? (
+          <AccountPanel
+            profile={profile}
+            email={cloudUser?.email}
+            signedIn={Boolean(cloudUser)}
+            offlineMode={offlineMode}
+            cloudConfigured={configured}
+            pro={pro}
+            wineCount={wines.length}
+            highlightSubscription={accountHighlight}
+            onProfileSaved={setProfile}
+            onProUnlocked={() => setPro(true)}
+            onSignOut={() => signOut()}
+            onSignIn={() => exitOffline()}
+          />
+        ) : view === 'friends' && cloudUser ? (
           friendView ? (
             <>
               <button className="btn ghost friend-back" onClick={() => setFriendView(null)}>
                 ← Back to friends
               </button>
-              <h2 className="friend-cellar-title">{friendView.name}&apos;s cellar</h2>
+              <div className="friend-cellar-header">
+                <Avatar
+                  displayName={friendView.name}
+                  avatarUrl={friendView.avatarUrl}
+                  seed={friendView.id}
+                  size="lg"
+                />
+                <h2 className="friend-cellar-title">{friendView.name}&apos;s cellar</h2>
+              </div>
               {friendWines.length === 0 ? (
                 <section className="empty">
                   <p>They haven&apos;t logged any wines yet.</p>
@@ -389,7 +433,13 @@ export default function App() {
             <FriendsPanel userId={cloudUser.id} onViewCellar={viewFriendCellar} />
           )
         ) : view === 'sommelier' ? (
-          <MenuScan wines={wines} />
+          <MenuScan
+            wines={wines}
+            pro={pro}
+            signedIn={Boolean(cloudUser)}
+            cloudConfigured={configured}
+            onUpgrade={() => goToAccount(true)}
+          />
         ) : view === 'insights' ? (
           pro ? (
             <Insights wines={wines} />
@@ -404,8 +454,8 @@ export default function App() {
                 type, region, and varietal — all in Cellar Rank Pro.
               </p>
               <div className="empty-actions">
-                <button className="btn primary" onClick={() => setUpgradeReason('insights')}>
-                  Unlock Insights
+                <button className="btn primary" onClick={() => goToAccount(true)}>
+                  View subscription
                 </button>
               </div>
             </section>
@@ -439,8 +489,8 @@ export default function App() {
             {atFreeLimit && (
               <div className="limit-banner">
                 <span>You&apos;ve reached the free limit of {FREE_WINE_LIMIT} wines.</span>
-                <button className="btn primary small" onClick={() => setUpgradeReason('limit')}>
-                  Go Pro for unlimited
+                <button className="btn primary small" onClick={() => goToAccount(true)}>
+                  Upgrade in Account
                 </button>
               </div>
             )}
@@ -564,31 +614,6 @@ export default function App() {
             setFormOpen(false)
             setEditing(null)
           }}
-        />
-      )}
-
-      {upgradeReason && (
-        <UpgradeModal
-          reason={upgradeReason}
-          onUnlocked={() => {
-            setPro(true)
-            setUpgradeReason(null)
-          }}
-          onClose={() => setUpgradeReason(null)}
-        />
-      )}
-
-      {profileOpen && cloudUser && (
-        <ProfileModal
-          profile={
-            profile ?? {
-              id: cloudUser.id,
-              displayName: cloudUser.email?.split('@')[0] ?? '',
-              email: cloudUser.email ?? '',
-            }
-          }
-          onSaved={setProfile}
-          onClose={() => setProfileOpen(false)}
         />
       )}
 

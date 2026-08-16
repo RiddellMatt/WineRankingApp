@@ -708,6 +708,13 @@ a.icon-btn {
   font-size: 0.88rem;
 }
 
+.menu-scan-quota,
+.menu-scan-note {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin: -0.6rem auto 1rem;
+}
+
 .menu-results {
   list-style: none;
   margin: 0;
@@ -1382,6 +1389,7 @@ textarea {
   flex-direction: column;
   gap: 0.15rem;
   min-width: 0;
+  flex: 1;
 }
 
 .friends-name {
@@ -1394,35 +1402,6 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.profile-modal .modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.profile-email {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--text-dim);
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0.2rem 0.4rem;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
 }
 
 .friends-row-actions {
@@ -1442,7 +1421,231 @@ textarea {
 
 .friend-cellar-title {
   font-family: var(--font-display);
-  margin: 0 0 1rem;
+}
+
+/* ── Account tab ─────────────────────────────────────── */
+
+.account-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 520px;
+}
+
+.account-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 1.2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.avatar-sm {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1rem;
+}
+
+.avatar-md {
+  width: 3.5rem;
+  height: 3.5rem;
+  font-size: 1.4rem;
+}
+
+.avatar-lg {
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.2rem;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.friends-row-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.friend-cellar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.friend-cellar-header .friend-cellar-title {
+  margin: 0;
+}
+
+.account-hero-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+}
+
+.account-hero-email {
+  margin: 0.2rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.account-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-top: 0.65rem;
+}
+
+.account-flash {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.account-flash p {
+  margin: 0;
+}
+
+.account-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+}
+
+.account-section-highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(182, 44, 74, 0.25);
+}
+
+.account-section h3 {
+  margin: 0 0 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.account-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.account-readonly input {
+  color: var(--text-dim);
+}
+
+.account-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+}
+
+.account-cloud-cta p {
+  margin: 0 0 0.85rem;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+}
+
+.account-plan {
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+}
+
+.account-plan.pro {
+  border-color: rgba(200, 144, 31, 0.45);
+  background: rgba(200, 144, 31, 0.08);
+}
+
+.account-plan-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.account-plan-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.account-plan-detail {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+}
+
+.account-pro-features {
+  margin: 0.85rem 0;
+  padding-left: 1.1rem;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+}
+
+.account-pro-features li + li {
+  margin-top: 0.35rem;
+}
+
+.account-upgrade {
+  display: inline-flex;
+  margin-bottom: 0.75rem;
+}
+
+.account-code-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.account-code-row input {
+  flex: 1;
+  min-width: 10rem;
+}
+
+.account-signout {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.account-signout-btn {
+  width: 100%;
+  justify-content: center;
+  color: var(--text-dim);
+}
+
+.account-signout-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ── Responsive ─────────────────────────────────────── */
