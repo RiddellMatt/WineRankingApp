@@ -110,10 +110,14 @@ Deno.serve(async (req) => {
 
     const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.0-flash'
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // Auth keys (AQ...) must use the header; query ?key= can fail for new key formats.
+          'x-goog-api-key': geminiKey,
+        },
         body: JSON.stringify({
           contents: [
             {
@@ -133,6 +137,7 @@ Deno.serve(async (req) => {
 
     if (!geminiRes.ok) {
       const detail = await geminiRes.text()
+      console.error('Gemini API error:', geminiRes.status, detail.slice(0, 500))
       return jsonResponse({ error: `Vision API failed: ${detail.slice(0, 200)}` }, 502)
     }
 
