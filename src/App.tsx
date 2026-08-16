@@ -127,7 +127,7 @@ export default function App() {
       .then((p) => {
         if (!cancelled) {
           setProfile(p)
-          setPro(syncProFromServer(p?.isPro))
+          setPro(syncProFromServer(p?.isPro, true))
         }
       })
       .catch(() => {
@@ -152,6 +152,57 @@ export default function App() {
   useEffect(() => {
     if (view !== 'account') setAccountHighlight(false)
   }, [view])
+
+  // After Stripe checkout, poll profile until webhook grants Pro (or timeout).
+  useEffect(() => {
+    if (!cloudUser) return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('checkout') !== 'success') return
+
+    let cancelled = false
+    let attempts = 0
+
+    async function pollPro() {
+      try {
+        const p = await fetchMyProfile()
+        if (cancelled) return
+        setProfile(p)
+        const isPro = syncProFromServer(p?.isPro, true)
+        setPro(isPro)
+        if (isPro || attempts >= 10) {
+          goToAccount(true)
+          if (isPro) {
+            setProfile((prev) => prev ?? p)
+          }
+          const url = new URL(window.location.href)
+          url.searchParams.delete('checkout')
+          window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+          return
+        }
+        attempts += 1
+        setTimeout(pollPro, 1500)
+      } catch {
+        if (!cancelled && attempts >= 10) {
+          goToAccount(true)
+        }
+      }
+    }
+
+    pollPro()
+    return () => {
+      cancelled = true
+    }
+  }, [cloudUser?.id])
+
+  // Return URL from Stripe billing portal.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('view') !== 'account' || !cloudUser) return
+    goToAccount(false)
+    const url = new URL(window.location.href)
+    url.searchParams.delete('view')
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+  }, [cloudUser?.id])
 
   // Persist offline cellar locally.
   useEffect(() => {
@@ -391,7 +442,11 @@ export default function App() {
             wineCount={wines.length}
             highlightSubscription={accountHighlight}
             onProfileSaved={setProfile}
-            onProUnlocked={() => setPro(true)}
+            onProUnlocked={async () => {
+              const p = await fetchMyProfile()
+              setProfile(p)
+              setPro(syncProFromServer(p?.isPro, true))
+            }}
             onSignOut={() => signOut()}
             onSignIn={() => exitOffline()}
           />

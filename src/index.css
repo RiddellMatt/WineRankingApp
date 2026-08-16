@@ -1619,6 +1619,10 @@ textarea {
   margin-bottom: 0.75rem;
 }
 
+.account-manage-billing {
+  margin-bottom: 0.75rem;
+}
+
 .account-code-row {
   display: flex;
   gap: 0.5rem;

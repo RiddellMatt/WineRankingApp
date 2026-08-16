@@ -23,6 +23,8 @@ export interface ProfileRow {
   email: string
   avatar_url: string | null
   is_pro?: boolean | null
+  stripe_customer_id?: string | null
+  stripe_subscription_id?: string | null
 }
 
 export interface WineRow {

@@ -8,6 +8,9 @@ create table public.profiles (
   display_name text not null default '',
   email text not null default '',
   avatar_url text,
+  is_pro boolean not null default false,
+  stripe_customer_id text,
+  stripe_subscription_id text,
   created_at timestamptz not null default now()
 );
 
@@ -141,7 +144,13 @@ create policy profiles_select on public.profiles
 
 create policy profiles_update on public.profiles
   for update to authenticated
-  using (auth.uid() = id);
+  using (auth.uid() = id)
+  with check (
+    auth.uid() = id
+    and is_pro is not distinct from (
+      select p.is_pro from public.profiles p where p.id = auth.uid()
+    )
+  );
 
 -- Wines: full access to own; read-only for friends
 create policy wines_select on public.wines
