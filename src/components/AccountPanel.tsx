@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FREE_WINE_LIMIT, PRO_CONFIG } from '../config'
 import { redeemUnlockCode } from '../pro'
 import { Avatar } from './Avatar'
-import { updateDisplayName, type UserProfile } from '../lib/profileDb'
+import { removeAvatar, updateDisplayName, uploadAvatar, type UserProfile } from '../lib/profileDb'
 
 const PRO_FEATURES = [
   'Unlimited wines',
@@ -40,9 +40,11 @@ export function AccountPanel({
   onSignIn,
 }: Props) {
   const subscriptionRef = useRef<HTMLElement>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '')
   const [profileError, setProfileError] = useState('')
   const [profileBusy, setProfileBusy] = useState(false)
+  const [avatarBusy, setAvatarBusy] = useState(false)
   const [profileInfo, setProfileInfo] = useState('')
 
   const [code, setCode] = useState('')
@@ -91,6 +93,38 @@ export function AccountPanel({
     }
   }
 
+  async function handleAvatarFile(file: File) {
+    setProfileError('')
+    setProfileInfo('')
+    setAvatarBusy(true)
+    try {
+      const next = await uploadAvatar(file)
+      onProfileSaved(next)
+      setProfileInfo('Profile photo updated.')
+    } catch (err) {
+      setProfileError(String((err as Error).message ?? err))
+    } finally {
+      setAvatarBusy(false)
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    if (!profile?.avatarUrl) return
+    if (!window.confirm('Remove your profile photo?')) return
+    setProfileError('')
+    setProfileInfo('')
+    setAvatarBusy(true)
+    try {
+      const next = await removeAvatar()
+      onProfileSaved(next)
+      setProfileInfo('Profile photo removed.')
+    } catch (err) {
+      setProfileError(String((err as Error).message ?? err))
+    } finally {
+      setAvatarBusy(false)
+    }
+  }
+
   return (
     <div className="account-panel">
       {signedIn && (
@@ -98,14 +132,53 @@ export function AccountPanel({
           <Avatar
             displayName={resolvedName}
             email={resolvedEmail}
+            avatarUrl={profile?.avatarUrl}
             seed={profile?.id}
             size="md"
           />
           <div className="account-hero-text">
             <h2 className="account-hero-name">{resolvedName}</h2>
             <p className="account-hero-email">{resolvedEmail}</p>
+            <div className="account-hero-actions">
+              <button
+                type="button"
+                className="btn ghost small"
+                disabled={avatarBusy}
+                onClick={() => avatarInputRef.current?.click()}
+              >
+                {avatarBusy ? 'Uploading…' : profile?.avatarUrl ? 'Change photo' : 'Add photo'}
+              </button>
+              {profile?.avatarUrl && (
+                <button
+                  type="button"
+                  className="link-btn"
+                  disabled={avatarBusy}
+                  onClick={handleRemoveAvatar}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleAvatarFile(file)
+                e.target.value = ''
+              }}
+            />
           </div>
         </section>
+      )}
+
+      {signedIn && (profileInfo || profileError) && (
+        <div className="account-flash">
+          {profileInfo && <p className="auth-info">{profileInfo}</p>}
+          {profileError && <p className="form-error">{profileError}</p>}
+        </div>
       )}
 
       {signedIn && (
@@ -124,11 +197,6 @@ export function AccountPanel({
               />
             </label>
             <p className="account-hint">Shown on friend requests and shared cellars.</p>
-            <p className="account-hint account-avatar-note">
-              Friends see your initial in a colored circle — photo upload coming later.
-            </p>
-            {profileInfo && <p className="auth-info">{profileInfo}</p>}
-            {profileError && <p className="form-error">{profileError}</p>}
             <button type="submit" className="btn primary small" disabled={profileBusy}>
               {profileBusy ? 'Saving…' : 'Save name'}
             </button>

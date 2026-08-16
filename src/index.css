@@ -1465,6 +1465,14 @@ textarea {
   font-size: 1.2rem;
 }
 
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
 .friends-row-main {
   display: flex;
   align-items: center;
@@ -1494,6 +1502,24 @@ textarea {
   margin: 0.2rem 0 0;
   color: var(--text-dim);
   font-size: 0.9rem;
+}
+
+.account-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-top: 0.65rem;
+}
+
+.account-flash {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.account-flash p {
+  margin: 0;
 }
 
 .account-section {

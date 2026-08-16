@@ -4,6 +4,7 @@ export interface FriendProfile {
   id: string
   displayName: string
   email: string
+  avatarUrl?: string
 }
 
 export interface Friendship {
@@ -17,7 +18,12 @@ export interface Friendship {
 }
 
 function mapProfile(row: ProfileRow): FriendProfile {
-  return { id: row.id, displayName: row.display_name, email: row.email }
+  return {
+    id: row.id,
+    displayName: row.display_name,
+    email: row.email,
+    avatarUrl: row.avatar_url ?? undefined,
+  }
 }
 
 /** Label shown in friends UI — prefers display name, never exposes raw email to addressee of pending requests unless needed. */
@@ -57,7 +63,7 @@ export async function fetchFriendships(userId: string): Promise<Friendship[]> {
   if (otherIds.length > 0) {
     const { data: profileRows, error: profileError } = await getSupabase()
       .from('profiles')
-      .select('id, display_name, email')
+      .select('id, display_name, email, avatar_url')
       .in('id', otherIds)
     if (profileError) throw profileError
     for (const p of profileRows as ProfileRow[]) {
@@ -108,7 +114,7 @@ export async function removeFriendship(friendshipId: string): Promise<void> {
 export async function fetchProfile(userId: string): Promise<FriendProfile | null> {
   const { data, error } = await getSupabase()
     .from('profiles')
-    .select('id, display_name, email')
+    .select('id, display_name, email, avatar_url')
     .eq('id', userId)
     .maybeSingle()
   if (error) throw error

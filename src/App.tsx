@@ -56,7 +56,11 @@ export default function App() {
 
   const [wines, setWines] = useState<Wine[]>(() => (offlineMode ? loadWines() : []))
   const [friendWines, setFriendWines] = useState<Wine[]>([])
-  const [friendView, setFriendView] = useState<{ id: string; name: string } | null>(null)
+  const [friendView, setFriendView] = useState<{
+    id: string
+    name: string
+    avatarUrl?: string
+  } | null>(null)
   const [cellarLoading, setCellarLoading] = useState(false)
   const [pro, setPro] = useState<boolean>(loadProStatus)
   const [view, setView] = useState<View>('cellar')
@@ -270,12 +274,12 @@ export default function App() {
     }
   }
 
-  async function viewFriendCellar(friendId: string, friendName: string) {
+  async function viewFriendCellar(friendId: string, friendName: string, avatarUrl?: string) {
     setCellarLoading(true)
     try {
       const list = await fetchWines(friendId)
       setFriendWines(list)
-      setFriendView({ id: friendId, name: friendName })
+      setFriendView({ id: friendId, name: friendName, avatarUrl })
       setView('friends')
     } catch (e) {
       window.alert(`Could not load their cellar: ${(e as Error).message}`)
@@ -395,7 +399,12 @@ export default function App() {
                 ← Back to friends
               </button>
               <div className="friend-cellar-header">
-                <Avatar displayName={friendView.name} seed={friendView.id} size="lg" />
+                <Avatar
+                  displayName={friendView.name}
+                  avatarUrl={friendView.avatarUrl}
+                  seed={friendView.id}
+                  size="lg"
+                />
                 <h2 className="friend-cellar-title">{friendView.name}&apos;s cellar</h2>
               </div>
               {friendWines.length === 0 ? (

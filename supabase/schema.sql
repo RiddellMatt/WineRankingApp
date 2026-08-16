@@ -7,6 +7,7 @@ create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   display_name text not null default '',
   email text not null default '',
+  avatar_url text,
   created_at timestamptz not null default now()
 );
 
@@ -92,13 +93,13 @@ $$;
 
 -- Look up a user by email to send a friend request (does not expose all profiles).
 create or replace function public.find_profile_by_email(lookup_email text)
-returns table (id uuid, display_name text, email text)
+returns table (id uuid, display_name text, email text, avatar_url text)
 language sql
 stable
 security definer
 set search_path = public
 as $$
-  select p.id, p.display_name, p.email
+  select p.id, p.display_name, p.email, p.avatar_url
   from public.profiles p
   where lower(p.email) = lower(trim(lookup_email))
     and p.id <> auth.uid()
@@ -178,3 +179,40 @@ create policy friendships_update on public.friendships
 create policy friendships_delete on public.friendships
   for delete to authenticated
   using (auth.uid() = requester_id or auth.uid() = addressee_id);
+
+-- ── Avatar storage ────────────────────────────────────────────────────────
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'avatars',
+  'avatars',
+  true,
+  2097152,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+)
+on conflict (id) do nothing;
+
+create policy avatars_select on storage.objects
+  for select
+  using (bucket_id = 'avatars');
+
+create policy avatars_insert on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy avatars_update on storage.objects
+  for update to authenticated
+  using (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy avatars_delete on storage.objects
+  for delete to authenticated
+  using (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );

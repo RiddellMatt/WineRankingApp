@@ -12,7 +12,7 @@ import {
 
 interface Props {
   userId: string
-  onViewCellar: (friendId: string, friendName: string) => void
+  onViewCellar: (friendId: string, friendName: string, avatarUrl?: string) => void
 }
 
 function FriendIdentity({
@@ -35,6 +35,7 @@ function FriendIdentity({
       <Avatar
         displayName={name}
         email={friend?.email}
+        avatarUrl={friend?.avatarUrl}
         seed={otherId}
         size="sm"
       />
@@ -193,7 +194,7 @@ export function FriendsPanel({ userId, onViewCellar }: Props) {
                   <div className="friends-row-actions">
                     <button
                       className="btn primary small"
-                      onClick={() => onViewCellar(friendId, name)}
+                      onClick={() => onViewCellar(friendId, name, f.friend?.avatarUrl)}
                     >
                       View cellar
                     </button>
