@@ -4,6 +4,14 @@ import { corsHeaders, jsonResponse } from '../_shared/cors.ts'
 const MONTHLY_LIMIT = 30
 const MAX_IMAGE_CHARS = 6_000_000
 
+/** Retired 2026-06-01. Tried in order when GEMINI_MODEL is unset. */
+const MODEL_FALLBACKS = [
+  'gemini-2.5-flash',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+] as const
+
 const MENU_PROMPT = `You extract wines from restaurant menu photos.
 
 Return ONLY valid JSON matching this schema:
@@ -22,6 +30,109 @@ interface AiWine {
   name?: string
   price?: string | null
   description?: string | null
+}
+
+function modelsToTry(): string[] {
+  const configured = Deno.env.get('GEMINI_MODEL')?.trim()
+  if (configured) {
+    return [configured, ...MODEL_FALLBACKS.filter((m) => m !== configured)]
+  }
+  return [...MODEL_FALLBACKS]
+}
+
+function parseJsonFromModel(text: string): { wines?: AiWine[] } {
+  try {
+    return JSON.parse(text)
+  } catch {
+    // Model may wrap JSON in a markdown fence.
+  }
+
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  if (fenced) {
+    try {
+      return JSON.parse(fenced[1]!.trim())
+    } catch {
+      // fall through
+    }
+  }
+
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start >= 0 && end > start) {
+    return JSON.parse(text.slice(start, end + 1))
+  }
+
+  throw new Error('Could not parse menu results.')
+}
+
+async function callGeminiVision(
+  apiKey: string,
+  mimeType: string,
+  imageBase64: string,
+): Promise<string> {
+  const models = modelsToTry()
+  let lastDetail = 'No models responded.'
+
+  for (const model of models) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 800 * attempt))
+      }
+
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey,
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: MENU_PROMPT },
+                  { inline_data: { mime_type: mimeType, data: imageBase64 } },
+                ],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.2,
+            },
+          }),
+        },
+      )
+
+      if (res.ok) {
+        const json = await res.json()
+        const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
+        if (text) {
+          console.log(`Gemini success via ${model}`)
+          return text
+        }
+        lastDetail = 'No response from vision model.'
+        continue
+      }
+
+      lastDetail = await res.text()
+      console.error(`Gemini ${model} attempt ${attempt + 1}:`, res.status, lastDetail.slice(0, 300))
+
+      // Auth errors won't improve by switching models.
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(`Vision API auth failed: ${lastDetail.slice(0, 200)}`)
+      }
+
+      // 404 = model unavailable; 503 = overloaded — try next model.
+      if (res.status === 404 || res.status === 503) {
+        break
+      }
+
+      // Other errors: one retry, then next model.
+      if (attempt === 1) break
+    }
+  }
+
+  throw new Error(`Vision API failed: ${lastDetail.slice(0, 200)}`)
 }
 
 Deno.serve(async (req) => {
@@ -108,49 +219,16 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'File must be an image.' }, 400)
     }
 
-    // gemini-2.0-flash was retired 2026-06-01; default to a current vision-capable model.
-    const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash'
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Auth keys (AQ...) must use the header; query ?key= can fail for new key formats.
-          'x-goog-api-key': geminiKey,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: MENU_PROMPT },
-                { inline_data: { mime_type: mimeType, data: imageBase64 } },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            responseMimeType: 'application/json',
-          },
-        }),
-      },
-    )
-
-    if (!geminiRes.ok) {
-      const detail = await geminiRes.text()
-      console.error('Gemini API error:', geminiRes.status, detail.slice(0, 500))
-      return jsonResponse({ error: `Vision API failed: ${detail.slice(0, 200)}` }, 502)
-    }
-
-    const geminiJson = await geminiRes.json()
-    const textPart = geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!textPart) {
-      return jsonResponse({ error: 'No response from vision model.' }, 502)
+    let textPart: string
+    try {
+      textPart = await callGeminiVision(geminiKey, mimeType, imageBase64)
+    } catch (e) {
+      return jsonResponse({ error: String(e) }, 502)
     }
 
     let parsed: { wines?: AiWine[] }
     try {
-      parsed = JSON.parse(textPart)
+      parsed = parseJsonFromModel(textPart)
     } catch {
       return jsonResponse({ error: 'Could not parse menu results.' }, 502)
     }
