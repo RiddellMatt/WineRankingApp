@@ -113,6 +113,48 @@ textarea::placeholder {
   font-size: 0.9rem;
 }
 
+.tagline-profile {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tagline-profile:hover .tagline-edit,
+.tagline-profile:focus-visible .tagline-edit {
+  color: var(--accent);
+}
+
+.tagline-name {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.tagline-edit {
+  color: var(--text-faint);
+  font-size: 0.85rem;
+}
+
+.profile-modal-lead {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  flex: 1 1 100%;
+}
+
+.profile-modal .modal-header {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.profile-modal .modal-close {
+  margin-left: auto;
+}
+
 .header-actions {
   display: flex;
   align-items: center;

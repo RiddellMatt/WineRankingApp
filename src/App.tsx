@@ -120,6 +120,17 @@ export default function App() {
     }
   }, [cloudUser?.id])
 
+  // Nudge existing accounts that still use the auto-generated email prefix as their name.
+  useEffect(() => {
+    if (!cloudUser?.email || !profile?.displayName) return
+    const emailPrefix = cloudUser.email.split('@')[0]?.toLowerCase()
+    if (!emailPrefix || profile.displayName.toLowerCase() !== emailPrefix) return
+    const key = 'cellar-rank.profile-name-prompt'
+    if (sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, '1')
+    setProfileOpen(true)
+  }, [cloudUser?.email, profile?.displayName])
+
   // Persist offline cellar locally.
   useEffect(() => {
     if (offlineMode) saveWines(wines)
@@ -286,24 +297,29 @@ export default function App() {
                 {pro && <span className="pro-badge inline"> PRO</span>}
               </h1>
               <p className="tagline">
-                {showAccountBar
-                  ? profile?.displayName
-                    ? `Signed in as ${profile.displayName}`
-                    : `Signed in as ${user.email}`
-                  : "Every bottle you've tried, ranked."}
+                {showAccountBar ? (
+                  <button
+                    type="button"
+                    className="tagline-profile"
+                    onClick={() => setProfileOpen(true)}
+                  >
+                    Signed in as{' '}
+                    <span className="tagline-name">
+                      {profile?.displayName || user.email?.split('@')[0] || user.email}
+                    </span>
+                    <span className="tagline-edit"> · Edit name</span>
+                  </button>
+                ) : (
+                  "Every bottle you've tried, ranked."
+                )}
               </p>
             </div>
           </div>
           <div className="header-actions">
             {showAccountBar && (
-              <>
-                <button className="btn ghost" onClick={() => setProfileOpen(true)}>
-                  Profile
-                </button>
-                <button className="btn ghost" onClick={() => signOut()}>
-                  Sign out
-                </button>
-              </>
+              <button className="btn ghost" onClick={() => signOut()}>
+                Sign out
+              </button>
             )}
             {!pro && (
               <button className="btn ghost" onClick={() => setUpgradeReason('generic')}>

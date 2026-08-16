@@ -16,6 +16,14 @@ export function ProfileModal({ profile, onSaved, onClose }: Props) {
     setDisplayName(profile.displayName)
   }, [profile.displayName])
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
@@ -36,6 +44,7 @@ export function ProfileModal({ profile, onSaved, onClose }: Props) {
       <div className="modal profile-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Your profile</h2>
+          <p className="profile-modal-lead">Choose how friends see you in requests and shared cellars.</p>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
