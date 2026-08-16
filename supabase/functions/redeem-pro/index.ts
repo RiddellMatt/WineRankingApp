@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts'
 
 function validCodes(): Set<string> {
-  const raw = Deno.env.get('PRO_UNLOCK_CODES') ?? 'CELLAR-PRO-2026'
+  const raw = Deno.env.get('PRO_UNLOCK_CODES') ?? ''
   return new Set(
     raw
       .split(',')

@@ -9,17 +9,12 @@ import type { Wine } from './types'
 export const FREE_WINE_LIMIT = 20
 
 export const PRO_CONFIG = {
-  priceLabel: '$2.99/month',
+  priceLabel: '$3.99/month',
   /**
-   * Stripe Payment Link (https://dashboard.stripe.com/payment-links).
-   * When set, the Upgrade button opens it in a new tab.
+   * Optional legacy Stripe Payment Link. Prefer signed-in checkout via
+   * create-pro-checkout Edge Function when Supabase is configured.
    */
   paymentUrl: '',
-  /**
-   * Codes that unlock Pro on this device — for testing, promos, or fulfilling
-   * purchases manually until payments are automated. Case-insensitive.
-   */
-  unlockCodes: ['CELLAR-PRO-2026'],
 }
 
 export const MENU_SCAN_CONFIG = {

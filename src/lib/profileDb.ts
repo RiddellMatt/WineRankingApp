@@ -2,10 +2,12 @@ import { getSupabase, type ProfileRow } from './supabase'
 import {
   isMissingAvatarColumn,
   isMissingProColumn,
+  isMissingStripeColumn,
   PROFILE_COLUMNS_BASE,
   PROFILE_COLUMNS_FULL,
   PROFILE_COLUMNS_NO_AVATAR,
   PROFILE_COLUMNS_NO_PRO,
+  PROFILE_COLUMNS_NO_STRIPE,
 } from './profileColumns'
 
 export const AVATAR_BUCKET = 'avatars'
@@ -20,6 +22,7 @@ export interface UserProfile {
   email: string
   avatarUrl?: string
   isPro?: boolean
+  hasBilling?: boolean
 }
 
 export function mapProfileRow(row: ProfileRow): UserProfile {
@@ -29,6 +32,7 @@ export function mapProfileRow(row: ProfileRow): UserProfile {
     email: row.email,
     avatarUrl: row.avatar_url ?? undefined,
     isPro: row.is_pro ?? undefined,
+    hasBilling: Boolean(row.stripe_customer_id),
   }
 }
 
@@ -39,6 +43,7 @@ async function selectMyProfileRow() {
 
   const attempts = [
     PROFILE_COLUMNS_FULL,
+    PROFILE_COLUMNS_NO_STRIPE,
     PROFILE_COLUMNS_NO_PRO,
     PROFILE_COLUMNS_NO_AVATAR,
     PROFILE_COLUMNS_BASE,
@@ -49,7 +54,11 @@ async function selectMyProfileRow() {
     if (!result.error) {
       return { row: result.data as ProfileRow | null, error: null }
     }
-    if (!isMissingAvatarColumn(result.error) && !isMissingProColumn(result.error)) {
+    if (
+      !isMissingAvatarColumn(result.error) &&
+      !isMissingProColumn(result.error) &&
+      !isMissingStripeColumn(result.error)
+    ) {
       return { row: null, error: result.error }
     }
   }
@@ -195,7 +204,7 @@ export async function fetchProfilesByIds(ids: string[]): Promise<ProfileRow[]> {
   if (ids.length === 0) return []
 
   const supabase = getSupabase()
-  const attempts = [PROFILE_COLUMNS_FULL, PROFILE_COLUMNS_NO_PRO, PROFILE_COLUMNS_BASE]
+  const attempts = [PROFILE_COLUMNS_FULL, PROFILE_COLUMNS_NO_STRIPE, PROFILE_COLUMNS_BASE]
 
   for (const columns of attempts) {
     const result = await supabase.from('profiles').select(columns).in('id', ids)
