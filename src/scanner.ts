@@ -1,4 +1,5 @@
 import { WINE_TYPES, type WineType } from './types'
+import { containsPhrase, findRegion } from './textMatch'
 
 export interface ScanResult {
   name?: string
@@ -80,7 +81,8 @@ export const REGIONS = [
   'tuscany', 'toscana', 'piedmont', 'piemonte', 'veneto', 'sicily', 'sicilia',
   'chianti', 'barolo', 'brunello', 'valpolicella', 'abruzzo', 'puglia',
   'rioja', 'ribera del duero', 'priorat', 'rías baixas', 'rias baixas', 'jerez',
-  'douro', 'alentejo', 'vinho verde',
+  'douro', 'alentejo', 'vinho verde', 'portugal', 'penedès', 'penedes', 'carinena', 'cariñena',
+  'valencia', 'swartland', 'mendocino', 'abruzzo', 'campania', 'friuli', 'cotes du marmandais',
   'mosel', 'rheingau', 'pfalz', 'nahe',
   'marlborough', 'central otago', 'hawkes bay',
   'barossa', 'mclaren vale', 'yarra valley', 'margaret river', 'hunter valley',
@@ -108,19 +110,15 @@ export function parseLabelText(rawText: string): ScanResult {
   if (years.length) result.vintage = Math.max(...years)
 
   for (const [varietal, type] of VARIETALS) {
-    if (lower.includes(varietal)) {
+    if (containsPhrase(lower, varietal)) {
       result.varietal = titleCase(varietal)
       result.type = type
       break
     }
   }
 
-  for (const region of REGIONS) {
-    if (lower.includes(region)) {
-      result.region = titleCase(region)
-      break
-    }
-  }
+  const region = findRegion(lower, REGIONS)
+  if (region) result.region = titleCase(region)
 
   // Identity lines: alphabetic, not boilerplate, not just the matched keywords.
   const candidates = rawText

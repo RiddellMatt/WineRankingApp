@@ -1,5 +1,6 @@
 import type { Wine } from './types'
 import { REGIONS, VARIETALS } from './scanner'
+import { containsPhrase, findPhrase, findRegion } from './textMatch'
 
 export interface MenuMatch {
   /** Cleaned menu line for the wine. */
@@ -18,13 +19,14 @@ const STOPWORDS = new Set([
   'del', 'della', 'di', 'de', 'la', 'le', 'du', 'des', 'red', 'white',
 ])
 
-/** Tasting-note vocabulary — strong signal this is prose, not a wine title. */
 const TASTING_RE =
   /\b(cherry|berries|berry|blackberry|currant|cassis|plum|peach|apricot|citrus|grapefruit|lemon|lime|apple|pear|tropical|floral|vanilla|oak|cedar|tobacco|leather|graphite|mineral|minerality|tannin|tannins|acid|acidity|crisp|bright|supple|velvety|silky|elegant|structured|balanced|finish|palate|aroma|aromas|notes? of|hint of|hints of|undertones|full[- ]bodied|medium[- ]bodied|light[- ]bodied|dry|sweet|off[- ]dry|spice|spicy|herbal|earthy|smoky|brioche|butter|creamy|zesty|refreshing)\b/i
 
-/** Food menu lines OCR'd alongside wine lists — never wines or descriptions. */
 const FOOD_RE =
   /\b(octopus|calamari|shrimp|prawn|scallop|lobster|crab|oyster|salmon|tuna|halibut|cod|snapper|branzino|chicken|beef|pork|lamb|duck|venison|steak|burger|meatball|pasta|risotto|pizza|salad|soup|appetizer|entree|bruschetta|charcuterie board)\b/i
+
+const SECTION_RE =
+  /^(bubbles?|whites?|reds?|ros[eé]s?|skin[- ]contact(?:\/funky stuff)?|funky stuff|sparkling|dessert|fortified|all bottles)$/i
 
 function significantTokens(text: string): string[] {
   return text
@@ -33,7 +35,6 @@ function significantTokens(text: string): string[] {
     .filter((t) => t.length >= 4 && !STOPWORDS.has(t))
 }
 
-/** Strip OCR junk and characters that rarely appear on printed menus. */
 function cleanLine(raw: string): string {
   return raw
     .normalize('NFKC')
@@ -45,7 +46,6 @@ function cleanLine(raw: string): string {
     .trim()
 }
 
-/** Reject lines that are mostly symbols / single-char noise from OCR. */
 function isMostlyGarbage(line: string): boolean {
   if (!line) return true
   const clean = (line.match(/[\p{L}\p{N}\s,.'’\-–—&()/$%]/gu) ?? []).length
@@ -63,7 +63,6 @@ function extractPrice(line: string): string | null {
   return m[0].replace(/\s+/g, ' ').trim()
 }
 
-/** Wine title without trailing price (for display). */
 function wineTitle(line: string, price: string | null): string {
   if (!price) return line
   const idx = line.lastIndexOf(price.replace(/\s+/g, ' ').trim())
@@ -75,13 +74,38 @@ function wineTitle(line: string, price: string | null): string {
 }
 
 function hasVintage(line: string): boolean {
-  return /\b(19[5-9]\d|20\d{2})\b/.test(line)
+  return /\b(19[5-9]\d|20\d{2})\b/.test(line) || /^NV\b/i.test(line.trim())
+}
+
+function isSectionHeader(line: string, price: string | null): boolean {
+  if (price) return false
+  const stripped = line.replace(/[^a-zA-Z\s/-]/g, '').trim()
+  if (SECTION_RE.test(stripped)) return true
+  if (/\bcorkage\b/i.test(line)) return true
+  return false
 }
 
 /**
- * Menus print wine names in Title Case or CAPS; tasting-note descriptions
- * are mostly lowercase prose, comma-heavy, or use tasting vocabulary.
+ * Grape/region lines common on restaurant menus (often ALL CAPS, comma-heavy,
+ * ending in a country — e.g. "ARINTO, TRAJADURA, ETC. VINHO VERDE, PORTUGAL.").
  */
+function isMenuDetailLine(line: string, price: string | null): boolean {
+  if (price) return false
+  if (/\betc\.?\b/i.test(line)) return true
+  const trimmed = line.trim()
+  if (/,\s*[A-Z][A-Z\s.]+\.$/.test(trimmed)) return true
+
+  const commas = (line.match(/,/g)?.length ?? 0)
+  if (commas >= 1 && trimmed.endsWith('.')) return true
+
+  const words = line.split(/\s+/).filter((w) => /\p{L}/u.test(w))
+  if (words.length >= 2 && commas >= 1) {
+    const allCaps = words.filter((w) => w.length > 2 && w === w.toUpperCase()).length
+    if (allCaps / words.length > 0.65) return true
+  }
+  return false
+}
+
 function isDescriptionLike(line: string, price: string | null): boolean {
   if (price) return false
   if (TASTING_RE.test(line)) return true
@@ -96,7 +120,6 @@ function isDescriptionLike(line: string, price: string | null): boolean {
     return true
   }
 
-  // Short lines without tasting vocabulary or commas are OCR noise, not prose.
   if (words.length < 8 && commaCount === 0) return false
 
   if (words.length === 0) return true
@@ -107,10 +130,6 @@ function isDescriptionLike(line: string, price: string | null): boolean {
   return lowerStarts / words.length > 0.45
 }
 
-/**
- * A real menu wine line usually has a price, a vintage year, or reads like
- * a title (Title Case / ALL CAPS). Prose without those signals is not a wine.
- */
 function looksLikeWineTitle(line: string, price: string | null): boolean {
   if (price) return true
   if (hasVintage(line)) return true
@@ -152,18 +171,13 @@ function attachDescription(lastMatch: MenuMatch, line: string): void {
   lastMatch.description = merged.length > 160 ? `${merged.slice(0, 157)}…` : merged
 }
 
-/**
- * Score each line of an OCR'd menu against the user's cellar.
- * Direct cellar matches use the user's own rating; otherwise the score is
- * driven by how the user rates that varietal, then that wine type.
- */
 export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
   const varietalPrefs = new Map<string, Preference>()
   for (const w of cellar) {
     const v = w.varietal.toLowerCase().trim()
     if (!v) continue
     for (const [keyword] of VARIETALS) {
-      if (v.includes(keyword) || keyword.includes(v)) {
+      if (containsPhrase(v, keyword) || containsPhrase(keyword, v)) {
         const cur = varietalPrefs.get(keyword)
         varietalPrefs.set(keyword, {
           avg: cur ? (cur.avg * cur.count + w.rating) / (cur.count + 1) : w.rating,
@@ -177,13 +191,12 @@ export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
   for (const w of cellar) {
     if (w.rating >= 4 && w.region.trim()) {
       for (const region of REGIONS) {
-        if (w.region.toLowerCase().includes(region)) lovedRegions.set(region, w)
+        if (containsPhrase(w.region, region)) lovedRegions.set(region, w)
       }
     }
   }
 
   const matches: MenuMatch[] = []
-  // The most recent wine entry, so following description lines attach to it.
   let lastMatch: MenuMatch | null = null
 
   for (const raw of menuText.split('\n')) {
@@ -195,42 +208,30 @@ export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
     const lower = line.toLowerCase()
     const price = extractPrice(line)
 
-    if (FOOD_RE.test(lower)) continue
+    if (FOOD_RE.test(lower) || isSectionHeader(line, price)) continue
 
-    // Tasting-note prose under a wine — never a new entry, even if it
-    // name-drops a varietal ("notes of Cabernet and cherry").
-    if (isDescriptionLike(line, price)) {
+    if (isMenuDetailLine(line, price) || isDescriptionLike(line, price)) {
       if (lastMatch) attachDescription(lastMatch, line)
       continue
     }
 
-    // Direct cellar match: enough distinctive tokens from name+winery on the line.
     let cellarWine: Wine | undefined
     for (const w of cellar) {
       const tokens = significantTokens(`${w.name} ${w.winery}`)
       if (tokens.length === 0) continue
-      const hits = tokens.filter((t) => lower.includes(t)).length
+      const hits = tokens.filter((t) => containsPhrase(lower, t)).length
       if (hits >= Math.min(2, tokens.length)) {
         cellarWine = w
         break
       }
     }
 
-    const varietalHit = VARIETALS.find(([keyword]) => lower.includes(keyword))
-    const regionHit = REGIONS.find((region) => lower.includes(region))
+    const varietalHit = findPhrase(lower, VARIETALS)
+    const regionHit = findRegion(lower, REGIONS)
 
-    // Without a price, vintage, or title shape, treat as description — varietal
-    // keywords in prose must not spawn a second wine row.
-    if (!looksLikeWineTitle(line, price) && !cellarWine) {
-      if (lastMatch && isDescriptionLike(line, price)) attachDescription(lastMatch, line)
-      continue
-    }
+    if (!looksLikeWineTitle(line, price) && !cellarWine) continue
 
-    if (!varietalHit && !regionHit && !cellarWine) {
-      // Only merge prose; skip food, garbage, and other non-wine lines.
-      if (lastMatch && isDescriptionLike(line, price)) attachDescription(lastMatch, line)
-      continue
-    }
+    if (!varietalHit && !regionHit && !cellarWine && !price && !hasVintage(line)) continue
 
     let score: number
     const reasons: string[] = []
