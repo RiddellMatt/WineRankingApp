@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FREE_WINE_LIMIT, PRO_CONFIG } from '../config'
-import { activatePro, redeemUnlockCode } from '../pro'
+import { activatePro } from '../pro'
+import { createBillingPortal, createProCheckout } from '../lib/checkoutApi'
 import { redeemProOnServer } from '../lib/proApi'
 import { Avatar } from './Avatar'
 import { removeAvatar, updateDisplayName, uploadAvatar, type UserProfile } from '../lib/profileDb'
@@ -52,10 +53,13 @@ export function AccountPanel({
   const [code, setCode] = useState('')
   const [codeError, setCodeError] = useState('')
   const [showCode, setShowCode] = useState(false)
+  const [checkoutBusy, setCheckoutBusy] = useState(false)
+  const [billingBusy, setBillingBusy] = useState(false)
 
   const resolvedEmail = profile?.email || email || ''
   const resolvedName =
     profile?.displayName || email?.split('@')[0] || 'Wine lover'
+  const canCheckout = signedIn && cloudConfigured && !offlineMode
 
   useEffect(() => {
     setDisplayName(profile?.displayName ?? email?.split('@')[0] ?? '')
@@ -86,25 +90,49 @@ export function AccountPanel({
   async function handleRedeem(e: FormEvent) {
     e.preventDefault()
     setCodeError('')
-    if (signedIn && cloudConfigured) {
-      try {
-        await redeemProOnServer(code)
-        activatePro()
-        onProUnlocked()
-        setCode('')
-        setShowCode(false)
-        return
-      } catch (err) {
-        setCodeError(String((err as Error).message ?? err))
-        return
-      }
+    if (!signedIn || !cloudConfigured) {
+      setCodeError('Sign in to redeem a promo code.')
+      return
     }
-    if (redeemUnlockCode(code)) {
+    try {
+      await redeemProOnServer(code)
+      activatePro()
       onProUnlocked()
       setCode('')
       setShowCode(false)
-    } else {
-      setCodeError('That code is not valid.')
+      setProfileInfo('Pro unlocked on your account.')
+    } catch (err) {
+      setCodeError(String((err as Error).message ?? err))
+    }
+  }
+
+  async function handleUpgrade() {
+    setCodeError('')
+    if (!canCheckout) {
+      onSignIn()
+      return
+    }
+    setCheckoutBusy(true)
+    try {
+      const url = await createProCheckout()
+      window.location.href = url
+    } catch (err) {
+      setCodeError(String((err as Error).message ?? err))
+    } finally {
+      setCheckoutBusy(false)
+    }
+  }
+
+  async function handleManageBilling() {
+    setCodeError('')
+    setBillingBusy(true)
+    try {
+      const url = await createBillingPortal()
+      window.location.href = url
+    } catch (err) {
+      setCodeError(String((err as Error).message ?? err))
+    } finally {
+      setBillingBusy(false)
     }
   }
 
@@ -259,14 +287,26 @@ export function AccountPanel({
                 : 'Unlimited wines, Insights, and export on this device.'
               : `${wineCount} / ${FREE_WINE_LIMIT} wines · Insights and export locked`}
           </p>
-          {!pro && (
+          {!pro && signedIn && (
             <p className="account-hint">
-              {signedIn
-                ? 'Redeem a code here to unlock Pro on your account.'
-                : 'Pro status is saved on this device only. Sign in to sync Pro and AI menu scan.'}
+              Subscribe to unlock Pro on your account — syncs across devices.
             </p>
           )}
+          {!pro && !signedIn && (
+            <p className="account-hint">Sign in to subscribe and sync Pro across devices.</p>
+          )}
         </div>
+
+        {pro && profile?.hasBilling && canCheckout && (
+          <button
+            type="button"
+            className="btn ghost account-manage-billing"
+            disabled={billingBusy}
+            onClick={handleManageBilling}
+          >
+            {billingBusy ? 'Opening…' : 'Manage subscription'}
+          </button>
+        )}
 
         {!pro && (
           <>
@@ -276,39 +316,54 @@ export function AccountPanel({
               ))}
             </ul>
 
-            {PRO_CONFIG.paymentUrl ? (
+            {canCheckout ? (
+              <button
+                type="button"
+                className="btn primary account-upgrade"
+                disabled={checkoutBusy}
+                onClick={handleUpgrade}
+              >
+                {checkoutBusy ? 'Starting checkout…' : `Subscribe — ${PRO_CONFIG.priceLabel}`}
+              </button>
+            ) : PRO_CONFIG.paymentUrl ? (
               <a
                 className="btn primary account-upgrade"
                 href={PRO_CONFIG.paymentUrl}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Upgrade — {PRO_CONFIG.priceLabel}
+                Subscribe — {PRO_CONFIG.priceLabel}
               </a>
             ) : (
               <p className="account-hint">
-                Paid checkout isn&apos;t connected yet. Use an unlock code below.
+                {signedIn
+                  ? 'Checkout is not configured on this deployment yet.'
+                  : 'Sign in to subscribe.'}
               </p>
             )}
 
-            {showCode ? (
-              <form className="account-code-row" onSubmit={handleRedeem}>
-                <input
-                  value={code}
-                  onChange={(e) => {
-                    setCode(e.target.value)
-                    setCodeError('')
-                  }}
-                  placeholder="Unlock code"
-                />
-                <button type="submit" className="btn ghost">
-                  Redeem
-                </button>
-              </form>
-            ) : (
-              <button type="button" className="link-btn" onClick={() => setShowCode(true)}>
-                Have an unlock code?
-              </button>
+            {canCheckout && (
+              <>
+                {showCode ? (
+                  <form className="account-code-row" onSubmit={handleRedeem}>
+                    <input
+                      value={code}
+                      onChange={(e) => {
+                        setCode(e.target.value)
+                        setCodeError('')
+                      }}
+                      placeholder="Promo code"
+                    />
+                    <button type="submit" className="btn ghost">
+                      Redeem
+                    </button>
+                  </form>
+                ) : (
+                  <button type="button" className="link-btn" onClick={() => setShowCode(true)}>
+                    Have a promo code?
+                  </button>
+                )}
+              </>
             )}
             {codeError && <p className="form-error">{codeError}</p>}
           </>

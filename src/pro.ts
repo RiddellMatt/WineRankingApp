@@ -1,5 +1,3 @@
-import { PRO_CONFIG } from './config'
-
 const PRO_KEY = 'wine-rank.pro.v1'
 
 export function loadProStatus(): boolean {
@@ -14,19 +12,27 @@ export function activatePro(): void {
   localStorage.setItem(PRO_KEY, 'active')
 }
 
-/** Returns true (and activates Pro) if the code is valid. */
-export function redeemUnlockCode(code: string): boolean {
-  const normalized = code.trim().toUpperCase()
-  if (!normalized) return false
-  if (PRO_CONFIG.unlockCodes.some((c) => c.toUpperCase() === normalized)) {
-    activatePro()
-    return true
+export function clearPro(): void {
+  try {
+    localStorage.removeItem(PRO_KEY)
+  } catch {
+    // ignore
   }
-  return false
 }
 
-/** Merge server-side Pro entitlement into local storage when signed in. */
-export function syncProFromServer(isPro: boolean | undefined): boolean {
+/**
+ * When signed in, server `is_pro` is the source of truth.
+ * Offline mode keeps using localStorage until the user signs in.
+ */
+export function syncProFromServer(isPro: boolean | undefined, signedIn: boolean): boolean {
+  if (signedIn) {
+    if (isPro) {
+      activatePro()
+      return true
+    }
+    clearPro()
+    return false
+  }
   if (isPro) {
     activatePro()
     return true
