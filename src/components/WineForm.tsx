@@ -1,6 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { WINE_TYPES, type Wine, type WineType } from '../types'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { WINE_TYPES, type TasteProfile, type Wine, type WineType } from '../types'
 import { StarInput } from './StarRating'
+import { TasteInput } from './TasteProfile'
+import { hasTaste, lookupTaste } from '../tasteData'
+import type { ScanResult } from '../scanner'
 
 interface Props {
   initial: Wine | null
@@ -16,9 +19,21 @@ export function WineForm({ initial, onSave, onClose }: Props) {
   const [varietal, setVarietal] = useState(initial?.varietal ?? '')
   const [region, setRegion] = useState(initial?.region ?? '')
   const [price, setPrice] = useState(initial?.price?.toString() ?? '')
+  const [purchasedAt, setPurchasedAt] = useState(initial?.purchasedAt ?? '')
   const [rating, setRating] = useState(initial?.rating ?? 0)
+  const [taste, setTaste] = useState<TasteProfile>(initial?.taste ?? {})
+  // Wines whose taste was customized keep it; otherwise the reference
+  // profile tracks the varietal/type as the user types.
+  const [tasteTouched, setTasteTouched] = useState(
+    hasTaste(initial?.taste) && initial?.tasteSource !== 'typical',
+  )
+  const [tasteBasedOn, setTasteBasedOn] = useState('')
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [error, setError] = useState('')
+  const [scanState, setScanState] = useState<'idle' | 'scanning' | 'done' | 'failed'>('idle')
+  const [scanPct, setScanPct] = useState(0)
+  const [scanSummary, setScanSummary] = useState('')
+  const scanInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -27,6 +42,62 @@ export function WineForm({ initial, onSave, onClose }: Props) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  useEffect(() => {
+    if (tasteTouched) return
+    const { taste: reference, basedOn } = lookupTaste(varietal, name, type)
+    setTaste(reference)
+    setTasteBasedOn(basedOn)
+  }, [varietal, name, type, tasteTouched])
+
+  function applyScan(scan: ScanResult) {
+    const found: string[] = []
+    // Prefill only; never overwrite something the user already typed.
+    if (scan.name && !name.trim()) {
+      setName(scan.name)
+      found.push('name')
+    }
+    if (scan.winery && !winery.trim()) {
+      setWinery(scan.winery)
+      found.push('winery')
+    }
+    if (scan.vintage && !vintage) {
+      setVintage(String(scan.vintage))
+      found.push('vintage')
+    }
+    if (scan.varietal && !varietal.trim()) {
+      setVarietal(scan.varietal)
+      found.push('varietal')
+    }
+    if (scan.region && !region.trim()) {
+      setRegion(scan.region)
+      found.push('region')
+    }
+    if (scan.type && !initial) {
+      setType(scan.type)
+      found.push('type')
+    }
+    if (found.length === 0) {
+      setScanState('failed')
+      setScanSummary("Couldn't read anything useful — try a straighter, closer photo in good light.")
+    } else {
+      setScanState('done')
+      setScanSummary(`Filled in ${found.join(', ')} from the label. Double-check before saving.`)
+    }
+  }
+
+  async function handleScanFile(file: File) {
+    setScanState('scanning')
+    setScanPct(0)
+    setScanSummary('')
+    try {
+      const { scanLabel } = await import('../scanner')
+      applyScan(await scanLabel(file, setScanPct))
+    } catch {
+      setScanState('failed')
+      setScanSummary('Scanning failed on this device. You can still enter the wine manually.')
+    }
+  }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -49,6 +120,9 @@ export function WineForm({ initial, onSave, onClose }: Props) {
       price: price ? Number(price) : null,
       rating,
       notes: notes.trim(),
+      purchasedAt: purchasedAt.trim(),
+      taste,
+      tasteSource: tasteTouched ? 'custom' : 'typical',
       addedAt: initial?.addedAt ?? Date.now(),
     })
   }
@@ -62,6 +136,35 @@ export function WineForm({ initial, onSave, onClose }: Props) {
             ✕
           </button>
         </div>
+
+        {!initial && (
+          <div className="scan-box">
+            <button
+              type="button"
+              className="btn ghost scan-btn"
+              disabled={scanState === 'scanning'}
+              onClick={() => scanInputRef.current?.click()}
+            >
+              {scanState === 'scanning' ? `Reading label… ${scanPct}%` : '📷 Scan wine label'}
+            </button>
+            <input
+              ref={scanInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleScanFile(file)
+                e.target.value = ''
+              }}
+            />
+            {scanSummary && (
+              <p className={`scan-summary ${scanState === 'failed' ? 'failed' : ''}`}>
+                {scanSummary}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="form-rating">
           <label>Your rating</label>
@@ -134,6 +237,41 @@ export function WineForm({ initial, onSave, onClose }: Props) {
               placeholder="e.g. 45"
             />
           </label>
+          <label className="field span-2">
+            <span>Purchased at</span>
+            <input
+              value={purchasedAt}
+              onChange={(e) => setPurchasedAt(e.target.value)}
+              placeholder="e.g. Trader Joe's, restaurant, winery visit…"
+            />
+          </label>
+        </div>
+
+        <div className="taste-section">
+          <span className="taste-section-title">Taste characteristics</span>
+          <p className="taste-caption">
+            {tasteTouched ? (
+              <>
+                Customized to your palate.{' '}
+                <button type="button" className="link-btn" onClick={() => setTasteTouched(false)}>
+                  Reset to typical
+                </button>
+              </>
+            ) : (
+              `Typical ${tasteBasedOn} profile — drag to match your pour.`
+            )}
+          </p>
+          <TasteInput
+            taste={taste}
+            wineType={type}
+            onChange={(t) => {
+              setTaste(t)
+              setTasteTouched(true)
+            }}
+          />
+        </div>
+
+        <div className="form-grid">
           <label className="field span-2">
             <span>Tasting notes</span>
             <textarea

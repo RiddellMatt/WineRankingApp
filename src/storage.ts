@@ -7,7 +7,9 @@ export function loadWines(): Wine[] {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    if (!Array.isArray(parsed)) return []
+    // Backfill fields added after v1 so older saved wines keep working.
+    return parsed.map((w: Partial<Wine>) => ({ purchasedAt: '', taste: {}, ...w }) as Wine)
   } catch {
     return []
   }
@@ -29,6 +31,8 @@ export const SAMPLE_WINES: Wine[] = [
     price: 85,
     rating: 4.5,
     notes: 'Blackcurrant and cedar with silky tannins. Long, elegant finish.',
+    purchasedAt: 'Total Wine, Denver',
+    taste: { body: 75, tannin: 60, sweetness: 15, acidity: 55 },
     addedAt: Date.now() - 6 * 86400000,
   },
   {
@@ -42,6 +46,8 @@ export const SAMPLE_WINES: Wine[] = [
     price: 32,
     rating: 4,
     notes: 'Zesty grapefruit and passionfruit. Crisp, refreshing acidity.',
+    purchasedAt: 'Whole Foods',
+    taste: { body: 25, sweetness: 10, acidity: 85 },
     addedAt: Date.now() - 5 * 86400000,
   },
   {
@@ -55,6 +61,8 @@ export const SAMPLE_WINES: Wine[] = [
     price: 24,
     rating: 3.5,
     notes: 'Pale salmon color. Strawberry and white peach, bone dry.',
+    purchasedAt: 'Trader Joe\u2019s',
+    taste: { body: 30, sweetness: 8, acidity: 65 },
     addedAt: Date.now() - 4 * 86400000,
   },
   {
@@ -68,6 +76,8 @@ export const SAMPLE_WINES: Wine[] = [
     price: 60,
     rating: 4.5,
     notes: 'Brioche and green apple. Fine, persistent bubbles.',
+    purchasedAt: 'Costco',
+    taste: { body: 40, sweetness: 20, acidity: 75, fizz: 85 },
     addedAt: Date.now() - 3 * 86400000,
   },
   {
@@ -81,6 +91,8 @@ export const SAMPLE_WINES: Wine[] = [
     price: 55,
     rating: 5,
     notes: 'Rose petal, tar, and dried cherry. Structured and unforgettable.',
+    purchasedAt: 'Enoteca Rossi, Rome',
+    taste: { body: 80, tannin: 85, sweetness: 10, acidity: 70 },
     addedAt: Date.now() - 2 * 86400000,
   },
   {
@@ -94,6 +106,8 @@ export const SAMPLE_WINES: Wine[] = [
     price: 45,
     rating: 4,
     notes: 'Apricot, honey, and saffron. Sweetness balanced by bright acid.',
+    purchasedAt: 'Wine.com',
+    taste: { body: 55, sweetness: 90, acidity: 80 },
     addedAt: Date.now() - 86400000,
   },
 ]

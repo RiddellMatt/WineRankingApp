@@ -407,6 +407,15 @@ a.icon-btn {
   border-color: #5a2c3b;
 }
 
+.wine-card.clickable {
+  cursor: pointer;
+}
+
+.wine-card.clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .rank-badge {
   flex-shrink: 0;
   width: 2.4rem;
@@ -496,11 +505,370 @@ a.icon-btn {
   font-size: 0.85rem;
 }
 
+.wine-purchased {
+  margin: 0.15rem 0 0;
+  color: var(--text-faint);
+  font-size: 0.83rem;
+}
+
 .wine-notes {
   margin: 0.5rem 0 0;
   color: var(--text-dim);
   font-size: 0.88rem;
   font-style: italic;
+}
+
+/* ── Taste characteristics ──────────────────────────── */
+
+.taste-display {
+  margin-top: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-width: 26rem;
+}
+
+.taste-track-row,
+.taste-slider-row {
+  display: grid;
+  grid-template-columns: 4.2rem 1fr 4.2rem;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.taste-slider-row {
+  grid-template-columns: 4.2rem 1fr 4.2rem 1.6rem;
+}
+
+.taste-end {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+
+.taste-end.right {
+  text-align: right;
+}
+
+.taste-end.strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.taste-track {
+  position: relative;
+  height: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-soft);
+}
+
+.taste-pill {
+  position: absolute;
+  top: 50%;
+  width: 1.7rem;
+  height: 0.62rem;
+  border-radius: 999px;
+  background: var(--star);
+  transform: translate(-50%, -50%);
+  max-width: 100%;
+}
+
+.taste-section {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-top: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.taste-section-title {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.7rem;
+}
+
+.taste-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.taste-slider-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.taste-slider-track input[type='range'] {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  height: 1.1rem;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.taste-slider-track input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.8rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  background: var(--star-empty);
+  border: none;
+}
+
+.taste-slider-track input[type='range']::-moz-range-thumb {
+  width: 1.8rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  background: var(--star-empty);
+  border: none;
+}
+
+.taste-slider-row.set input[type='range']::-webkit-slider-thumb {
+  background: var(--star);
+}
+
+.taste-slider-row.set input[type='range']::-moz-range-thumb {
+  background: var(--star);
+}
+
+.taste-unset-hint {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.taste-clear {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.3rem;
+}
+
+.taste-clear.hidden {
+  visibility: hidden;
+}
+
+.taste-source-caption {
+  margin: 0.3rem 0 0;
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.taste-caption {
+  margin: -0.35rem 0 0.7rem;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+
+.taste-caption .link-btn {
+  font-size: 0.8rem;
+  color: var(--star);
+}
+
+/* ── Menu sommelier ─────────────────────────────────── */
+
+.menu-scan-hero {
+  text-align: center;
+  padding: 2.6rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+
+.menu-scan-hero h2 {
+  font-family: var(--font-display);
+  margin: 0 0 0.4rem;
+}
+
+.menu-scan-hero p {
+  color: var(--text-dim);
+  max-width: 34rem;
+  margin: 0 auto 1.3rem;
+}
+
+.menu-scan-warning {
+  color: var(--star);
+  font-size: 0.88rem;
+}
+
+.menu-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.menu-result {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+}
+
+.menu-score {
+  flex-shrink: 0;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  line-height: 1;
+  gap: 0.15rem;
+}
+
+.menu-score.good {
+  border-color: var(--accent);
+  color: #f0899e;
+}
+
+.menu-score.great {
+  background: linear-gradient(145deg, #f5cf6e, #c8901f);
+  border-color: #f5cf6e;
+  color: #3a2a05;
+}
+
+.menu-score-label {
+  font-family: var(--font-body);
+  font-size: 0.52rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.menu-result-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.menu-line {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.best-pick {
+  display: inline-block;
+  background: linear-gradient(145deg, #f5cf6e, #c8901f);
+  color: #3a2a05;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  border-radius: 5px;
+  padding: 0.14rem 0.45rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.menu-desc {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.menu-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.menu-reason {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.16rem 0.6rem;
+}
+
+.menu-price {
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--star);
+  font-size: 0.95rem;
+}
+
+/* ── Pairings ───────────────────────────────────────── */
+
+.pairings {
+  margin-top: 0.7rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pairings-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  margin-right: 0.15rem;
+}
+
+.pairing-chip {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.16rem 0.6rem;
+  white-space: nowrap;
+}
+
+/* ── Label scanner ──────────────────────────────────── */
+
+.scan-box {
+  margin-bottom: 1rem;
+}
+
+.scan-btn {
+  width: 100%;
+  border-style: dashed;
+}
+
+.scan-summary {
+  margin: 0.55rem 0 0;
+  font-size: 0.85rem;
+  color: var(--star);
+}
+
+.scan-summary.failed {
+  color: var(--danger);
 }
 
 .wine-side {
