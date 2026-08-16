@@ -14,7 +14,8 @@ A small web app for ranking the wines you've tried. Log each bottle with a ratin
 - **Local persistence** — everything is stored in your browser's localStorage; no account or backend needed
 - **Sample wines** available from the empty state so you can explore the app instantly
 - **Purchase location** — track where you bought each bottle; searchable
-- **Taste characteristics** — optional Vivino-style sliders (Light↔Bold, Smooth↔Tannic, Dry↔Sweet, Soft↔Acidic, and Gentle↔Fizzy for sparkling), displayed on each wine card
+- **Taste characteristics** — data-driven Vivino-style stats (Light↔Bold, Smooth↔Tannic, Dry↔Sweet, Soft↔Acidic, and Gentle↔Fizzy for sparkling). Profiles auto-populate from a curated per-varietal reference dataset (`src/tasteData.ts`) and can be fine-tuned per bottle; cards fall back to the typical varietal profile when the user hasn't customized. Architecture is ready for aggregated community ratings later.
+- **Menu sommelier** — photograph a restaurant wine list; on-device OCR finds the wines and ranks them against your cellar using your own ratings, varietal averages, and favorite regions, with plain-English reasons for each score
 - **Label scanner** — snap or upload a photo of the label and on-device OCR (Tesseract.js, lazy-loaded) prefills name, winery, vintage, varietal, region, and type for review
 - **Food pairings** — curated "Pairs with" suggestions per wine, keyed by varietal with wine-type fallbacks (`src/pairings.ts`)
 

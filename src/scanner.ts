@@ -11,7 +11,7 @@ export interface ScanResult {
 }
 
 /** Known varietals → inferred wine type. Order matters: longest match wins. */
-const VARIETALS: [string, WineType][] = [
+export const VARIETALS: [string, WineType][] = [
   ['cabernet sauvignon', 'Red'],
   ['cabernet franc', 'Red'],
   ['sauvignon blanc', 'White'],
@@ -71,7 +71,7 @@ const VARIETALS: [string, WineType][] = [
   ['eiswein', 'Dessert'],
 ]
 
-const REGIONS = [
+export const REGIONS = [
   'napa valley', 'sonoma', 'willamette valley', 'columbia valley', 'paso robles',
   'russian river', 'santa barbara', 'finger lakes',
   'bordeaux', 'burgundy', 'bourgogne', 'champagne', 'loire', 'rhône', 'rhone',
@@ -149,10 +149,10 @@ export function parseLabelText(rawText: string): ScanResult {
   return result
 }
 
-export async function scanLabel(
+export async function ocrImage(
   image: File,
   onProgress?: (pct: number) => void,
-): Promise<ScanResult> {
+): Promise<string> {
   const { createWorker } = await import('tesseract.js')
   const worker = await createWorker('eng', 1, {
     logger: (m) => {
@@ -163,8 +163,15 @@ export async function scanLabel(
   })
   try {
     const { data } = await worker.recognize(image)
-    return parseLabelText(data.text ?? '')
+    return data.text ?? ''
   } finally {
     await worker.terminate()
   }
+}
+
+export async function scanLabel(
+  image: File,
+  onProgress?: (pct: number) => void,
+): Promise<ScanResult> {
+  return parseLabelText(await ocrImage(image, onProgress))
 }

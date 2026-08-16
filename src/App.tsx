@@ -7,6 +7,7 @@ import { WineCard } from './components/WineCard'
 import { WineForm } from './components/WineForm'
 import { UpgradeModal } from './components/UpgradeModal'
 import { Insights } from './components/Insights'
+import { MenuScan } from './components/MenuScan'
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'rating', label: 'Rating' },
@@ -16,7 +17,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'addedAt', label: 'Recently added' },
 ]
 
-type View = 'cellar' | 'insights'
+type View = 'cellar' | 'sommelier' | 'insights'
 type UpgradeReason = 'limit' | 'insights' | 'export' | 'generic'
 
 export default function App() {
@@ -177,6 +178,12 @@ export default function App() {
             My cellar
           </button>
           <button
+            className={`tab ${view === 'sommelier' ? 'active' : ''}`}
+            onClick={() => setView('sommelier')}
+          >
+            Sommelier
+          </button>
+          <button
             className={`tab ${view === 'insights' ? 'active' : ''}`}
             onClick={() => setView('insights')}
           >
@@ -186,7 +193,9 @@ export default function App() {
       </header>
 
       <main className="content">
-        {view === 'insights' ? (
+        {view === 'sommelier' ? (
+          <MenuScan wines={wines} />
+        ) : view === 'insights' ? (
           pro ? (
             <Insights wines={wines} />
           ) : (

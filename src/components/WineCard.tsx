@@ -1,6 +1,7 @@
 import type { Wine } from '../types'
 import { shopUrl } from '../config'
 import { getPairings } from '../pairings'
+import { hasTaste, lookupTaste } from '../tasteData'
 import { StarDisplay } from './StarRating'
 import { TasteDisplay } from './TasteProfile'
 
@@ -25,8 +26,23 @@ export function WineCard({ wine, rank, onEdit, onDelete }: Props) {
   const medal = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : ''
   const meta = [wine.varietal, wine.region].filter(Boolean).join(' · ')
 
+  // Show the wine's own profile when it has one; otherwise fall back to the
+  // reference profile for its varietal/type so stats are always available.
+  const reference = lookupTaste(wine.varietal, wine.name, wine.type)
+  const ownTaste = hasTaste(wine.taste)
+  const taste = ownTaste ? wine.taste : reference.taste
+  const isTypical = !ownTaste || wine.tasteSource === 'typical'
+
   return (
-    <li className="wine-card">
+    <li
+      className="wine-card clickable"
+      onClick={onEdit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && e.target === e.currentTarget) onEdit()
+      }}
+      tabIndex={0}
+      aria-label={`Edit ${wine.name}`}
+    >
       <div className={`rank-badge ${medal}`}>{rank}</div>
 
       <div className="wine-main">
@@ -45,7 +61,10 @@ export function WineCard({ wine, rank, onEdit, onDelete }: Props) {
           </p>
         )}
         {wine.notes && <p className="wine-notes">“{wine.notes}”</p>}
-        <TasteDisplay taste={wine.taste ?? {}} />
+        <TasteDisplay taste={taste} />
+        {isTypical && (
+          <p className="taste-source-caption">Typical {reference.basedOn} profile</p>
+        )}
         <div className="pairings">
           <span className="pairings-label">Pairs with</span>
           {getPairings(wine).map((dish) => (
@@ -56,7 +75,7 @@ export function WineCard({ wine, rank, onEdit, onDelete }: Props) {
         </div>
       </div>
 
-      <div className="wine-side">
+      <div className="wine-side" onClick={(e) => e.stopPropagation()}>
         <div className="wine-rating">
           <StarDisplay value={wine.rating} />
           <span className="rating-number">{wine.rating.toFixed(1)}</span>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { WINE_TYPES, type TasteProfile, type Wine, type WineType } from '../types'
 import { StarInput } from './StarRating'
 import { TasteInput } from './TasteProfile'
+import { hasTaste, lookupTaste } from '../tasteData'
 import type { ScanResult } from '../scanner'
 
 interface Props {
@@ -21,6 +22,12 @@ export function WineForm({ initial, onSave, onClose }: Props) {
   const [purchasedAt, setPurchasedAt] = useState(initial?.purchasedAt ?? '')
   const [rating, setRating] = useState(initial?.rating ?? 0)
   const [taste, setTaste] = useState<TasteProfile>(initial?.taste ?? {})
+  // Wines whose taste was customized keep it; otherwise the reference
+  // profile tracks the varietal/type as the user types.
+  const [tasteTouched, setTasteTouched] = useState(
+    hasTaste(initial?.taste) && initial?.tasteSource !== 'typical',
+  )
+  const [tasteBasedOn, setTasteBasedOn] = useState('')
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [error, setError] = useState('')
   const [scanState, setScanState] = useState<'idle' | 'scanning' | 'done' | 'failed'>('idle')
@@ -35,6 +42,13 @@ export function WineForm({ initial, onSave, onClose }: Props) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  useEffect(() => {
+    if (tasteTouched) return
+    const { taste: reference, basedOn } = lookupTaste(varietal, name, type)
+    setTaste(reference)
+    setTasteBasedOn(basedOn)
+  }, [varietal, name, type, tasteTouched])
 
   function applyScan(scan: ScanResult) {
     const found: string[] = []
@@ -108,6 +122,7 @@ export function WineForm({ initial, onSave, onClose }: Props) {
       notes: notes.trim(),
       purchasedAt: purchasedAt.trim(),
       taste,
+      tasteSource: tasteTouched ? 'custom' : 'typical',
       addedAt: initial?.addedAt ?? Date.now(),
     })
   }
@@ -235,7 +250,26 @@ export function WineForm({ initial, onSave, onClose }: Props) {
 
         <div className="taste-section">
           <span className="taste-section-title">Taste characteristics</span>
-          <TasteInput taste={taste} wineType={type} onChange={setTaste} />
+          <p className="taste-caption">
+            {tasteTouched ? (
+              <>
+                Customized to your palate.{' '}
+                <button type="button" className="link-btn" onClick={() => setTasteTouched(false)}>
+                  Reset to typical
+                </button>
+              </>
+            ) : (
+              `Typical ${tasteBasedOn} profile — drag to match your pour.`
+            )}
+          </p>
+          <TasteInput
+            taste={taste}
+            wineType={type}
+            onChange={(t) => {
+              setTaste(t)
+              setTasteTouched(true)
+            }}
+          />
         </div>
 
         <div className="form-grid">

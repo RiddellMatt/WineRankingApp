@@ -48,6 +48,8 @@ export interface Wine {
   notes: string
   purchasedAt: string
   taste: TasteProfile
+  /** Whether taste came from the reference dataset or was tuned by the user. */
+  tasteSource?: 'typical' | 'custom'
   addedAt: number
 }
 
