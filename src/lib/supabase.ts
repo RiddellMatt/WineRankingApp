@@ -12,7 +12,12 @@ export function getSupabase(): SupabaseClient {
     throw new Error('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
   }
   if (!client) {
-    client = createClient(url!, anonKey!)
+    client = createClient(url!, anonKey!, {
+      auth: {
+        flowType: 'pkce',
+        detectSessionInUrl: true,
+      },
+    })
   }
   return client
 }
