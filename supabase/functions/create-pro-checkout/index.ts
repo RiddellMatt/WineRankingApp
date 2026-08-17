@@ -1,18 +1,15 @@
 import { requireUser } from '../_shared/auth.ts'
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts'
+import {
+  mobileCheckoutUrls,
+  readRequestPlatform,
+  webCheckoutUrls,
+} from '../_shared/mobileUrls.ts'
 
 function stripeSecret(): string {
   const key = Deno.env.get('STRIPE_SECRET_KEY')
   if (!key) throw new Error('Stripe is not configured.')
   return key
-}
-
-function checkoutUrls(): { successUrl: string; cancelUrl: string } {
-  const appUrl = Deno.env.get('APP_URL') ?? 'https://riddellmatt.github.io/WineRankingApp/'
-  const base = appUrl.endsWith('/') ? appUrl : `${appUrl}/`
-  const successUrl = Deno.env.get('STRIPE_SUCCESS_URL') ?? `${base}?checkout=success`
-  const cancelUrl = Deno.env.get('STRIPE_CANCEL_URL') ?? `${base}?checkout=cancel`
-  return { successUrl, cancelUrl }
 }
 
 Deno.serve(async (req) => {
@@ -21,6 +18,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const platform = await readRequestPlatform(req)
     const auth = await requireUser(req)
     if (auth instanceof Response) return auth
     const { user, admin } = auth
@@ -40,7 +38,8 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'You already have Cellar Rank Pro.' }, 400)
     }
 
-    const { successUrl, cancelUrl } = checkoutUrls()
+    const { successUrl, cancelUrl } =
+      platform === 'mobile' ? mobileCheckoutUrls() : webCheckoutUrls()
     const params = new URLSearchParams({
       mode: 'subscription',
       'line_items[0][price]': priceId,

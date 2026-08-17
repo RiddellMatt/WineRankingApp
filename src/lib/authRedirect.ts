@@ -1,8 +1,26 @@
+import { isNativeApp } from './platform'
+import {
+  MOBILE_AUTH_REDIRECT,
+  MOBILE_CHECKOUT_SUCCESS,
+} from './mobileDeepLinks'
+
 /** OAuth redirect target; must match Supabase Auth → URL Configuration. */
 export function authRedirectUrl(): string {
+  if (isNativeApp()) return MOBILE_AUTH_REDIRECT
+
   const base = import.meta.env.BASE_URL || '/'
   const normalized = base.endsWith('/') ? base : `${base}/`
   return `${window.location.origin}${normalized}`
+}
+
+export function isCheckoutSuccessUrl(): boolean {
+  if (isNativeApp()) return false
+  const params = new URLSearchParams(window.location.search)
+  return params.get('checkout') === 'success'
+}
+
+export function checkoutSuccessRedirectTarget(): string {
+  return isNativeApp() ? MOBILE_CHECKOUT_SUCCESS : authRedirectUrl() + '?checkout=success'
 }
 
 const AUTH_QUERY_PARAMS = [
@@ -26,6 +44,8 @@ export function isOAuthCallback(): boolean {
 
 /** Remove Supabase OAuth params from the address bar after sign-in. */
 export function cleanAuthParamsFromUrl(): void {
+  if (isNativeApp()) return
+
   const url = new URL(window.location.href)
   let changed = false
 

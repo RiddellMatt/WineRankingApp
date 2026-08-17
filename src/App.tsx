@@ -3,6 +3,9 @@ import { WINE_TYPES, type SortKey, type Wine, type WineType } from './types'
 import { loadWines, saveWines, SAMPLE_WINES } from './storage'
 import { FREE_WINE_LIMIT } from './config'
 import { loadProStatus, syncProFromServer } from './pro'
+import { isCheckoutSuccessUrl } from './lib/authRedirect'
+import { ACCOUNT_EVENT, CHECKOUT_SUCCESS_EVENT } from './lib/mobileDeepLinks'
+import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
 import { WineCard } from './components/WineCard'
@@ -156,8 +159,6 @@ export default function App() {
   // After Stripe checkout, poll profile until webhook grants Pro (or timeout).
   useEffect(() => {
     if (!cloudUser) return
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('checkout') !== 'success') return
 
     let cancelled = false
     let attempts = 0
@@ -174,9 +175,11 @@ export default function App() {
           if (isPro) {
             setProfile((prev) => prev ?? p)
           }
-          const url = new URL(window.location.href)
-          url.searchParams.delete('checkout')
-          window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+          if (!isNativeApp()) {
+            const url = new URL(window.location.href)
+            url.searchParams.delete('checkout')
+            window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+          }
           return
         }
         attempts += 1
@@ -188,20 +191,38 @@ export default function App() {
       }
     }
 
-    pollPro()
+    function startCheckoutPoll() {
+      attempts = 0
+      pollPro()
+    }
+
+    if (isCheckoutSuccessUrl()) startCheckoutPoll()
+
+    window.addEventListener(CHECKOUT_SUCCESS_EVENT, startCheckoutPoll)
     return () => {
       cancelled = true
+      window.removeEventListener(CHECKOUT_SUCCESS_EVENT, startCheckoutPoll)
     }
   }, [cloudUser?.id])
 
-  // Return URL from Stripe billing portal.
+  // Return URL from Stripe billing portal (web query param or mobile deep link).
   useEffect(() => {
+    if (!cloudUser) return
+
+    function openAccountFromReturn() {
+      goToAccount(false)
+      if (!isNativeApp()) {
+        const url = new URL(window.location.href)
+        url.searchParams.delete('view')
+        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+      }
+    }
+
     const params = new URLSearchParams(window.location.search)
-    if (params.get('view') !== 'account' || !cloudUser) return
-    goToAccount(false)
-    const url = new URL(window.location.href)
-    url.searchParams.delete('view')
-    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+    if (params.get('view') === 'account') openAccountFromReturn()
+
+    window.addEventListener(ACCOUNT_EVENT, openAccountFromReturn)
+    return () => window.removeEventListener(ACCOUNT_EVENT, openAccountFromReturn)
   }, [cloudUser?.id])
 
   // Persist offline cellar locally.

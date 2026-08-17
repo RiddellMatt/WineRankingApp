@@ -1,4 +1,5 @@
 import { readFunctionError } from './functionError'
+import { isNativeApp } from './platform'
 import { getSupabase } from './supabase'
 
 interface CheckoutPayload {
@@ -20,10 +21,20 @@ async function readCheckoutUrl(
   return payload.url
 }
 
+function checkoutBody(): { platform: 'mobile' | 'web' } | undefined {
+  return isNativeApp() ? { platform: 'mobile' } : undefined
+}
+
 export async function createProCheckout(): Promise<string> {
-  return readCheckoutUrl(() => getSupabase().functions.invoke('create-pro-checkout'))
+  const body = checkoutBody()
+  return readCheckoutUrl(() =>
+    getSupabase().functions.invoke('create-pro-checkout', { body }),
+  )
 }
 
 export async function createBillingPortal(): Promise<string> {
-  return readCheckoutUrl(() => getSupabase().functions.invoke('create-billing-portal'))
+  const body = checkoutBody()
+  return readCheckoutUrl(() =>
+    getSupabase().functions.invoke('create-billing-portal', { body }),
+  )
 }

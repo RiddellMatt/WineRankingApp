@@ -21,6 +21,10 @@
   --radius: 14px;
   --font-display: 'Playfair Display', Georgia, serif;
   --font-body: 'Inter', system-ui, sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 * {
@@ -29,6 +33,11 @@
 
 body {
   margin: 0;
+  padding:
+    var(--safe-top)
+    var(--safe-right)
+    var(--safe-bottom)
+    var(--safe-left);
   background: radial-gradient(1200px 600px at 70% -10%, #3a1220 0%, var(--bg) 55%);
   color: var(--text);
   font-family: var(--font-body);
