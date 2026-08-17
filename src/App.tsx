@@ -399,7 +399,7 @@ export default function App() {
             )}
           </div>
         </div>
-        <nav className="tabs">
+        <nav className="tabs" aria-label="Main">
           <button
             className={`tab ${view === 'cellar' ? 'active' : ''}`}
             onClick={() => {
@@ -407,7 +407,8 @@ export default function App() {
               setView('cellar')
             }}
           >
-            My cellar
+            <span className="tab-text-long">My cellar</span>
+            <span className="tab-text-short">Cellar</span>
           </button>
           <button
             className={`tab ${view === 'sommelier' ? 'active' : ''}`}
@@ -416,7 +417,8 @@ export default function App() {
               setView('sommelier')
             }}
           >
-            Sommelier
+            <span className="tab-text-long">Sommelier</span>
+            <span className="tab-text-short">Scan</span>
           </button>
           {cloudUser && (
             <button
@@ -433,7 +435,9 @@ export default function App() {
               setView('insights')
             }}
           >
-            Insights {!pro && <span className="pro-badge">PRO</span>}
+            <span className="tab-text-long">Insights</span>
+            <span className="tab-text-short">Stats</span>
+            {!pro && <span className="pro-badge">PRO</span>}
           </button>
           <button
             className={`tab ${view === 'account' ? 'active' : ''}`}

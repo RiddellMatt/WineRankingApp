@@ -22,6 +22,9 @@ async function handleDeepLink(url: string): Promise<void> {
 export async function initNativeShell(): Promise<void> {
   if (!isNativeApp()) return
 
+  document.documentElement.classList.add('native-app')
+  document.body.classList.add('native-app')
+
   try {
     await StatusBar.setStyle({ style: Style.Dark })
     await StatusBar.setBackgroundColor({ color: '#16090d' })
