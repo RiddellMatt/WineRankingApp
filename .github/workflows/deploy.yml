@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-      # Deploys from the feature branch too until it is merged; remove after merging.
-      - cursor/wine-features-v2-29b9
-      - cursor/supabase-auth-friends-29b9
-      - cursor/stripe-pro-sprint-29b9
   workflow_dispatch:
 
 permissions:

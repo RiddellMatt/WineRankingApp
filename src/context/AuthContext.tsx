@@ -9,6 +9,11 @@ import type { Provider, Session, User } from '@supabase/supabase-js'
 import { authRedirectUrl, cleanAuthParamsFromUrl } from '../lib/authRedirect'
 import { startNativeOAuth } from '../lib/mobileOAuth'
 import { isNativeApp } from '../lib/platform'
+import {
+  completeWebOAuthFromUrl,
+  emitWebOAuthError,
+  isWebOAuthCallback,
+} from '../lib/webOAuth'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
 
 interface AuthState {
@@ -63,6 +68,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     return () => sub.subscription.unsubscribe()
+  }, [configured])
+
+  // Safari / GitHub Pages: finish OAuth when Google redirects back with ?code=
+  useEffect(() => {
+    if (!configured || !isWebOAuthCallback()) return
+
+    let cancelled = false
+    setLoading(true)
+
+    void completeWebOAuthFromUrl(window.location.href).then((err) => {
+      if (cancelled) return
+      if (err) emitWebOAuthError(err)
+      cleanAuthParamsFromUrl()
+      setLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [configured])
 
   async function signUp(
