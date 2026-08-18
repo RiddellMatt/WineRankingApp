@@ -1,5 +1,6 @@
 import { WINE_TYPES, type WineType } from './types'
 import { containsPhrase, findRegion } from './textMatch'
+import { resizeImageFile } from './lib/imageResize'
 
 export interface ScanResult {
   name?: string
@@ -171,5 +172,6 @@ export async function scanLabel(
   image: File,
   onProgress?: (pct: number) => void,
 ): Promise<ScanResult> {
-  return parseLabelText(await ocrImage(image, onProgress))
+  const prepared = await resizeImageFile(image)
+  return parseLabelText(await ocrImage(prepared, onProgress))
 }

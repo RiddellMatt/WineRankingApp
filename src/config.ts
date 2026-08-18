@@ -22,6 +22,11 @@ export const MENU_SCAN_CONFIG = {
   monthlyLimit: 30,
 }
 
+export const LABEL_SCAN_CONFIG = {
+  /** Monthly AI label scans per Pro account (must match scan-label Edge Function). */
+  monthlyLimit: 30,
+}
+
 export const SHOP_CONFIG = {
   /** Retailer search URL. `{query}` is replaced with the wine description. */
   urlTemplate: 'https://www.wine-searcher.com/find/{query}',

@@ -1,17 +1,29 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { LABEL_SCAN_CONFIG } from '../config'
 import { WINE_TYPES, type TasteProfile, type Wine, type WineType } from '../types'
 import { StarInput } from './StarRating'
 import { TasteInput } from './TasteProfile'
 import { hasTaste, lookupTaste } from '../tasteData'
 import type { ScanResult } from '../scanner'
+import { aiLabelToScanResult, LabelScanError, scanLabelWithAi } from '../lib/labelScanApi'
 
 interface Props {
   initial: Wine | null
   onSave: (wine: Wine) => void
   onClose: () => void
+  pro?: boolean
+  signedIn?: boolean
+  cloudConfigured?: boolean
 }
 
-export function WineForm({ initial, onSave, onClose }: Props) {
+export function WineForm({
+  initial,
+  onSave,
+  onClose,
+  pro = false,
+  signedIn = false,
+  cloudConfigured = false,
+}: Props) {
   const [name, setName] = useState(initial?.name ?? '')
   const [winery, setWinery] = useState(initial?.winery ?? '')
   const [vintage, setVintage] = useState(initial?.vintage?.toString() ?? '')
@@ -31,9 +43,11 @@ export function WineForm({ initial, onSave, onClose }: Props) {
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [error, setError] = useState('')
   const [scanState, setScanState] = useState<'idle' | 'scanning' | 'done' | 'failed'>('idle')
+  const [scanMode, setScanMode] = useState<'ai' | 'basic'>('basic')
   const [scanPct, setScanPct] = useState(0)
   const [scanSummary, setScanSummary] = useState('')
   const scanInputRef = useRef<HTMLInputElement>(null)
+  const aiAvailable = pro && signedIn && cloudConfigured
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -50,7 +64,7 @@ export function WineForm({ initial, onSave, onClose }: Props) {
     setTasteBasedOn(basedOn)
   }, [varietal, name, type, tasteTouched])
 
-  function applyScan(scan: ScanResult) {
+  function applyScan(scan: ScanResult, mode: 'ai' | 'basic') {
     const found: string[] = []
     // Prefill only; never overwrite something the user already typed.
     if (scan.name && !name.trim()) {
@@ -82,17 +96,60 @@ export function WineForm({ initial, onSave, onClose }: Props) {
       setScanSummary("Couldn't read anything useful — try a straighter, closer photo in good light.")
     } else {
       setScanState('done')
-      setScanSummary(`Filled in ${found.join(', ')} from the label. Double-check before saving.`)
+      const source = mode === 'ai' ? 'AI label scan' : 'label scan'
+      setScanSummary(`Filled in ${found.join(', ')} from ${source}. Double-check before saving.`)
+    }
+  }
+
+  async function runBasicScan(file: File) {
+    setScanMode('basic')
+    setScanState('scanning')
+    setScanPct(0)
+    setScanSummary('')
+    const { scanLabel } = await import('../scanner')
+    applyScan(await scanLabel(file, setScanPct), 'basic')
+  }
+
+  async function runAiScan(file: File) {
+    setScanMode('ai')
+    setScanState('scanning')
+    setScanPct(15)
+    setScanSummary('')
+    try {
+      const { label } = await scanLabelWithAi(file)
+      setScanPct(100)
+      applyScan(aiLabelToScanResult(label), 'ai')
+    } catch (err) {
+      if (err instanceof LabelScanError) {
+        if (err.code === 'not_configured') {
+          await runBasicScan(file)
+          return
+        }
+        if (err.code === 'quota_exceeded') {
+          setScanState('failed')
+          setScanSummary(`You've used all ${LABEL_SCAN_CONFIG.monthlyLimit} AI label scans this month.`)
+          return
+        }
+        if (err.code === 'pro_required' || err.code === 'auth_required') {
+          await runBasicScan(file)
+          return
+        }
+        setScanState('failed')
+        setScanSummary(err.message)
+        return
+      }
+      setScanState('failed')
+      setScanSummary('AI label scan failed. Try again or use a different photo.')
     }
   }
 
   async function handleScanFile(file: File) {
-    setScanState('scanning')
-    setScanPct(0)
-    setScanSummary('')
     try {
-      const { scanLabel } = await import('../scanner')
-      applyScan(await scanLabel(file, setScanPct))
+      if (aiAvailable) {
+        await runAiScan(file)
+      } else {
+        await runBasicScan(file)
+      }
     } catch {
       setScanState('failed')
       setScanSummary('Scanning failed on this device. You can still enter the wine manually.')
@@ -145,7 +202,13 @@ export function WineForm({ initial, onSave, onClose }: Props) {
               disabled={scanState === 'scanning'}
               onClick={() => scanInputRef.current?.click()}
             >
-              {scanState === 'scanning' ? `Reading label… ${scanPct}%` : '📷 Scan wine label'}
+              {scanState === 'scanning'
+                ? scanMode === 'ai'
+                  ? 'AI is reading your label…'
+                  : `Reading label… ${scanPct}%`
+                : aiAvailable
+                  ? '📷 Scan wine label (AI)'
+                  : '📷 Scan wine label'}
             </button>
             <input
               ref={scanInputRef}
