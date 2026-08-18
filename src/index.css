@@ -32,6 +32,17 @@
   box-sizing: border-box;
 }
 
+html {
+  background: var(--bg);
+  color-scheme: dark;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+}
+
 body {
   margin: 0;
   padding:
@@ -39,11 +50,14 @@ body {
     var(--safe-right)
     var(--safe-bottom)
     var(--safe-left);
-  background: radial-gradient(1200px 600px at 70% -10%, #3a1220 0%, var(--bg) 55%);
+  background: var(--bg);
+  background-image: radial-gradient(1200px 600px at 70% -10%, #3a1220 0%, var(--bg) 55%);
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-body);
   line-height: 1.5;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 button {
@@ -1865,26 +1879,45 @@ textarea {
 /* ── Responsive ─────────────────────────────────────── */
 
 @media (max-width: 640px) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+
   body {
     padding-bottom: 0;
   }
 
   .app {
-    padding: 0 max(0.85rem, var(--safe-left)) 0 max(0.85rem, var(--safe-right));
+    width: 100%;
+    max-width: none;
+    padding: 0;
+    min-height: 100dvh;
+  }
+
+  .header,
+  .content,
+  .app-footer-note {
+    padding-left: max(0.85rem, var(--safe-left));
+    padding-right: max(0.85rem, var(--safe-right));
   }
 
   .header {
-    padding: 1.15rem 0 0.75rem;
+    padding-top: 1.15rem;
+    padding-bottom: 0.75rem;
     margin-bottom: 1rem;
     border-bottom: none;
   }
 
   .content {
-    padding-bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 1rem);
+    order: 2;
+    flex: 1 1 auto;
+    padding-bottom: 1rem;
   }
 
   .app-footer-note {
-    padding-bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 0.5rem);
+    order: 3;
+    padding-bottom: 0.5rem;
   }
 
   .header-inner {
@@ -1918,22 +1951,21 @@ textarea {
   }
 
   .tabs {
-    position: fixed;
-    left: 0;
-    right: 0;
+    position: sticky;
     bottom: 0;
-    z-index: 40;
-    order: 99;
-    margin: 0;
+    z-index: 100;
+    order: 4;
+    flex-shrink: 0;
+    margin-top: auto;
+    margin-bottom: 0;
     gap: 0;
+    width: 100%;
     min-height: calc(var(--tab-bar-height) + var(--safe-bottom));
     padding:
       0.45rem max(0.35rem, var(--safe-left))
       max(0.55rem, var(--safe-bottom))
       max(0.35rem, var(--safe-right));
-    background: rgba(34, 16, 22, 0.98);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: var(--bg-soft);
     border-top: 1px solid var(--border);
     justify-content: space-around;
     overflow-x: auto;
@@ -2134,7 +2166,9 @@ html.native-app body {
   padding-bottom: 0;
 }
 
-html.native-app .app {
+html.native-app .header,
+html.native-app .content,
+html.native-app .app-footer-note {
   padding-left: max(0.85rem, var(--safe-left));
   padding-right: max(0.85rem, var(--safe-right));
 }
