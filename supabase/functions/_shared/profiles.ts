@@ -22,6 +22,28 @@ export async function revokePro(admin: SupabaseClient, userId: string): Promise<
   if (error) throw error
 }
 
+export async function grantProByEmail(
+  admin: SupabaseClient,
+  email: string,
+  opts: { stripeCustomerId?: string; stripeSubscriptionId?: string | null } = {},
+): Promise<boolean> {
+  const trimmed = email.trim()
+  if (!trimmed) return false
+
+  const { data: rows, error: findError } = await admin
+    .from('profiles')
+    .select('id')
+    .ilike('email', trimmed)
+    .limit(1)
+
+  if (findError) throw findError
+  const profile = rows?.[0]
+  if (!profile) return false
+
+  await grantPro(admin, profile.id, opts)
+  return true
+}
+
 export async function grantProByStripeCustomer(
   admin: SupabaseClient,
   stripeCustomerId: string,

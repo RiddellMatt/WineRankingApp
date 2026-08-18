@@ -27,3 +27,20 @@ export async function createProCheckout(): Promise<string> {
 export async function createBillingPortal(): Promise<string> {
   return readCheckoutUrl(() => getSupabase().functions.invoke('create-billing-portal'))
 }
+
+interface SyncProPayload {
+  isPro?: boolean
+  synced?: boolean
+  reason?: string
+  error?: string
+}
+
+/** Verify an active Stripe subscription and grant Pro when webhooks lag or fail. */
+export async function syncProSubscription(): Promise<SyncProPayload> {
+  const { data, error } = await getSupabase().functions.invoke('sync-pro-subscription')
+  if (error) {
+    const { message } = await readFunctionError(error, data)
+    throw new Error(message)
+  }
+  return (data ?? {}) as SyncProPayload
+}

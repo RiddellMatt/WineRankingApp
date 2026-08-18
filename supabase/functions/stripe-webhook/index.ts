@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import Stripe from 'https://esm.sh/stripe@17.7.0?target=deno'
 import {
   grantPro,
+  grantProByEmail,
   grantProByStripeCustomer,
   revokePro,
   revokeProByStripeCustomer,
@@ -40,7 +41,11 @@ Deno.serve(async (req) => {
 
     const body = await req.text()
     const stripe = stripeClient()
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret())
+    const event = await stripe.webhooks.constructEventAsync(
+      body,
+      signature,
+      webhookSecret(),
+    )
     const admin = createClient(supabaseUrl, serviceKey)
 
     switch (event.type) {
@@ -58,8 +63,25 @@ Deno.serve(async (req) => {
             stripeCustomerId: customerId ?? undefined,
             stripeSubscriptionId: subscriptionId,
           })
+          console.log(`Granted Pro via checkout for user ${userId}`)
         } else if (customerId) {
           await grantProByStripeCustomer(admin, customerId, subscriptionId)
+          console.log(`Granted Pro via checkout for Stripe customer ${customerId}`)
+        } else {
+          const email = session.customer_details?.email ?? session.customer_email
+          if (email) {
+            const granted = await grantProByEmail(admin, email, {
+              stripeCustomerId: customerId ?? undefined,
+              stripeSubscriptionId: subscriptionId,
+            })
+            if (granted) {
+              console.log(`Granted Pro via checkout email ${email}`)
+            } else {
+              console.warn(`checkout.session.completed: no profile for email ${email}`)
+            }
+          } else {
+            console.warn('checkout.session.completed: missing user id, customer, and email')
+          }
         }
         break
       }
