@@ -7,6 +7,8 @@ import {
 } from 'react'
 import type { Provider, Session, User } from '@supabase/supabase-js'
 import { authRedirectUrl, cleanAuthParamsFromUrl } from '../lib/authRedirect'
+import { startNativeOAuth } from '../lib/mobileOAuth'
+import { isNativeApp } from '../lib/platform'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
 
 interface AuthState {
@@ -85,6 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithOAuth(provider: Provider): Promise<string | null> {
+    if (isNativeApp()) {
+      return startNativeOAuth(provider)
+    }
+
     const options: { redirectTo: string; scopes?: string } = {
       redirectTo: authRedirectUrl(),
     }
