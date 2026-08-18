@@ -459,56 +459,6 @@ export default function App() {
             )}
           </div>
         </div>
-        <nav className="tabs" aria-label="Main">
-          <button
-            className={`tab ${view === 'cellar' ? 'active' : ''}`}
-            onClick={() => {
-              setFriendView(null)
-              setView('cellar')
-            }}
-          >
-            <span className="tab-text-long">My cellar</span>
-            <span className="tab-text-short">Cellar</span>
-          </button>
-          <button
-            className={`tab ${view === 'sommelier' ? 'active' : ''}`}
-            onClick={() => {
-              setFriendView(null)
-              setView('sommelier')
-            }}
-          >
-            <span className="tab-text-long">Sommelier</span>
-            <span className="tab-text-short">Scan</span>
-          </button>
-          {cloudUser && (
-            <button
-              className={`tab ${view === 'friends' ? 'active' : ''}`}
-              onClick={() => setView('friends')}
-            >
-              Friends
-            </button>
-          )}
-          <button
-            className={`tab ${view === 'insights' ? 'active' : ''}`}
-            onClick={() => {
-              setFriendView(null)
-              setView('insights')
-            }}
-          >
-            <span className="tab-text-long">Insights</span>
-            <span className="tab-text-short">Stats</span>
-            {!pro && <span className="pro-badge">PRO</span>}
-          </button>
-          <button
-            className={`tab ${view === 'account' ? 'active' : ''}`}
-            onClick={() => {
-              setFriendView(null)
-              setView('account')
-            }}
-          >
-            Account
-          </button>
-        </nav>
       </header>
 
       <main className="content">
@@ -750,6 +700,57 @@ export default function App() {
           </>
         )}
       </main>
+
+      <nav className="tabs" aria-label="Main">
+        <button
+          className={`tab ${view === 'cellar' ? 'active' : ''}`}
+          onClick={() => {
+            setFriendView(null)
+            setView('cellar')
+          }}
+        >
+          <span className="tab-text-long">My cellar</span>
+          <span className="tab-text-short">Cellar</span>
+        </button>
+        <button
+          className={`tab ${view === 'sommelier' ? 'active' : ''}`}
+          onClick={() => {
+            setFriendView(null)
+            setView('sommelier')
+          }}
+        >
+          <span className="tab-text-long">Sommelier</span>
+          <span className="tab-text-short">Scan</span>
+        </button>
+        {cloudUser && (
+          <button
+            className={`tab ${view === 'friends' ? 'active' : ''}`}
+            onClick={() => setView('friends')}
+          >
+            Friends
+          </button>
+        )}
+        <button
+          className={`tab ${view === 'insights' ? 'active' : ''}`}
+          onClick={() => {
+            setFriendView(null)
+            setView('insights')
+          }}
+        >
+          <span className="tab-text-long">Insights</span>
+          <span className="tab-text-short">Stats</span>
+          {!pro && <span className="pro-badge">PRO</span>}
+        </button>
+        <button
+          className={`tab ${view === 'account' ? 'active' : ''}`}
+          onClick={() => {
+            setFriendView(null)
+            setView('account')
+          }}
+        >
+          Account
+        </button>
+      </nav>
 
       {formOpen && (
         <WineForm
