@@ -13,6 +13,14 @@ const config: CapacitorConfig = {
   },
   server: {
     androidScheme: 'https',
+    allowNavigation: [
+      'accounts.google.com',
+      'www.google.com',
+      '*.google.com',
+      '*.googleapis.com',
+      'appleid.apple.com',
+      '*.supabase.co',
+    ],
   },
   plugins: {
     SplashScreen: {
