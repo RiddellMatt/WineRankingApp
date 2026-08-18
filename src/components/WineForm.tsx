@@ -1,16 +1,18 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { LABEL_SCAN_CONFIG } from '../config'
-import { WINE_TYPES, type TasteProfile, type Wine, type WineType } from '../types'
+import { aiLabelToScanResult, LabelScanError, scanLabelWithAi } from '../lib/labelScanApi'
+import { applyCompositeRating, compositeScore } from '../lib/ranking'
+import type { ScanResult } from '../scanner'
+import { hasTaste, lookupTaste } from '../tasteData'
+import { WINE_TYPES, type RankingPreference, type TasteProfile, type Wine, type WineType } from '../types'
 import { StarInput } from './StarRating'
 import { TasteInput } from './TasteProfile'
-import { hasTaste, lookupTaste } from '../tasteData'
-import type { ScanResult } from '../scanner'
-import { aiLabelToScanResult, LabelScanError, scanLabelWithAi } from '../lib/labelScanApi'
 
 interface Props {
   initial: Wine | null
   onSave: (wine: Wine) => void
   onClose: () => void
+  rankingPreference: RankingPreference
   pro?: boolean
   signedIn?: boolean
   cloudConfigured?: boolean
@@ -20,6 +22,7 @@ export function WineForm({
   initial,
   onSave,
   onClose,
+  rankingPreference,
   pro = false,
   signedIn = false,
   cloudConfigured = false,
@@ -32,7 +35,11 @@ export function WineForm({
   const [region, setRegion] = useState(initial?.region ?? '')
   const [price, setPrice] = useState(initial?.price?.toString() ?? '')
   const [purchasedAt, setPurchasedAt] = useState(initial?.purchasedAt ?? '')
-  const [rating, setRating] = useState(initial?.rating ?? 0)
+  const [ratingEnjoyment, setRatingEnjoyment] = useState(
+    initial?.ratingEnjoyment ?? initial?.rating ?? 0,
+  )
+  const [ratingValue, setRatingValue] = useState(initial?.ratingValue ?? 0)
+  const [ratingBuyAgain, setRatingBuyAgain] = useState(initial?.ratingBuyAgain ?? 0)
   const [taste, setTaste] = useState<TasteProfile>(initial?.taste ?? {})
   // Wines whose taste was customized keep it; otherwise the reference
   // profile tracks the varietal/type as the user types.
@@ -48,6 +55,20 @@ export function WineForm({
   const [scanSummary, setScanSummary] = useState('')
   const scanInputRef = useRef<HTMLInputElement>(null)
   const aiAvailable = pro && signedIn && cloudConfigured
+  const parsedPrice = price ? Number(price) : null
+  const showValueRating = parsedPrice != null && parsedPrice > 0
+
+  const previewRank = useMemo(
+    () =>
+      compositeScore(
+        {
+          ratingEnjoyment,
+          ratingValue: showValueRating && ratingValue > 0 ? ratingValue : null,
+        },
+        rankingPreference,
+      ),
+    [ratingEnjoyment, ratingValue, showValueRating, rankingPreference],
+  )
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -162,26 +183,33 @@ export function WineForm({
       setError('Give the wine a name.')
       return
     }
-    if (rating === 0) {
-      setError('Pick a rating — that is the whole point!')
+    if (ratingEnjoyment === 0) {
+      setError('Rate how much you enjoyed it — that is the whole point!')
       return
     }
-    onSave({
-      id: initial?.id ?? crypto.randomUUID(),
-      name: name.trim(),
-      winery: winery.trim(),
-      vintage: vintage ? Number(vintage) : null,
-      type,
-      varietal: varietal.trim(),
-      region: region.trim(),
-      price: price ? Number(price) : null,
-      rating,
-      notes: notes.trim(),
-      purchasedAt: purchasedAt.trim(),
-      taste,
-      tasteSource: tasteTouched ? 'custom' : 'typical',
-      addedAt: initial?.addedAt ?? Date.now(),
-    })
+    const wine = applyCompositeRating(
+      {
+        id: initial?.id ?? crypto.randomUUID(),
+        name: name.trim(),
+        winery: winery.trim(),
+        vintage: vintage ? Number(vintage) : null,
+        type,
+        varietal: varietal.trim(),
+        region: region.trim(),
+        price: parsedPrice,
+        ratingEnjoyment,
+        ratingValue: showValueRating && ratingValue > 0 ? ratingValue : null,
+        ratingBuyAgain: ratingBuyAgain > 0 ? ratingBuyAgain : null,
+        rating: 0,
+        notes: notes.trim(),
+        purchasedAt: purchasedAt.trim(),
+        taste,
+        tasteSource: tasteTouched ? 'custom' : 'typical',
+        addedAt: initial?.addedAt ?? Date.now(),
+      },
+      rankingPreference,
+    )
+    onSave(wine)
   }
 
   return (
@@ -229,9 +257,54 @@ export function WineForm({
           </div>
         )}
 
-        <div className="form-rating">
-          <label>Your rating</label>
-          <StarInput value={rating} onChange={setRating} />
+        <div className="form-ratings">
+          <div className="form-rating">
+            <label>Enjoyment</label>
+            <p className="form-rating-hint">How much did you like drinking this?</p>
+            <StarInput value={ratingEnjoyment} onChange={setRatingEnjoyment} />
+          </div>
+          {showValueRating && (
+            <div className="form-rating">
+              <label>Value</label>
+              <p className="form-rating-hint">Worth what you paid? (optional)</p>
+              <StarInput value={ratingValue} onChange={setRatingValue} />
+            </div>
+          )}
+          <div className="form-rating">
+            <label>Buy again?</label>
+            <p className="form-rating-hint">Optional — does not change your rank.</p>
+            <div className="buy-again-options">
+              {[
+                { label: 'Yes', value: 5 },
+                { label: 'Maybe', value: 3 },
+                { label: 'Pass', value: 1 },
+              ].map((option) => (
+                <button
+                  key={option.label}
+                  type="button"
+                  className={`buy-again-btn ${ratingBuyAgain === option.value ? 'active' : ''}`}
+                  onClick={() =>
+                    setRatingBuyAgain((current) =>
+                      current === option.value ? 0 : option.value,
+                    )
+                  }
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {ratingEnjoyment > 0 && (
+            <p className="rank-preview">
+              Your rank: <strong>{previewRank.toFixed(1)}</strong>
+              {showValueRating && ratingValue > 0 && (
+                <span className="rank-preview-detail">
+                  {' '}
+                  (enjoyment {ratingEnjoyment.toFixed(1)} · value {ratingValue.toFixed(1)})
+                </span>
+              )}
+            </p>
+          )}
         </div>
 
         <div className="form-grid">

@@ -11,6 +11,10 @@ create table public.profiles (
   is_pro boolean not null default false,
   stripe_customer_id text,
   stripe_subscription_id text,
+  ranking_preference text check (
+    ranking_preference is null
+    or ranking_preference in ('taste_first', 'balanced', 'value_first')
+  ),
   created_at timestamptz not null default now()
 );
 
@@ -25,6 +29,9 @@ create table public.wines (
   region text not null default '',
   price numeric,
   rating numeric not null,
+  rating_enjoyment numeric,
+  rating_value numeric,
+  rating_buy_again numeric,
   notes text not null default '',
   purchased_at text not null default '',
   taste jsonb not null default '{}',

@@ -30,6 +30,7 @@ export interface ProfileRow {
   is_pro?: boolean | null
   stripe_customer_id?: string | null
   stripe_subscription_id?: string | null
+  ranking_preference?: string | null
 }
 
 export interface WineRow {
@@ -43,6 +44,9 @@ export interface WineRow {
   region: string
   price: number | null
   rating: number
+  rating_enjoyment?: number | null
+  rating_value?: number | null
+  rating_buy_again?: number | null
   notes: string
   purchased_at: string
   taste: Record<string, number>

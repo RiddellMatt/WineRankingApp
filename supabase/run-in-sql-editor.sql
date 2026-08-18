@@ -173,6 +173,25 @@ create policy label_scan_usage_select on public.label_scan_usage
   using (auth.uid() = user_id);
 
 
+-- ── 3c) Multi-dimensional ratings + ranking preference ───────────────────
+
+alter table public.wines
+  add column if not exists rating_enjoyment numeric,
+  add column if not exists rating_value numeric,
+  add column if not exists rating_buy_again numeric;
+
+update public.wines
+set rating_enjoyment = coalesce(rating_enjoyment, rating)
+where rating_enjoyment is null;
+
+alter table public.profiles
+  add column if not exists ranking_preference text
+  check (
+    ranking_preference is null
+    or ranking_preference in ('taste_first', 'balanced', 'value_first')
+  );
+
+
 -- ── 4) Stripe subscription tracking ──────────────────────────────────────
 
 alter table public.profiles

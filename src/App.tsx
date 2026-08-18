@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { WINE_TYPES, type SortKey, type Wine, type WineType } from './types'
+import { WINE_TYPES, type RankingPreference, type SortKey, type Wine, type WineType } from './types'
 import { loadWines, saveWines, SAMPLE_WINES } from './storage'
 import { FREE_WINE_LIMIT } from './config'
 import { syncProSubscription } from './lib/checkoutApi'
@@ -15,10 +15,20 @@ import { Insights } from './components/Insights'
 import { MenuScan } from './components/MenuScan'
 import { FriendsPanel } from './components/FriendsPanel'
 import { AccountPanel } from './components/AccountPanel'
+import { RankingPreferenceModal } from './components/RankingPreferenceModal'
 import { Avatar } from './components/Avatar'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
-import { fetchMyProfile, type UserProfile } from './lib/profileDb'
+import { fetchMyProfile, updateRankingPreference, type UserProfile } from './lib/profileDb'
 import { isSupabaseConfigured } from './lib/supabase'
+import {
+  applyCompositeRating,
+  compareByRank,
+  compositeScore,
+  needsRankingPreferenceSetup,
+  normalizeWine,
+  resolveRankingPreference,
+  saveLocalRankingPreference,
+} from './lib/ranking'
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'rating', label: 'Rating' },
@@ -30,7 +40,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 
 type View = 'cellar' | 'sommelier' | 'insights' | 'friends' | 'account'
 
-function sortWines(list: Wine[], sortKey: SortKey): Wine[] {
+function sortWines(list: Wine[], sortKey: SortKey, rankingPreference: RankingPreference): Wine[] {
   return [...list].sort((a, b) => {
     switch (sortKey) {
       case 'name':
@@ -42,7 +52,7 @@ function sortWines(list: Wine[], sortKey: SortKey): Wine[] {
       case 'addedAt':
         return b.addedAt - a.addedAt
       default:
-        return b.rating - a.rating || a.name.localeCompare(b.name)
+        return compareByRank(a, b, rankingPreference)
     }
   })
 }
@@ -75,7 +85,11 @@ export default function App() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Wine | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [rankingSetupOpen, setRankingSetupOpen] = useState(false)
+  const [rankingSetupBusy, setRankingSetupBusy] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
+
+  const rankingPreference = resolveRankingPreference(profile?.rankingPreference)
 
   function goToAccount(highlightSubscription = false) {
     setFriendView(null)
@@ -152,6 +166,12 @@ export default function App() {
     sessionStorage.setItem(key, '1')
     goToAccount(false)
   }, [cloudUser?.email, profile?.displayName])
+
+  useEffect(() => {
+    if (needsRankingPreferenceSetup(profile?.rankingPreference, Boolean(cloudUser))) {
+      setRankingSetupOpen(true)
+    }
+  }, [profile?.rankingPreference, cloudUser])
 
   useEffect(() => {
     if (view !== 'account') setAccountHighlight(false)
@@ -240,18 +260,14 @@ export default function App() {
   }, [wines, offlineMode])
 
   const rankById = useMemo(() => {
-    const ordered = [...wines].sort(
-      (a, b) => b.rating - a.rating || a.name.localeCompare(b.name),
-    )
+    const ordered = [...wines].sort((a, b) => compareByRank(a, b, rankingPreference))
     return new Map(ordered.map((w, i) => [w.id, i + 1]))
-  }, [wines])
+  }, [wines, rankingPreference])
 
   const friendRankById = useMemo(() => {
-    const ordered = [...friendWines].sort(
-      (a, b) => b.rating - a.rating || a.name.localeCompare(b.name),
-    )
+    const ordered = [...friendWines].sort((a, b) => compareByRank(a, b, rankingPreference))
     return new Map(ordered.map((w, i) => [w.id, i + 1]))
-  }, [friendWines])
+  }, [friendWines, rankingPreference])
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -263,15 +279,16 @@ export default function App() {
         .toLowerCase()
         .includes(q)
     })
-    return sortWines(list, sortKey)
-  }, [wines, search, typeFilter, sortKey])
+    return sortWines(list, sortKey, rankingPreference)
+  }, [wines, search, typeFilter, sortKey, rankingPreference])
 
   const stats = useMemo(() => {
     if (wines.length === 0) return null
-    const avg = wines.reduce((sum, w) => sum + w.rating, 0) / wines.length
-    const best = [...wines].sort((a, b) => b.rating - a.rating)[0]
+    const avg =
+      wines.reduce((sum, w) => sum + compositeScore(w, rankingPreference), 0) / wines.length
+    const best = [...wines].sort((a, b) => compareByRank(a, b, rankingPreference))[0]
     return { count: wines.length, avg, best }
-  }, [wines])
+  }, [wines, rankingPreference])
 
   const atFreeLimit = !pro && wines.length >= FREE_WINE_LIMIT
 
@@ -284,19 +301,51 @@ export default function App() {
     setFormOpen(true)
   }
 
-  async function handleSave(wine: Wine) {
+  async function applyRankingPreference(preference: RankingPreference) {
+    saveLocalRankingPreference(preference)
+    if (cloudUser) {
+      const updatedProfile = await updateRankingPreference(preference)
+      setProfile(updatedProfile)
+    }
     setWines((prev) => {
-      const exists = prev.some((w) => w.id === wine.id)
+      const next = prev.map((w) => applyCompositeRating(w, preference))
+      if (cloudUser) {
+        bulkUpsertWines(cloudUser.id, next, preference).catch(() => {
+          // Local ranks still updated; cloud sync can retry on next save.
+        })
+      }
+      return next
+    })
+    setRankingSetupOpen(false)
+  }
+
+  async function handleRankingPreferenceChoose(preference: RankingPreference) {
+    setRankingSetupBusy(true)
+    try {
+      await applyRankingPreference(preference)
+    } catch (e) {
+      window.alert(`Could not save ranking preference: ${(e as Error).message}`)
+    } finally {
+      setRankingSetupBusy(false)
+    }
+  }
+
+  async function handleSave(wine: Wine) {
+    const normalized = applyCompositeRating(wine, rankingPreference)
+    setWines((prev) => {
+      const exists = prev.some((w) => w.id === normalized.id)
       if (!exists && !pro && prev.length >= FREE_WINE_LIMIT) return prev
-      return exists ? prev.map((w) => (w.id === wine.id ? wine : w)) : [...prev, wine]
+      return exists
+        ? prev.map((w) => (w.id === normalized.id ? normalized : w))
+        : [...prev, normalized]
     })
     setFormOpen(false)
     setEditing(null)
     if (cloudUser) {
       try {
-        const synced = await upsertWine(cloudUser.id, wine)
-        if (synced.id !== wine.id) {
-          setWines((prev) => prev.map((w) => (w.id === wine.id ? synced : w)))
+        const synced = await upsertWine(cloudUser.id, normalized, rankingPreference)
+        if (synced.id !== normalized.id) {
+          setWines((prev) => prev.map((w) => (w.id === normalized.id ? synced : w)))
         }
       } catch (e) {
         window.alert(`Saved locally but cloud sync failed: ${(e as Error).message}`)
@@ -344,13 +393,15 @@ export default function App() {
       if (!Array.isArray(imported)) throw new Error('not an array')
       const merged = [...wines]
       const byId = new Map(merged.map((w) => [w.id, w]))
-      for (const w of imported as Wine[]) {
-        if (w && typeof w.id === 'string' && typeof w.name === 'string') byId.set(w.id, w)
+      for (const w of imported as Partial<Wine>[]) {
+        if (w && typeof w.id === 'string' && typeof w.name === 'string') {
+          byId.set(w.id, normalizeWine(w))
+        }
       }
-      const next = [...byId.values()]
+      const next = [...byId.values()].map((w) => applyCompositeRating(w, rankingPreference))
       setWines(next)
       if (cloudUser) {
-        const synced = await bulkUpsertWines(cloudUser.id, next)
+        const synced = await bulkUpsertWines(cloudUser.id, next, rankingPreference)
         setWines(synced)
       }
     } catch {
@@ -474,8 +525,10 @@ export default function App() {
             cloudConfigured={configured}
             pro={pro}
             wineCount={wines.length}
+            rankingPreference={rankingPreference}
             highlightSubscription={accountHighlight}
             onProfileSaved={setProfile}
+            onRankingPreferenceSaved={applyRankingPreference}
             onProUnlocked={async () => {
               const p = await fetchMyProfile()
               setProfile(p)
@@ -505,11 +558,12 @@ export default function App() {
                 </section>
               ) : (
                 <ol className="wine-list">
-                  {sortWines(friendWines, 'rating').map((wine) => (
+                  {sortWines(friendWines, 'rating', rankingPreference).map((wine) => (
                     <WineCard
                       key={wine.id}
                       wine={wine}
                       rank={friendRankById.get(wine.id) ?? 0}
+                      rankingPreference={rankingPreference}
                       onEdit={() => {}}
                       onDelete={() => {}}
                       readOnly
@@ -524,6 +578,7 @@ export default function App() {
         ) : view === 'sommelier' ? (
           <MenuScan
             wines={wines}
+            rankingPreference={rankingPreference}
             pro={pro}
             signedIn={Boolean(cloudUser)}
             cloudConfigured={configured}
@@ -531,7 +586,7 @@ export default function App() {
           />
         ) : view === 'insights' ? (
           pro ? (
-            <Insights wines={wines} />
+            <Insights wines={wines} rankingPreference={rankingPreference} />
           ) : (
             <section className="empty locked">
               <span className="empty-icon" aria-hidden="true">
@@ -682,6 +737,7 @@ export default function App() {
                     key={wine.id}
                     wine={wine}
                     rank={rankById.get(wine.id) ?? 0}
+                    rankingPreference={rankingPreference}
                     onEdit={() => {
                       setEditing(wine)
                       setFormOpen(true)
@@ -703,10 +759,15 @@ export default function App() {
             setFormOpen(false)
             setEditing(null)
           }}
+          rankingPreference={rankingPreference}
           pro={pro}
           signedIn={Boolean(cloudUser)}
           cloudConfigured={isSupabaseConfigured}
         />
+      )}
+
+      {rankingSetupOpen && (
+        <RankingPreferenceModal onChoose={handleRankingPreferenceChoose} busy={rankingSetupBusy} />
       )}
 
       {!isSupabaseConfigured && (

@@ -1065,6 +1065,132 @@ a.icon-btn {
   letter-spacing: 0.05em;
 }
 
+.form-ratings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+}
+
+.form-ratings .form-rating {
+  margin-bottom: 0;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.form-rating-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.rank-preview {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+
+.rank-preview-detail {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.buy-again-options {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.buy-again-btn {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.buy-again-btn.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.ranking-preference-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.ranking-preference-card {
+  text-align: left;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+}
+
+.ranking-preference-card.active,
+.ranking-preference-card:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.ranking-preference-card:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.ranking-preference-title {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.ranking-preference-desc {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.ranking-onboarding {
+  max-width: 28rem;
+}
+
+.ranking-onboarding-lead {
+  margin: 0 0 1rem;
+  color: var(--text-dim);
+}
+
+.ranking-onboarding-backdrop {
+  z-index: 1200;
+}
+
+.account-ranking-list {
+  margin-top: 0.75rem;
+}
+
+.rating-breakdown {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-top: 0.15rem;
+}
+
+.buy-again-chip {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
