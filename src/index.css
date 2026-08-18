@@ -25,6 +25,7 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+  --tab-bar-height: 4.25rem;
 }
 
 * {
@@ -79,6 +80,10 @@ textarea::placeholder {
   max-width: 880px;
   margin: 0 auto;
   padding: 0 1.25rem 4rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* ── Header ─────────────────────────────────────────── */
@@ -87,6 +92,12 @@ textarea::placeholder {
   padding: 2.25rem 0 1.5rem;
   border-bottom: 1px solid var(--border);
   margin-bottom: 1.75rem;
+  order: 1;
+}
+
+.content {
+  order: 3;
+  flex: 1;
 }
 
 .header-inner {
@@ -133,9 +144,9 @@ textarea::placeholder {
 .tabs {
   display: flex;
   gap: 0.3rem;
-  margin-top: 1.4rem;
-  margin-bottom: -1.5rem;
-  transform: translateY(1px);
+  order: 2;
+  margin-top: -0.25rem;
+  margin-bottom: 1.75rem;
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
@@ -1526,6 +1537,7 @@ textarea {
 }
 
 .app-footer-note {
+  order: 4;
   text-align: center;
   padding: 1rem;
 }
@@ -1853,13 +1865,26 @@ textarea {
 /* ── Responsive ─────────────────────────────────────── */
 
 @media (max-width: 640px) {
+  body {
+    padding-bottom: 0;
+  }
+
   .app {
-    padding: 0 0.85rem calc(5.5rem + var(--safe-bottom));
+    padding: 0 max(0.85rem, var(--safe-left)) 0 max(0.85rem, var(--safe-right));
   }
 
   .header {
     padding: 1.15rem 0 0.75rem;
     margin-bottom: 1rem;
+    border-bottom: none;
+  }
+
+  .content {
+    padding-bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 1rem);
+  }
+
+  .app-footer-note {
+    padding-bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 0.5rem);
   }
 
   .header-inner {
@@ -1897,30 +1922,40 @@ textarea {
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 20;
+    z-index: 40;
+    order: 99;
     margin: 0;
-    transform: none;
     gap: 0;
-    padding: 0.35rem 0.15rem calc(0.35rem + var(--safe-bottom));
-    background: rgba(34, 16, 22, 0.97);
+    min-height: calc(var(--tab-bar-height) + var(--safe-bottom));
+    padding:
+      0.45rem max(0.35rem, var(--safe-left))
+      max(0.55rem, var(--safe-bottom))
+      max(0.35rem, var(--safe-right));
+    background: rgba(34, 16, 22, 0.98);
     backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border-top: 1px solid var(--border);
-    justify-content: space-between;
+    justify-content: space-around;
     overflow-x: auto;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
   }
 
   .tab {
     flex: 1 1 0;
-    min-width: 3.1rem;
+    min-width: 0;
+    max-width: 5.5rem;
     justify-content: center;
-    font-size: 0.68rem;
-    padding: 0.4rem 0.2rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.35rem 0.15rem;
+    min-height: 2.75rem;
     border-bottom: none;
     border-top: 2px solid transparent;
     flex-direction: column;
-    gap: 0.15rem;
-    line-height: 1.15;
+    gap: 0.2rem;
+    line-height: 1.2;
     text-align: center;
+    touch-action: manipulation;
   }
 
   .tab.active {
@@ -1929,8 +1964,8 @@ textarea {
   }
 
   .tab .pro-badge {
-    font-size: 0.48rem;
-    padding: 0.06rem 0.28rem;
+    font-size: 0.55rem;
+    padding: 0.08rem 0.32rem;
     margin-top: 0.05rem;
   }
 
@@ -2090,12 +2125,15 @@ textarea {
   }
 
   .app-footer-note {
-    padding-bottom: 0.5rem;
     font-size: 0.82rem;
   }
 }
 
 /* Capacitor native shell — same bottom nav even on wider tablets in portrait */
+html.native-app body {
+  padding-bottom: 0;
+}
+
 html.native-app .app {
   padding-left: max(0.85rem, var(--safe-left));
   padding-right: max(0.85rem, var(--safe-right));
