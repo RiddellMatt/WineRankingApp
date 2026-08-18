@@ -1,16 +1,15 @@
 import { requireUser } from '../_shared/auth.ts'
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts'
+import {
+  mobilePortalReturnUrl,
+  readRequestPlatform,
+  webPortalReturnUrl,
+} from '../_shared/mobileUrls.ts'
 
 function stripeSecret(): string {
   const key = Deno.env.get('STRIPE_SECRET_KEY')
   if (!key) throw new Error('Stripe is not configured.')
   return key
-}
-
-function portalReturnUrl(): string {
-  const appUrl = Deno.env.get('APP_URL') ?? 'https://riddellmatt.github.io/WineRankingApp/'
-  const base = appUrl.endsWith('/') ? appUrl : `${appUrl}/`
-  return Deno.env.get('STRIPE_PORTAL_RETURN_URL') ?? `${base}?view=account`
 }
 
 Deno.serve(async (req) => {
@@ -19,6 +18,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const platform = await readRequestPlatform(req)
     const auth = await requireUser(req)
     if (auth instanceof Response) return auth
     const { user, admin } = auth
@@ -36,9 +36,12 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'No billing account found for this user.' }, 400)
     }
 
+    const returnUrl =
+      platform === 'mobile' ? mobilePortalReturnUrl() : webPortalReturnUrl()
+
     const params = new URLSearchParams({
       customer: profile.stripe_customer_id,
-      return_url: portalReturnUrl(),
+      return_url: returnUrl,
     })
 
     const stripeRes = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {

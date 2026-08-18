@@ -21,6 +21,10 @@
   --radius: 14px;
   --font-display: 'Playfair Display', Georgia, serif;
   --font-body: 'Inter', system-ui, sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 * {
@@ -29,6 +33,11 @@
 
 body {
   margin: 0;
+  padding:
+    var(--safe-top)
+    var(--safe-right)
+    var(--safe-bottom)
+    var(--safe-left);
   background: radial-gradient(1200px 600px at 70% -10%, #3a1220 0%, var(--bg) 55%);
   color: var(--text);
   font-family: var(--font-body);
@@ -127,6 +136,16 @@ textarea::placeholder {
   margin-top: 1.4rem;
   margin-bottom: -1.5rem;
   transform: translateY(1px);
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex-wrap: nowrap;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
@@ -140,7 +159,13 @@ textarea::placeholder {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  flex-shrink: 0;
+  white-space: nowrap;
   transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-text-short {
+  display: none;
 }
 
 .tab:hover {
@@ -1702,10 +1727,95 @@ textarea {
 /* ── Responsive ─────────────────────────────────────── */
 
 @media (max-width: 640px) {
+  .app {
+    padding: 0 0.85rem calc(5.5rem + var(--safe-bottom));
+  }
+
+  .header {
+    padding: 1.15rem 0 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .header-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .brand h1 {
+    font-size: 1.45rem;
+  }
+
+  .brand-icon {
+    font-size: 2rem;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tab-text-long {
+    display: none;
+  }
+
+  .tab-text-short {
+    display: inline;
+  }
+
+  .tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    margin: 0;
+    transform: none;
+    gap: 0;
+    padding: 0.35rem 0.15rem calc(0.35rem + var(--safe-bottom));
+    background: rgba(34, 16, 22, 0.97);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border);
+    justify-content: space-between;
+    overflow-x: auto;
+  }
+
+  .tab {
+    flex: 1 1 0;
+    min-width: 3.1rem;
+    justify-content: center;
+    font-size: 0.68rem;
+    padding: 0.4rem 0.2rem;
+    border-bottom: none;
+    border-top: 2px solid transparent;
+    flex-direction: column;
+    gap: 0.15rem;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .tab.active {
+    border-bottom-color: transparent;
+    border-top-color: var(--accent);
+  }
+
+  .tab .pro-badge {
+    font-size: 0.48rem;
+    padding: 0.06rem 0.28rem;
+    margin-top: 0.05rem;
+  }
+
   .stats,
   .insights .stats,
   .insight-grid {
     grid-template-columns: 1fr;
+  }
+
+  .insights .stats {
+    grid-template-columns: 1fr 1fr;
   }
 
   .wine-card {
@@ -1723,6 +1833,10 @@ textarea {
     margin-top: 0;
   }
 
+  .wine-meta {
+    font-size: 0.82rem;
+  }
+
   .form-grid {
     grid-template-columns: 1fr;
   }
@@ -1730,4 +1844,133 @@ textarea {
   .field.span-2 {
     grid-column: span 1;
   }
+
+  .toolbar-bottom {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sort-control {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .sort-control select {
+    flex: 1;
+    max-width: 12rem;
+  }
+
+  .limit-banner {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .limit-banner .btn {
+    width: 100%;
+  }
+
+  .menu-result {
+    align-items: flex-start;
+  }
+
+  .menu-score {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 0.95rem;
+  }
+
+  .bar-row {
+    grid-template-columns: 4.5rem 1fr auto;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+  }
+
+  .modal-backdrop {
+    padding:
+      max(1rem, var(--safe-top))
+      max(0.75rem, var(--safe-right))
+      max(1rem, var(--safe-bottom))
+      max(0.75rem, var(--safe-left));
+    align-items: stretch;
+  }
+
+  .modal {
+    margin: auto 0;
+    padding: 1.25rem 1.1rem;
+    max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 2rem);
+    overflow-y: auto;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .modal-actions .btn {
+    width: 100%;
+  }
+
+  .code-row {
+    flex-direction: column;
+  }
+
+  .friends-add-row {
+    flex-direction: column;
+  }
+
+  .friends-add-row input,
+  .friends-add-row .btn {
+    width: 100%;
+  }
+
+  .friends-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .friends-row-actions {
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .friends-row-actions .btn {
+    flex: 1;
+  }
+
+  .account-panel {
+    max-width: none;
+  }
+
+  .account-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .account-hero-actions {
+    width: 100%;
+  }
+
+  .account-hero-actions .btn {
+    flex: 1;
+  }
+
+  .account-signout-btn {
+    width: 100%;
+  }
+
+  .auth-card {
+    padding: 1.6rem 1.15rem;
+  }
+
+  .app-footer-note {
+    padding-bottom: 0.5rem;
+    font-size: 0.82rem;
+  }
+}
+
+/* Capacitor native shell — same bottom nav even on wider tablets in portrait */
+html.native-app .app {
+  padding-left: max(0.85rem, var(--safe-left));
+  padding-right: max(0.85rem, var(--safe-right));
 }

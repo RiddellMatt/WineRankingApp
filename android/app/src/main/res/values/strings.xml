@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Cellar Rank</string>
+    <string name="title_activity_main">Cellar Rank</string>
+    <string name="package_name">com.northline.cellarrank</string>
+    <string name="custom_url_scheme">com.northline.cellarrank</string>
+</resources>

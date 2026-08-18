@@ -23,3 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 *.traineddata
+
+# Capacitor / native tooling
+ios/App/Pods/
+ios/DerivedData/
+android/.gradle/
+android/app/build/
+android/build/
+*.keystore
+!debug.keystore

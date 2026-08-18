@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FREE_WINE_LIMIT, PRO_CONFIG } from '../config'
 import { activatePro } from '../pro'
 import { createBillingPortal, createProCheckout } from '../lib/checkoutApi'
+import { openExternalUrl } from '../lib/openUrl'
 import { redeemProOnServer } from '../lib/proApi'
 import { Avatar } from './Avatar'
 import { removeAvatar, updateDisplayName, uploadAvatar, type UserProfile } from '../lib/profileDb'
@@ -115,7 +116,7 @@ export function AccountPanel({
     setCheckoutBusy(true)
     try {
       const url = await createProCheckout()
-      window.location.href = url
+      await openExternalUrl(url)
     } catch (err) {
       setCodeError(String((err as Error).message ?? err))
     } finally {
@@ -128,7 +129,7 @@ export function AccountPanel({
     setBillingBusy(true)
     try {
       const url = await createBillingPortal()
-      window.location.href = url
+      await openExternalUrl(url)
     } catch (err) {
       setCodeError(String((err as Error).message ?? err))
     } finally {
