@@ -2,10 +2,11 @@ import { useRef, useState } from 'react'
 import { MENU_SCAN_CONFIG } from '../config'
 import { matchMenu, matchParsedMenuWines, type MenuMatch } from '../menuMatch'
 import { MenuScanError, scanMenuWithAi } from '../lib/menuScanApi'
-import type { Wine } from '../types'
+import type { RankingPreference, Wine } from '../types'
 
 interface Props {
   wines: Wine[]
+  rankingPreference: RankingPreference
   pro: boolean
   signedIn: boolean
   cloudConfigured: boolean
@@ -24,7 +25,14 @@ function scoreClass(score: number): string {
   return ''
 }
 
-export function MenuScan({ wines, pro, signedIn, cloudConfigured, onUpgrade }: Props) {
+export function MenuScan({
+  wines,
+  rankingPreference,
+  pro,
+  signedIn,
+  cloudConfigured,
+  onUpgrade,
+}: Props) {
   const [state, setState] = useState<State>({ phase: 'idle' })
   const inputRef = useRef<HTMLInputElement>(null)
   const ratedCount = wines.length
@@ -34,7 +42,7 @@ export function MenuScan({ wines, pro, signedIn, cloudConfigured, onUpgrade }: P
     setState({ phase: 'scanning', pct: 0, mode: 'basic' })
     const { ocrImage } = await import('../scanner')
     const text = await ocrImage(file, (pct) => setState({ phase: 'scanning', pct, mode: 'basic' }))
-    const matches = matchMenu(text, wines)
+    const matches = matchMenu(text, wines, rankingPreference)
     if (matches.length === 0) {
       setState({
         phase: 'failed',
@@ -51,7 +59,7 @@ export function MenuScan({ wines, pro, signedIn, cloudConfigured, onUpgrade }: P
     try {
       const { wines: parsed, remaining } = await scanMenuWithAi(file)
       setState({ phase: 'scanning', pct: 85, mode: 'ai' })
-      const matches = matchParsedMenuWines(parsed, wines)
+      const matches = matchParsedMenuWines(parsed, wines, rankingPreference)
       if (matches.length === 0) {
         setState({
           phase: 'failed',

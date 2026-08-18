@@ -1,4 +1,5 @@
 import type { Wine } from './types'
+import { normalizeWine } from './lib/ranking'
 
 const STORAGE_KEY = 'wine-rank.wines.v1'
 
@@ -8,8 +9,7 @@ export function loadWines(): Wine[] {
     if (!raw) return []
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    // Backfill fields added after v1 so older saved wines keep working.
-    return parsed.map((w: Partial<Wine>) => ({ purchasedAt: '', taste: {}, ...w }) as Wine)
+    return parsed.map((w: Partial<Wine>) => normalizeWine({ purchasedAt: '', taste: {}, ...w }))
   } catch {
     return []
   }
@@ -29,6 +29,7 @@ export const SAMPLE_WINES: Wine[] = [
     varietal: 'Cabernet Sauvignon',
     region: 'Bordeaux, France',
     price: 85,
+    ratingEnjoyment: 4.5,
     rating: 4.5,
     notes: 'Blackcurrant and cedar with silky tannins. Long, elegant finish.',
     purchasedAt: 'Total Wine, Denver',
@@ -44,6 +45,7 @@ export const SAMPLE_WINES: Wine[] = [
     varietal: 'Sauvignon Blanc',
     region: 'Marlborough, New Zealand',
     price: 32,
+    ratingEnjoyment: 4,
     rating: 4,
     notes: 'Zesty grapefruit and passionfruit. Crisp, refreshing acidity.',
     purchasedAt: 'Whole Foods',
@@ -59,6 +61,7 @@ export const SAMPLE_WINES: Wine[] = [
     varietal: 'Grenache blend',
     region: 'Provence, France',
     price: 24,
+    ratingEnjoyment: 3.5,
     rating: 3.5,
     notes: 'Pale salmon color. Strawberry and white peach, bone dry.',
     purchasedAt: 'Trader Joe\u2019s',
@@ -74,6 +77,7 @@ export const SAMPLE_WINES: Wine[] = [
     varietal: 'Champagne blend',
     region: 'Champagne, France',
     price: 60,
+    ratingEnjoyment: 4.5,
     rating: 4.5,
     notes: 'Brioche and green apple. Fine, persistent bubbles.',
     purchasedAt: 'Costco',
@@ -89,6 +93,7 @@ export const SAMPLE_WINES: Wine[] = [
     varietal: 'Nebbiolo',
     region: 'Piedmont, Italy',
     price: 55,
+    ratingEnjoyment: 5,
     rating: 5,
     notes: 'Rose petal, tar, and dried cherry. Structured and unforgettable.',
     purchasedAt: 'Enoteca Rossi, Rome',
@@ -104,6 +109,7 @@ export const SAMPLE_WINES: Wine[] = [
     varietal: 'Furmint',
     region: 'Tokaj, Hungary',
     price: 45,
+    ratingEnjoyment: 4,
     rating: 4,
     notes: 'Apricot, honey, and saffron. Sweetness balanced by bright acid.',
     purchasedAt: 'Wine.com',

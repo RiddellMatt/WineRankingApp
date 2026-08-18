@@ -4,8 +4,10 @@ import { activatePro } from '../pro'
 import { createBillingPortal, createProCheckout } from '../lib/checkoutApi'
 import { openExternalUrl } from '../lib/openUrl'
 import { redeemProOnServer } from '../lib/proApi'
+import { RANKING_PREFERENCE_OPTIONS } from '../lib/ranking'
+import { updateDisplayName, uploadAvatar, removeAvatar, type UserProfile } from '../lib/profileDb'
+import type { RankingPreference } from '../types'
 import { Avatar } from './Avatar'
-import { removeAvatar, updateDisplayName, uploadAvatar, type UserProfile } from '../lib/profileDb'
 
 const PRO_FEATURES = [
   'Unlimited wines',
@@ -22,8 +24,10 @@ interface Props {
   cloudConfigured: boolean
   pro: boolean
   wineCount: number
+  rankingPreference: RankingPreference
   highlightSubscription?: boolean
   onProfileSaved: (profile: UserProfile) => void
+  onRankingPreferenceSaved: (preference: RankingPreference) => Promise<void>
   onProUnlocked: () => void
   onSignOut: () => void
   onSignIn: () => void
@@ -37,8 +41,10 @@ export function AccountPanel({
   cloudConfigured,
   pro,
   wineCount,
+  rankingPreference,
   highlightSubscription = false,
   onProfileSaved,
+  onRankingPreferenceSaved,
   onProUnlocked,
   onSignOut,
   onSignIn,
@@ -56,6 +62,7 @@ export function AccountPanel({
   const [showCode, setShowCode] = useState(false)
   const [checkoutBusy, setCheckoutBusy] = useState(false)
   const [billingBusy, setBillingBusy] = useState(false)
+  const [rankingBusy, setRankingBusy] = useState(false)
 
   const resolvedEmail = profile?.email || email || ''
   const resolvedName =
@@ -104,6 +111,21 @@ export function AccountPanel({
       setProfileInfo('Pro unlocked on your account.')
     } catch (err) {
       setCodeError(String((err as Error).message ?? err))
+    }
+  }
+
+  async function handleRankingPreferenceChange(preference: RankingPreference) {
+    if (preference === rankingPreference) return
+    setProfileError('')
+    setProfileInfo('')
+    setRankingBusy(true)
+    try {
+      await onRankingPreferenceSaved(preference)
+      setProfileInfo('Ranking style saved.')
+    } catch (err) {
+      setProfileError(String((err as Error).message ?? err))
+    } finally {
+      setRankingBusy(false)
     }
   }
 
@@ -252,6 +274,27 @@ export function AccountPanel({
           <p className="account-hint">Used for sign-in and finding friends.</p>
         </section>
       )}
+
+      <section className="account-section">
+        <h3>Ranking style</h3>
+        <p className="account-hint">
+          When comparing wines in your cellar, what should matter more — taste or value?
+        </p>
+        <div className="ranking-preference-list account-ranking-list">
+          {RANKING_PREFERENCE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={`ranking-preference-card ${rankingPreference === option.value ? 'active' : ''}`}
+              disabled={rankingBusy}
+              onClick={() => handleRankingPreferenceChange(option.value)}
+            >
+              <span className="ranking-preference-title">{option.title}</span>
+              <span className="ranking-preference-desc">{option.description}</span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       {!signedIn && cloudConfigured && offlineMode && (
         <section className="account-section account-cloud-cta">

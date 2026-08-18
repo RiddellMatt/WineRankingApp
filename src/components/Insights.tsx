@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
-import type { Wine } from '../types'
+import { compositeScore, wineEnjoyment, wineValueScore } from '../lib/ranking'
+import type { RankingPreference, Wine } from '../types'
 
 interface Props {
   wines: Wine[]
+  rankingPreference: RankingPreference
 }
 
 interface BarDatum {
@@ -36,7 +38,11 @@ function BarChart({ data, max }: { data: BarDatum[]; max: number }) {
   )
 }
 
-function groupBy(wines: Wine[], key: (w: Wine) => string): BarDatum[] {
+function groupBy(
+  wines: Wine[],
+  key: (w: Wine) => string,
+  rankingPreference: RankingPreference,
+): BarDatum[] {
   const groups = new Map<string, Wine[]>()
   for (const w of wines) {
     const k = key(w).trim()
@@ -48,26 +54,32 @@ function groupBy(wines: Wine[], key: (w: Wine) => string): BarDatum[] {
       label,
       value: ws.length,
       display: `${ws.length}`,
-      sub: `· avg ${(ws.reduce((s, w) => s + w.rating, 0) / ws.length).toFixed(1)}★`,
+      sub: `· avg ${(
+        ws.reduce((s, w) => s + compositeScore(w, rankingPreference), 0) / ws.length
+      ).toFixed(1)}★`,
     }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 6)
 }
 
-export function Insights({ wines }: Props) {
+export function Insights({ wines, rankingPreference }: Props) {
   const insights = useMemo(() => {
     const priced = wines.filter((w) => w.price != null && w.price > 0)
     const totalSpend = priced.reduce((s, w) => s + (w.price ?? 0), 0)
     const avgPrice = priced.length ? totalSpend / priced.length : 0
 
-    const bestValue = [...priced].sort(
-      (a, b) => b.rating / (b.price ?? 1) - a.rating / (a.price ?? 1),
-    )[0]
+    const bestValue = [...priced].sort((a, b) => {
+      const aValue = wineValueScore(a) ?? wineEnjoyment(a)
+      const bValue = wineValueScore(b) ?? wineEnjoyment(b)
+      return bValue / (b.price ?? 1) - aValue / (a.price ?? 1)
+    })[0]
     const splurge = [...priced].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))[0]
 
     const histogram: BarDatum[] = []
     for (let r = 5; r >= 0.5; r -= 0.5) {
-      const count = wines.filter((w) => w.rating === r).length
+      const count = wines.filter(
+        (w) => compositeScore(w, rankingPreference) === r,
+      ).length
       if (count > 0 || r >= 3) {
         histogram.push({ label: `${r.toFixed(1)}★`, value: count, display: `${count}` })
       }
@@ -80,11 +92,11 @@ export function Insights({ wines }: Props) {
       bestValue,
       splurge,
       histogram,
-      byType: groupBy(wines, (w) => w.type),
-      byRegion: groupBy(wines, (w) => w.region),
-      byVarietal: groupBy(wines, (w) => w.varietal),
+      byType: groupBy(wines, (w) => w.type, rankingPreference),
+      byRegion: groupBy(wines, (w) => w.region, rankingPreference),
+      byVarietal: groupBy(wines, (w) => w.varietal, rankingPreference),
     }
-  }, [wines])
+  }, [wines, rankingPreference])
 
   if (wines.length === 0) {
     return (
@@ -115,7 +127,7 @@ export function Insights({ wines }: Props) {
           <span className="stat-label">
             best value{' '}
             {insights.bestValue &&
-              `(${insights.bestValue.rating.toFixed(1)}★ at $${insights.bestValue.price?.toFixed(0)})`}
+              `(${compositeScore(insights.bestValue, rankingPreference).toFixed(1)}★ at $${insights.bestValue.price?.toFixed(0)})`}
           </span>
         </div>
         <div className="stat">
@@ -125,7 +137,7 @@ export function Insights({ wines }: Props) {
           <span className="stat-label">
             biggest splurge{' '}
             {insights.splurge &&
-              `($${insights.splurge.price?.toFixed(0)} · ${insights.splurge.rating.toFixed(1)}★)`}
+              `($${insights.splurge.price?.toFixed(0)} · ${compositeScore(insights.splurge, rankingPreference).toFixed(1)}★)`}
           </span>
         </div>
       </section>

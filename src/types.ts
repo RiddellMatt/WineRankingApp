@@ -10,6 +10,8 @@ export const WINE_TYPES = [
 
 export type WineType = (typeof WINE_TYPES)[number]
 
+export type RankingPreference = 'taste_first' | 'balanced' | 'value_first'
+
 /**
  * Taste characteristic values are 0–100 along the axis (0 = left label,
  * 100 = right label). Missing key = not rated for that axis.
@@ -44,7 +46,14 @@ export interface Wine {
   varietal: string
   region: string
   price: number | null
-  rating: number // 0.5 – 5 in half-star steps
+  /** How much you liked drinking it (0.5–5). */
+  ratingEnjoyment: number
+  /** Worth the price — optional; used in composite rank when set. */
+  ratingValue?: number | null
+  /** Would buy again — optional; shown on cards, not in composite rank. */
+  ratingBuyAgain?: number | null
+  /** Composite score cached at save time; use compositeScore() for display with current preference. */
+  rating: number
   notes: string
   purchasedAt: string
   taste: TasteProfile

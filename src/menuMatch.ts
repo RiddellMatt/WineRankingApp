@@ -1,6 +1,7 @@
-import type { Wine } from './types'
+import type { RankingPreference, Wine } from './types'
 import { REGIONS, VARIETALS } from './scanner'
 import { containsPhrase, findPhrase, findRegion } from './textMatch'
+import { compositeScore, wineEnjoyment } from './lib/ranking'
 
 export interface ParsedMenuWine {
   vintage: string
@@ -198,12 +199,16 @@ interface Preference {
   count: number
 }
 
-function preferencesBy(wines: Wine[], key: (w: Wine) => string): Map<string, Preference> {
+function preferencesBy(
+  wines: Wine[],
+  key: (w: Wine) => string,
+  rankingPreference: RankingPreference,
+): Map<string, Preference> {
   const groups = new Map<string, number[]>()
   for (const w of wines) {
     const k = key(w).toLowerCase().trim()
     if (!k) continue
-    groups.set(k, [...(groups.get(k) ?? []), w.rating])
+    groups.set(k, [...(groups.get(k) ?? []), compositeScore(w, rankingPreference)])
   }
   return new Map(
     [...groups.entries()].map(([k, ratings]) => [
@@ -216,25 +221,27 @@ function preferencesBy(wines: Wine[], key: (w: Wine) => string): Map<string, Pre
 export function matchParsedMenuWines(
   parsed: ParsedMenuWine[],
   cellar: Wine[],
+  rankingPreference: RankingPreference = 'balanced',
 ): MenuMatch[] {
   const varietalPrefs = new Map<string, Preference>()
   for (const w of cellar) {
     const v = w.varietal.toLowerCase().trim()
     if (!v) continue
+    const score = compositeScore(w, rankingPreference)
     for (const [keyword] of VARIETALS) {
       if (containsPhrase(v, keyword) || containsPhrase(keyword, v)) {
         const cur = varietalPrefs.get(keyword)
         varietalPrefs.set(keyword, {
-          avg: cur ? (cur.avg * cur.count + w.rating) / (cur.count + 1) : w.rating,
+          avg: cur ? (cur.avg * cur.count + score) / (cur.count + 1) : score,
           count: (cur?.count ?? 0) + 1,
         })
       }
     }
   }
-  const typePrefs = preferencesBy(cellar, (w) => w.type)
+  const typePrefs = preferencesBy(cellar, (w) => w.type, rankingPreference)
   const lovedRegions = new Map<string, Wine>()
   for (const w of cellar) {
-    if (w.rating >= 4 && w.region.trim()) {
+    if (wineEnjoyment(w) >= 4 && w.region.trim()) {
       for (const region of REGIONS) {
         if (containsPhrase(w.region, region)) lovedRegions.set(region, w)
       }
@@ -265,8 +272,9 @@ export function matchParsedMenuWines(
     const reasons: string[] = []
 
     if (cellarWine) {
-      score = cellarWine.rating * 20
-      reasons.push(`In your cellar — you rated it ${cellarWine.rating.toFixed(1)}★`)
+      const cellarScore = compositeScore(cellarWine, rankingPreference)
+      score = cellarScore * 20
+      reasons.push(`In your cellar — you rated it ${cellarScore.toFixed(1)}★`)
     } else {
       const pref = varietalHit ? varietalPrefs.get(varietalHit[0]) : undefined
       const typePref = varietalHit ? typePrefs.get(varietalHit[1].toLowerCase()) : undefined
@@ -311,7 +319,11 @@ export function matchParsedMenuWines(
   return matches.sort((a, b) => b.score - a.score)
 }
 
-export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
+export function matchMenu(
+  menuText: string,
+  cellar: Wine[],
+  rankingPreference: RankingPreference = 'balanced',
+): MenuMatch[] {
   const parsedRaw = parseMenuWines(menuText)
   const parsed: ParsedMenuWine[] = parsedRaw.map((w) => ({
     vintage: w.vintage,
@@ -319,5 +331,5 @@ export function matchMenu(menuText: string, cellar: Wine[]): MenuMatch[] {
     price: w.price,
     description: w.description.join(' ') || undefined,
   }))
-  return matchParsedMenuWines(parsed, cellar)
+  return matchParsedMenuWines(parsed, cellar, rankingPreference)
 }

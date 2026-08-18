@@ -1,14 +1,18 @@
+import type { RankingPreference } from '../types'
 import { getSupabase, type ProfileRow } from './supabase'
 import {
   isMissingAvatarColumn,
   isMissingProColumn,
+  isMissingRankingPreferenceColumn,
   isMissingStripeColumn,
   PROFILE_COLUMNS_BASE,
   PROFILE_COLUMNS_FULL,
   PROFILE_COLUMNS_NO_AVATAR,
   PROFILE_COLUMNS_NO_PRO,
+  PROFILE_COLUMNS_NO_RANKING,
   PROFILE_COLUMNS_NO_STRIPE,
 } from './profileColumns'
+import { saveLocalRankingPreference } from './ranking'
 
 export const AVATAR_BUCKET = 'avatars'
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024
@@ -23,6 +27,12 @@ export interface UserProfile {
   avatarUrl?: string
   isPro?: boolean
   hasBilling?: boolean
+  rankingPreference?: RankingPreference | null
+}
+
+function parseRankingPreference(raw: string | null | undefined): RankingPreference | null {
+  if (raw === 'taste_first' || raw === 'balanced' || raw === 'value_first') return raw
+  return null
 }
 
 export function mapProfileRow(row: ProfileRow): UserProfile {
@@ -33,6 +43,7 @@ export function mapProfileRow(row: ProfileRow): UserProfile {
     avatarUrl: row.avatar_url ?? undefined,
     isPro: row.is_pro ?? undefined,
     hasBilling: Boolean(row.stripe_customer_id),
+    rankingPreference: parseRankingPreference(row.ranking_preference),
   }
 }
 
@@ -43,6 +54,7 @@ async function selectMyProfileRow() {
 
   const attempts = [
     PROFILE_COLUMNS_FULL,
+    PROFILE_COLUMNS_NO_RANKING,
     PROFILE_COLUMNS_NO_STRIPE,
     PROFILE_COLUMNS_NO_PRO,
     PROFILE_COLUMNS_NO_AVATAR,
@@ -57,7 +69,8 @@ async function selectMyProfileRow() {
     if (
       !isMissingAvatarColumn(result.error) &&
       !isMissingProColumn(result.error) &&
-      !isMissingStripeColumn(result.error)
+      !isMissingStripeColumn(result.error) &&
+      !isMissingRankingPreferenceColumn(result.error)
     ) {
       return { row: null, error: result.error }
     }
@@ -102,6 +115,33 @@ export async function updateDisplayName(displayName: string): Promise<UserProfil
       .eq('id', user.id)
       .select(PROFILE_COLUMNS_BASE)
       .single()
+  }
+
+  if (result.error) throw result.error
+  return mapProfileRow(result.data as ProfileRow)
+}
+
+export async function updateRankingPreference(
+  preference: RankingPreference,
+): Promise<UserProfile> {
+  const { data: { user } } = await getSupabase().auth.getUser()
+  if (!user) throw new Error('Not signed in')
+
+  saveLocalRankingPreference(preference)
+
+  const supabase = getSupabase()
+  let result = await supabase
+    .from('profiles')
+    .update({ ranking_preference: preference })
+    .eq('id', user.id)
+    .select(PROFILE_COLUMNS_FULL)
+    .single()
+
+  if (isMissingRankingPreferenceColumn(result.error)) {
+    return fetchMyProfile().then((p) => {
+      if (!p) throw new Error('Could not load profile.')
+      return { ...p, rankingPreference: preference }
+    })
   }
 
   if (result.error) throw result.error

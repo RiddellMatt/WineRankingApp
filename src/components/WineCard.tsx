@@ -1,5 +1,6 @@
-import type { Wine } from '../types'
+import type { RankingPreference, Wine } from '../types'
 import { shopUrl } from '../config'
+import { buyAgainLabel, compositeScore } from '../lib/ranking'
 import { getPairings } from '../pairings'
 import { hasTaste, lookupTaste } from '../tasteData'
 import { StarDisplay } from './StarRating'
@@ -8,6 +9,7 @@ import { TasteDisplay } from './TasteProfile'
 interface Props {
   wine: Wine
   rank: number
+  rankingPreference: RankingPreference
   onEdit: () => void
   onDelete: () => void
   readOnly?: boolean
@@ -23,9 +25,18 @@ const TYPE_CLASS: Record<string, string> = {
   Fortified: 'type-fortified',
 }
 
-export function WineCard({ wine, rank, onEdit, onDelete, readOnly = false }: Props) {
+export function WineCard({
+  wine,
+  rank,
+  rankingPreference,
+  onEdit,
+  onDelete,
+  readOnly = false,
+}: Props) {
   const medal = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : ''
   const meta = [wine.varietal, wine.region].filter(Boolean).join(' · ')
+  const score = compositeScore(wine, rankingPreference)
+  const buyAgain = buyAgainLabel(wine.ratingBuyAgain)
 
   // Show the wine's own profile when it has one; otherwise fall back to the
   // reference profile for its varietal/type so stats are always available.
@@ -82,8 +93,14 @@ export function WineCard({ wine, rank, onEdit, onDelete, readOnly = false }: Pro
 
       <div className="wine-side" onClick={readOnly ? undefined : (e) => e.stopPropagation()}>
         <div className="wine-rating">
-          <StarDisplay value={wine.rating} />
-          <span className="rating-number">{wine.rating.toFixed(1)}</span>
+          <StarDisplay value={score} />
+          <span className="rating-number">{score.toFixed(1)}</span>
+          {(wine.ratingValue ?? 0) > 0 && (
+            <span className="rating-breakdown">
+              T {wine.ratingEnjoyment.toFixed(1)} · V {wine.ratingValue!.toFixed(1)}
+            </span>
+          )}
+          {buyAgain && <span className="buy-again-chip">{buyAgain}</span>}
         </div>
         {wine.price != null && <span className="wine-price">${wine.price.toFixed(0)}</span>}
         {!readOnly && (
