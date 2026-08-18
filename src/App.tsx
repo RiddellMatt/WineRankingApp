@@ -85,6 +85,7 @@ export default function App() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Wine | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [profileLoaded, setProfileLoaded] = useState(false)
   const [rankingSetupOpen, setRankingSetupOpen] = useState(false)
   const [rankingSetupBusy, setRankingSetupBusy] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
@@ -138,8 +139,10 @@ export default function App() {
   useEffect(() => {
     if (!cloudUser) {
       setProfile(null)
+      setProfileLoaded(true)
       return
     }
+    setProfileLoaded(false)
     let cancelled = false
     fetchMyProfile()
       .then((p) => {
@@ -150,6 +153,9 @@ export default function App() {
       })
       .catch(() => {
         if (!cancelled) setProfile(null)
+      })
+      .finally(() => {
+        if (!cancelled) setProfileLoaded(true)
       })
     return () => {
       cancelled = true
@@ -168,10 +174,12 @@ export default function App() {
   }, [cloudUser?.email, profile?.displayName])
 
   useEffect(() => {
-    if (needsRankingPreferenceSetup(profile?.rankingPreference, Boolean(cloudUser))) {
-      setRankingSetupOpen(true)
-    }
-  }, [profile?.rankingPreference, cloudUser])
+    setRankingSetupOpen(
+      needsRankingPreferenceSetup(profile?.rankingPreference, {
+        profilePending: Boolean(cloudUser) && !profileLoaded,
+      }),
+    )
+  }, [profile?.rankingPreference, cloudUser, profileLoaded])
 
   useEffect(() => {
     if (view !== 'account') setAccountHighlight(false)

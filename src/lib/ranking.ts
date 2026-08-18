@@ -23,6 +23,7 @@ export const RANKING_PREFERENCE_OPTIONS: {
 ]
 
 const LOCAL_PREF_KEY = 'cellar-rank.ranking-preference'
+const SETUP_DONE_KEY = 'cellar-rank.ranking-preference-setup-done'
 
 export function getScoreWeights(pref: RankingPreference): { enjoyment: number; value: number } {
   switch (pref) {
@@ -77,6 +78,12 @@ export function loadLocalRankingPreference(): RankingPreference | null {
 
 export function saveLocalRankingPreference(pref: RankingPreference): void {
   localStorage.setItem(LOCAL_PREF_KEY, pref)
+  localStorage.setItem(SETUP_DONE_KEY, '1')
+}
+
+export function hasCompletedRankingPreferenceSetup(): boolean {
+  if (localStorage.getItem(SETUP_DONE_KEY) === '1') return true
+  return loadLocalRankingPreference() != null
 }
 
 export function resolveRankingPreference(
@@ -87,11 +94,12 @@ export function resolveRankingPreference(
 
 export function needsRankingPreferenceSetup(
   profilePref: RankingPreference | null | undefined,
-  signedIn: boolean,
+  options?: { profilePending?: boolean },
 ): boolean {
+  if (options?.profilePending) return false
   if (profilePref) return false
-  if (signedIn) return true
-  return loadLocalRankingPreference() == null
+  if (hasCompletedRankingPreferenceSetup()) return false
+  return true
 }
 
 /** Backfill legacy exports and old saves that only had `rating`. */
