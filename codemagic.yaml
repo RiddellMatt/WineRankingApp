@@ -1,0 +1,102 @@
+# Cellar Rank — cloud iOS builds (no Mac required).
+# Setup: mobile/CODEMAGIC_SETUP.md
+
+workflows:
+  ios-testflight:
+    name: iOS TestFlight
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    integrations:
+      # Must match Team integrations → Developer Portal → key name in Codemagic UI.
+      app_store_connect: cellar_rank_asc
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.northline.cellarrank
+      groups:
+        # Create in Codemagic: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+        - cellar_rank_env
+      vars:
+        XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+        # App Store Connect → your app → General → App Information → Apple ID
+        APP_STORE_APPLE_ID: 0000000000
+      node: v20
+      xcode: latest
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Install npm dependencies
+        script: npm ci
+      - name: Build mobile web bundle and sync Capacitor iOS
+        script: npm run cap:sync
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Increment build number
+        script: |
+          cd ios/App
+          LATEST=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          agvtool new-version -all $(($LATEST + 1))
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Internal Testers
+
+  android-play-internal:
+    name: Android Play internal track
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      android_signing:
+        - cellar_rank_keystore
+      groups:
+        - cellar_rank_env
+        - google_play
+      vars:
+        PACKAGE_NAME: com.northline.cellarrank
+      node: v20
+      java: 21
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Install npm dependencies
+        script: npm ci
+      - name: Build mobile web bundle and sync Capacitor Android
+        script: npm run cap:sync
+      - name: Build Android App Bundle
+        script: |
+          LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || echo "")
+          if [ -z "$LATEST" ]; then
+            UPDATED_BUILD_NUMBER=$BUILD_NUMBER
+          else
+            UPDATED_BUILD_NUMBER=$(($LATEST + 1))
+          fi
+          cd android
+          ./gradlew bundleRelease \
+            -PversionCode=$UPDATED_BUILD_NUMBER \
+            -PversionName=1.0.$UPDATED_BUILD_NUMBER
+    artifacts:
+      - android/app/build/outputs/**/*.aab
+    publishing:
+      google_play:
+        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        submit_as_draft: true

@@ -63,7 +63,7 @@ Optional: **Share → Add to Home Screen** for an app-like icon.
 
 ## 5. Native iOS app (separate path)
 
-The App Store / TestFlight build uses `com.northline.cellarrank://login-callback`, not the GitHub Pages URL. Requires a **Mac + Xcode** to build. See `mobile/STORE_RELEASE.md`.
+The App Store / TestFlight build uses `com.northline.cellarrank://login-callback`, not the GitHub Pages URL. You do **not** need a Mac — use **Codemagic** cloud builds (`mobile/CODEMAGIC_SETUP.md`). Local Xcode is optional; see `mobile/STORE_RELEASE.md`.
 
 ## Troubleshooting
 

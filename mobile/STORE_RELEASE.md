@@ -7,10 +7,13 @@ Cellar Rank ships as a **native mobile app** (iOS + Android) using **Capacitor**
 | Tool | iOS | Android |
 |------|-----|---------|
 | Node.js 20+ | ✓ | ✓ |
-| Xcode 15+ | ✓ | — |
+| Xcode 15+ (optional) | ✓ | — |
+| **Codemagic** (no Mac) | ✓ | optional |
 | Apple Developer Program ($99/yr) | ✓ | — |
 | Android Studio | — | ✓ |
 | Google Play Console ($25 one-time) | — | ✓ |
+
+> **No Mac?** Use `codemagic.yaml` + `mobile/CODEMAGIC_SETUP.md` for TestFlight builds from Windows.
 
 ## 1. Build the native shell
 
@@ -105,7 +108,9 @@ npm run cap:sync
    - Create app record, screenshots (6.7", 6.5", iPad if supporting tablets)
    - Age rating questionnaire
    - Export compliance (typically "No" for HTTPS-only encryption)
-5. **Archive & upload:** Xcode → Product → Archive → Distribute → App Store Connect
+5. **Build & upload**
+   - **Cloud (recommended, no Mac):** `mobile/CODEMAGIC_SETUP.md` — push to `main`, Codemagic uploads to TestFlight
+   - **Local Mac:** Xcode → Product → Archive → Distribute → App Store Connect
 6. **TestFlight** → internal testing → submit for review
 
 ## 7. Google Play checklist
