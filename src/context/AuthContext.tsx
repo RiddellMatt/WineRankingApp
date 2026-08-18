@@ -5,7 +5,8 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { Session, User } from '@supabase/supabase-js'
+import type { Provider, Session, User } from '@supabase/supabase-js'
+import { authRedirectUrl, cleanAuthParamsFromUrl } from '../lib/authRedirect'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
 
 interface AuthState {
@@ -16,6 +17,7 @@ interface AuthState {
   offlineMode: boolean
   signUp: (email: string, password: string, displayName?: string) => Promise<string | null>
   signIn: (email: string, password: string) => Promise<string | null>
+  signInWithOAuth: (provider: Provider) => Promise<string | null>
   signOut: () => Promise<void>
   continueOffline: () => void
   exitOffline: () => void
@@ -44,15 +46,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
+      if (data.session) cleanAuthParamsFromUrl()
       setLoading(false)
     })
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next)
       if (next) {
         setOfflineMode(false)
         localStorage.removeItem(OFFLINE_KEY)
+        if (event === 'SIGNED_IN') cleanAuthParamsFromUrl()
       }
+      setLoading(false)
     })
 
     return () => sub.subscription.unsubscribe()
@@ -76,6 +81,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signIn(email: string, password: string): Promise<string | null> {
     const { error } = await getSupabase().auth.signInWithPassword({ email, password })
+    return error?.message ?? null
+  }
+
+  async function signInWithOAuth(provider: Provider): Promise<string | null> {
+    const options: { redirectTo: string; scopes?: string } = {
+      redirectTo: authRedirectUrl(),
+    }
+    if (provider === 'apple') {
+      options.scopes = 'name email'
+    }
+
+    const { error } = await getSupabase().auth.signInWithOAuth({ provider, options })
     return error?.message ?? null
   }
 
@@ -104,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         offlineMode: !configured || offlineMode,
         signUp,
         signIn,
+        signInWithOAuth,
         signOut,
         continueOffline,
         exitOffline,

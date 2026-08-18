@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 export function AuthScreen() {
-  const { signIn, signUp, continueOffline } = useAuth()
+  const { signIn, signUp, signInWithOAuth, continueOffline } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
@@ -10,6 +10,17 @@ export function AuthScreen() {
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
+
+  async function handleOAuth(provider: 'google' | 'apple') {
+    setError('')
+    setInfo('')
+    setBusy(true)
+    const err = await signInWithOAuth(provider)
+    if (err) {
+      setBusy(false)
+      setError(err)
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -41,6 +52,29 @@ export function AuthScreen() {
         <p className="auth-tagline">
           Sign in to sync your cellar across devices and share ratings with friends.
         </p>
+
+        <div className="auth-oauth">
+          <button
+            type="button"
+            className="btn oauth google"
+            disabled={busy}
+            onClick={() => handleOAuth('google')}
+          >
+            Continue with Google
+          </button>
+          <button
+            type="button"
+            className="btn oauth apple"
+            disabled={busy}
+            onClick={() => handleOAuth('apple')}
+          >
+            Continue with Apple
+          </button>
+        </div>
+
+        <div className="auth-divider" aria-hidden="true">
+          <span>or use email</span>
+        </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {mode === 'signup' && (

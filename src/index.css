@@ -1293,6 +1293,53 @@ textarea {
   margin: 0 0 1.4rem;
 }
 
+.auth-oauth {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.btn.oauth {
+  width: 100%;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.btn.oauth:hover {
+  background: var(--surface-hover);
+  border-color: var(--text-faint);
+}
+
+.btn.oauth.apple {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+}
+
+.btn.oauth.apple:hover {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+  color: var(--text-faint);
+  font-size: 0.82rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
 .auth-form {
   text-align: left;
   display: flex;
