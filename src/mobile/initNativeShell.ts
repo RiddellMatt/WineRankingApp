@@ -1,22 +1,13 @@
 import { App } from '@capacitor/app'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { StatusBar, Style } from '@capacitor/status-bar'
-import { getSupabase } from '../lib/supabase'
 import { isNativeApp } from '../lib/platform'
-import {
-  emitMobileDeepLinkEvent,
-  MOBILE_AUTH_REDIRECT,
-  parseMobileDeepLink,
-} from '../lib/mobileDeepLinks'
+import { completeOAuthFromUrl } from '../lib/mobileOAuth'
+import { emitMobileDeepLinkEvent, parseMobileDeepLink } from '../lib/mobileDeepLinks'
 
 async function handleDeepLink(url: string): Promise<void> {
-  const kind = parseMobileDeepLink(url)
-  if (kind === 'auth' || url.startsWith(MOBILE_AUTH_REDIRECT)) {
-    const { error } = await getSupabase().auth.exchangeCodeForSession(url)
-    if (error) console.error('OAuth deep link failed:', error.message)
-    return
-  }
-  emitMobileDeepLinkEvent(kind)
+  if (await completeOAuthFromUrl(url)) return
+  emitMobileDeepLinkEvent(parseMobileDeepLink(url))
 }
 
 export async function initNativeShell(): Promise<void> {

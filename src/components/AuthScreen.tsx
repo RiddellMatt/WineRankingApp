@@ -1,8 +1,10 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { OAUTH_ERROR_EVENT, OAUTH_SUCCESS_EVENT } from '../lib/mobileOAuth'
+import { isNativeApp } from '../lib/platform'
 
 export function AuthScreen() {
-  const { signIn, signUp, signInWithOAuth, continueOffline } = useAuth()
+  const { signIn, signUp, signInWithOAuth, continueOffline, user } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
@@ -10,6 +12,26 @@ export function AuthScreen() {
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (user) setBusy(false)
+  }, [user])
+
+  useEffect(() => {
+    function onOAuthSuccess() {
+      setBusy(false)
+    }
+    function onOAuthError(event: Event) {
+      setBusy(false)
+      setError(String((event as CustomEvent<string>).detail ?? 'Sign in failed.'))
+    }
+    window.addEventListener(OAUTH_SUCCESS_EVENT, onOAuthSuccess)
+    window.addEventListener(OAUTH_ERROR_EVENT, onOAuthError)
+    return () => {
+      window.removeEventListener(OAUTH_SUCCESS_EVENT, onOAuthSuccess)
+      window.removeEventListener(OAUTH_ERROR_EVENT, onOAuthError)
+    }
+  }, [])
 
   async function handleOAuth(provider: 'google' | 'apple') {
     setError('')
@@ -19,6 +41,10 @@ export function AuthScreen() {
     if (err) {
       setBusy(false)
       setError(err)
+      return
+    }
+    if (!isNativeApp()) {
+      setBusy(false)
     }
   }
 
