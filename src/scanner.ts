@@ -171,5 +171,7 @@ export async function scanLabel(
   image: File,
   onProgress?: (pct: number) => void,
 ): Promise<ScanResult> {
-  return parseLabelText(await ocrImage(image, onProgress))
+  const { resizeImageFile } = await import('./lib/imageResize')
+  const prepared = await resizeImageFile(image)
+  return parseLabelText(await ocrImage(prepared, onProgress))
 }

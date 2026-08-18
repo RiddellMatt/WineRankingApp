@@ -703,6 +703,9 @@ export default function App() {
             setFormOpen(false)
             setEditing(null)
           }}
+          pro={pro}
+          signedIn={Boolean(cloudUser)}
+          cloudConfigured={isSupabaseConfigured}
         />
       )}
 

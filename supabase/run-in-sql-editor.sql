@@ -154,6 +154,25 @@ create policy menu_scan_usage_select on public.menu_scan_usage
   using (auth.uid() = user_id);
 
 
+-- ── 3b) AI label scan usage tracking ─────────────────────────────────────
+
+create table if not exists public.label_scan_usage (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists label_scan_usage_user_created_idx
+  on public.label_scan_usage (user_id, created_at desc);
+
+alter table public.label_scan_usage enable row level security;
+
+drop policy if exists label_scan_usage_select on public.label_scan_usage;
+create policy label_scan_usage_select on public.label_scan_usage
+  for select to authenticated
+  using (auth.uid() = user_id);
+
+
 -- ── 4) Stripe subscription tracking ──────────────────────────────────────
 
 alter table public.profiles

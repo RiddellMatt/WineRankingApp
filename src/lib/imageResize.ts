@@ -38,3 +38,17 @@ export async function resizeImageForUpload(
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]!)
   return { base64: btoa(binary), mimeType }
 }
+
+/** Downscale a photo before on-device OCR (same limits as AI upload). */
+export async function resizeImageFile(
+  file: File,
+  maxDimension = DEFAULT_MAX_DIMENSION,
+  quality = DEFAULT_QUALITY,
+): Promise<File> {
+  const { base64, mimeType } = await resizeImageForUpload(file, maxDimension, quality)
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  const baseName = file.name.replace(/\.[^.]+$/, '') || 'scan'
+  return new File([bytes], `${baseName}.jpg`, { type: mimeType })
+}
