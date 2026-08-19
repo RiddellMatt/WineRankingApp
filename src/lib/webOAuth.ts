@@ -2,6 +2,7 @@ import { OAUTH_ERROR_EVENT } from './mobileOAuth'
 import { isOAuthCallback } from './authRedirect'
 import { isNativeApp } from './platform'
 import { getSupabase } from './supabase'
+import { friendlyAuthError } from './supabaseConfig'
 
 /** Add these in Supabase → Authentication → URL Configuration → Redirect URLs. */
 export const SUPABASE_WEB_REDIRECT_URLS = [
@@ -35,7 +36,7 @@ export async function completeWebOAuthFromUrl(url: string): Promise<string | nul
   if (existing.session) return null
 
   const { error } = await supabase.auth.exchangeCodeForSession(url)
-  return error?.message ?? null
+  return error ? friendlyAuthError(error.message) : null
 }
 
 export function emitWebOAuthError(message: string): void {

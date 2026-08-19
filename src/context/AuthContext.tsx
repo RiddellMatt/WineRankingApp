@@ -15,6 +15,13 @@ import {
   isWebOAuthCallback,
 } from '../lib/webOAuth'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
+import {
+  friendlyAuthError,
+  friendlySupabaseConfigError,
+  getSupabaseEnv,
+  looksLikePlaceholderConfig,
+  verifySupabaseConnection,
+} from '../lib/supabaseConfig'
 
 interface AuthState {
   configured: boolean
@@ -28,6 +35,7 @@ interface AuthState {
   signOut: () => Promise<void>
   continueOffline: () => void
   exitOffline: () => void
+  configError: string | null
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -42,6 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!configured) return true
     return localStorage.getItem(OFFLINE_KEY) === 'true'
   })
+  const [configError, setConfigError] = useState<string | null>(() => {
+    const { url, anonKey } = getSupabaseEnv()
+    if (!url || !anonKey) return friendlySupabaseConfigError('missing')
+    if (looksLikePlaceholderConfig(url, anonKey)) {
+      return friendlySupabaseConfigError('placeholder')
+    }
+    return null
+  })
 
   useEffect(() => {
     if (!configured) {
@@ -49,15 +65,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    const { url, anonKey } = getSupabaseEnv()
+    if (!url || !anonKey) return
+
+    let cancelled = false
+    void verifySupabaseConnection(url, anonKey).then((code: string | null) => {
+      if (cancelled) return
+      setConfigError(friendlySupabaseConfigError(code))
+    })
+
     const supabase = getSupabase()
 
     supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return
       setSession(data.session)
       if (data.session) cleanAuthParamsFromUrl()
       setLoading(false)
     })
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
+      if (cancelled) return
       setSession(next)
       if (next) {
         setOfflineMode(false)
@@ -67,8 +94,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     })
 
-    return () => sub.subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      sub.subscription.unsubscribe()
+    }
   }, [configured])
+
+  useEffect(() => {
+    if (configError) setLoading(false)
+  }, [configError])
 
   // Safari / GitHub Pages: finish OAuth when Google redirects back with ?code=
   useEffect(() => {
@@ -111,8 +145,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithOAuth(provider: Provider): Promise<string | null> {
+    if (configError) return configError
+
     if (isNativeApp()) {
-      return startNativeOAuth(provider)
+      const err = await startNativeOAuth(provider)
+      return err ? friendlyAuthError(err) : null
     }
 
     const options: { redirectTo: string; scopes?: string } = {
@@ -123,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const { error } = await getSupabase().auth.signInWithOAuth({ provider, options })
-    return error?.message ?? null
+    return error ? friendlyAuthError(error.message) : null
   }
 
   async function signOut(): Promise<void> {
@@ -155,6 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         continueOffline,
         exitOffline,
+        configError,
       }}
     >
       {children}

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:mobile": "tsc -b && vite build --mode mobile",
+    "build:mobile": "node scripts/check-env.mjs && tsc -b && vite build --mode mobile",
     "cap:sync": "npm run build:mobile && npx cap sync && node scripts/configure-deeplinks.mjs",
     "cap:ios": "npx cap open ios",
     "cap:android": "npx cap open android",
