@@ -76,7 +76,13 @@ export function friendlyAuthError(message: string): string {
   if (/flow state/i.test(message)) {
     return (
       'Sign-in timed out or was interrupted. Force-close the app, reopen it, and tap Continue with Google once — ' +
-      'do not switch apps or open a second login tab while Google is open.'
+      'finish login in the Chrome tab that opens, then wait to return to Cellar Rank automatically.'
+    )
+  }
+  if (/400|malformed|disallowed_useragent/i.test(message)) {
+    return (
+      'Google blocked sign-in in the in-app browser. Update the app (latest build uses Chrome for Google login), ' +
+      'then try again.'
     )
   }
   return message

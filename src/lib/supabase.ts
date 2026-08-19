@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createNativeAuthStorage } from './capacitorAuthStorage'
 import { getSupabaseEnv, looksLikePlaceholderConfig } from './supabaseConfig'
 
 const { url, anonKey } = getSupabaseEnv()
@@ -13,10 +14,12 @@ export function getSupabase(): SupabaseClient {
     throw new Error('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
   }
   if (!client) {
+    const nativeStorage = createNativeAuthStorage()
     client = createClient(url!, anonKey!, {
       auth: {
         flowType: 'pkce',
         detectSessionInUrl: true,
+        ...(nativeStorage ? { storage: nativeStorage } : {}),
       },
     })
   }
