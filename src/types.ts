@@ -10,6 +10,8 @@ export const WINE_TYPES = [
 
 export type WineType = (typeof WINE_TYPES)[number]
 
+export type WineStatus = 'tried' | 'wishlist'
+
 export type RankingPreference = 'taste_first' | 'balanced' | 'value_first'
 
 /**
@@ -59,6 +61,8 @@ export interface Wine {
   taste: TasteProfile
   /** Whether taste came from the reference dataset or was tuned by the user. */
   tasteSource?: 'typical' | 'custom'
+  /** Tried = rated and ranked; wishlist = want to try, not yet tasted. */
+  status?: WineStatus
   addedAt: number
 }
 

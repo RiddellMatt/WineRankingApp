@@ -8,6 +8,9 @@ import type { Wine } from './types'
 /** Free plan cap. Users must upgrade to Pro to log more wines than this. */
 export const FREE_WINE_LIMIT = 20
 
+/** Free wishlist cap. Pro unlocks unlimited wishlist + save-from-menu. */
+export const FREE_WISHLIST_LIMIT = 5
+
 export const PRO_CONFIG = {
   priceLabel: '$3.99/month',
   /**

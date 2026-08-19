@@ -123,6 +123,7 @@ export function normalizeWine(raw: Partial<Wine>): Wine {
     purchasedAt: raw.purchasedAt ?? '',
     taste: raw.taste ?? {},
     tasteSource: raw.tasteSource,
+    status: raw.status === 'wishlist' ? 'wishlist' : 'tried',
     addedAt: raw.addedAt ?? Date.now(),
   }
   return applyCompositeRating(wine, pref)

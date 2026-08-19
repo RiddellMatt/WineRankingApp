@@ -36,6 +36,7 @@ create table public.wines (
   purchased_at text not null default '',
   taste jsonb not null default '{}',
   taste_source text,
+  status text not null default 'tried' check (status in ('tried', 'wishlist')),
   added_at bigint not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
