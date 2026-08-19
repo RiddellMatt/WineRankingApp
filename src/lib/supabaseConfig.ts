@@ -73,5 +73,11 @@ export function friendlyAuthError(message: string): string {
       'Invalid Supabase API key. Update VITE_SUPABASE_ANON_KEY and rebuild the app.'
     )
   }
+  if (/flow state/i.test(message)) {
+    return (
+      'Sign-in timed out or was interrupted. Force-close the app, reopen it, and tap Continue with Google once — ' +
+      'do not switch apps or open a second login tab while Google is open.'
+    )
+  }
   return message
 }

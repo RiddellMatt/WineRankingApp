@@ -144,5 +144,6 @@ npm run cap:sync
 | Problem | Fix |
 |---------|-----|
 | **Invalid API key** on Google sign-in | This is the **Supabase anon key** baked into the app at build time — not your Google OAuth client. In Supabase → **Project Settings → API**, copy the **anon public** key into `.env.local` on your dev machine, then run `npm run cap:sync` and rebuild in Android Studio. |
+| **Invalid flow state** on Android | Pull latest code, `npm run cap:sync`, rebuild. OAuth must complete in the app WebView. Force-close the app, reopen, tap Google once (don’t open multiple login tabs). Add `com.northline.cellarrank://login-callback` to Supabase → Authentication → URL Configuration → Redirect URLs if missing. |
 | Cloud sync disabled | Same as above — env vars must exist before `npm run build:mobile`. |
 | Google redirect error | Add `com.northline.cellarrank://login-callback` to Supabase redirect URLs (see `mobile/SAFARI_TESTING.md`). |
