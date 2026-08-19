@@ -4,6 +4,7 @@ import { authRedirectUrl } from './authRedirect'
 import { MOBILE_AUTH_REDIRECT } from './mobileDeepLinks'
 import { nativePlatform } from './platform'
 import { getSupabase } from './supabase'
+import { friendlyAuthError } from './supabaseConfig'
 
 export const OAUTH_SUCCESS_EVENT = 'cellar-rank:oauth-success'
 export const OAUTH_ERROR_EVENT = 'cellar-rank:oauth-error'
@@ -33,7 +34,7 @@ export async function completeOAuthFromUrl(url: string): Promise<boolean> {
     const oauthError =
       parsed.searchParams.get('error_description') ?? parsed.searchParams.get('error')
     if (oauthError) {
-      emitOAuthError(oauthError)
+      emitOAuthError(friendlyAuthError(oauthError))
       return true
     }
   } catch {
@@ -43,7 +44,7 @@ export async function completeOAuthFromUrl(url: string): Promise<boolean> {
   const { error } = await getSupabase().auth.exchangeCodeForSession(url)
   if (error) {
     console.error('OAuth deep link failed:', error.message)
-    emitOAuthError(error.message)
+    emitOAuthError(friendlyAuthError(error.message))
     return true
   }
 

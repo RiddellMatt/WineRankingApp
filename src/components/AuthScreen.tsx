@@ -4,7 +4,7 @@ import { OAUTH_ERROR_EVENT, OAUTH_SUCCESS_EVENT } from '../lib/mobileOAuth'
 import { isNativeApp } from '../lib/platform'
 
 export function AuthScreen() {
-  const { signIn, signUp, signInWithOAuth, continueOffline, user } = useAuth()
+  const { signIn, signUp, signInWithOAuth, continueOffline, user, configError } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
@@ -78,6 +78,8 @@ export function AuthScreen() {
         <p className="auth-tagline">
           Sign in to sync your cellar across devices and share ratings with friends.
         </p>
+
+        {configError && <p className="form-error auth-config-error">{configError}</p>}
 
         <div className="auth-oauth">
           <button

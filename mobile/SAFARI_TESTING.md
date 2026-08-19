@@ -73,3 +73,4 @@ The App Store / TestFlight build uses `com.northline.cellarrank://login-callback
 | Google access blocked | Add tester Gmail to Google OAuth consent **Test users** |
 | Redirect error | Confirm Supabase redirect URLs match section 1 exactly |
 | Stuck on sign-in after Google | Hard refresh Safari; try private tab |
+| **Invalid API key** on Google sign-in | This is the **Supabase anon key**, not Google. Copy the anon public key from Supabase → Project Settings → API into `.env.local`, run `npm run cap:sync`, rebuild Android. For web, update GitHub repo secrets `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, then redeploy. |
