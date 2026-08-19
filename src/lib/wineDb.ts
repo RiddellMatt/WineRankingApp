@@ -1,6 +1,10 @@
-import type { Wine, WineType, TasteProfile, RankingPreference } from '../types'
+import type { Wine, WineType, TasteProfile, RankingPreference, WineStatus } from '../types'
 import { getSupabase, type WineRow } from './supabase'
 import { applyCompositeRating, resolveRankingPreference, wineEnjoyment } from './ranking'
+
+function wineStatusFromRow(raw: string | null | undefined): WineStatus {
+  return raw === 'wishlist' ? 'wishlist' : 'tried'
+}
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -29,6 +33,7 @@ export function wineFromRow(row: WineRow): Wine {
     purchasedAt: row.purchased_at,
     taste: (row.taste ?? {}) as TasteProfile,
     tasteSource: row.taste_source === 'custom' ? 'custom' : row.taste_source === 'typical' ? 'typical' : undefined,
+    status: wineStatusFromRow(row.status),
     addedAt: row.added_at,
   }
   return applyCompositeRating(wine, resolveRankingPreference())
@@ -58,6 +63,7 @@ export function wineToRow(
     purchased_at: normalized.purchasedAt,
     taste: (normalized.taste ?? {}) as Record<string, number>,
     taste_source: normalized.tasteSource ?? null,
+    status: normalized.status === 'wishlist' ? 'wishlist' : 'tried',
     added_at: normalized.addedAt,
   }
 }

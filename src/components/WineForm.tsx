@@ -10,6 +10,7 @@ import { TasteInput } from './TasteProfile'
 
 interface Props {
   initial: Wine | null
+  formMode?: 'tried' | 'wishlist'
   onSave: (wine: Wine) => void
   onClose: () => void
   rankingPreference: RankingPreference
@@ -20,6 +21,7 @@ interface Props {
 
 export function WineForm({
   initial,
+  formMode = 'tried',
   onSave,
   onClose,
   rankingPreference,
@@ -27,6 +29,8 @@ export function WineForm({
   signedIn = false,
   cloudConfigured = false,
 }: Props) {
+  const wishlistForm = formMode === 'wishlist'
+  const promoteFromWishlist = initial?.status === 'wishlist' && !wishlistForm
   const [name, setName] = useState(initial?.name ?? '')
   const [winery, setWinery] = useState(initial?.winery ?? '')
   const [vintage, setVintage] = useState(initial?.vintage?.toString() ?? '')
@@ -183,7 +187,7 @@ export function WineForm({
       setError('Give the wine a name.')
       return
     }
-    if (ratingEnjoyment === 0) {
+    if (!wishlistForm && ratingEnjoyment === 0) {
       setError('Rate how much you enjoyed it — that is the whole point!')
       return
     }
@@ -197,14 +201,15 @@ export function WineForm({
         varietal: varietal.trim(),
         region: region.trim(),
         price: parsedPrice,
-        ratingEnjoyment,
-        ratingValue: showValueRating && ratingValue > 0 ? ratingValue : null,
-        ratingBuyAgain: ratingBuyAgain > 0 ? ratingBuyAgain : null,
+        ratingEnjoyment: wishlistForm ? 0 : ratingEnjoyment,
+        ratingValue: !wishlistForm && showValueRating && ratingValue > 0 ? ratingValue : null,
+        ratingBuyAgain: !wishlistForm && ratingBuyAgain > 0 ? ratingBuyAgain : null,
         rating: 0,
         notes: notes.trim(),
         purchasedAt: purchasedAt.trim(),
-        taste,
-        tasteSource: tasteTouched ? 'custom' : 'typical',
+        taste: wishlistForm ? {} : taste,
+        tasteSource: wishlistForm ? undefined : tasteTouched ? 'custom' : 'typical',
+        status: wishlistForm ? 'wishlist' : 'tried',
         addedAt: initial?.addedAt ?? Date.now(),
       },
       rankingPreference,
@@ -212,17 +217,37 @@ export function WineForm({
     onSave(wine)
   }
 
+  const modalTitle = promoteFromWishlist
+    ? 'Mark as tried'
+    : wishlistForm
+      ? initial
+        ? 'Edit wishlist item'
+        : 'Add to wishlist'
+      : initial
+        ? 'Edit wine'
+        : 'Add a wine'
+
+  const submitLabel = promoteFromWishlist
+    ? 'Save to cellar'
+    : wishlistForm
+      ? initial
+        ? 'Save changes'
+        : 'Add to wishlist'
+      : initial
+        ? 'Save changes'
+        : 'Add wine'
+
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <form className="modal" onSubmit={handleSubmit}>
         <div className="modal-header">
-          <h2>{initial ? 'Edit wine' : 'Add a wine'}</h2>
+          <h2>{modalTitle}</h2>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
             ✕
           </button>
         </div>
 
-        {!initial && (
+        {!initial && !wishlistForm && (
           <div className="scan-box">
             <button
               type="button"
@@ -257,7 +282,8 @@ export function WineForm({
           </div>
         )}
 
-        <div className="form-ratings">
+        {!wishlistForm && (
+          <div className="form-ratings">
           <div className="form-rating">
             <label>Enjoyment</label>
             <p className="form-rating-hint">How much did you like drinking this?</p>
@@ -306,6 +332,7 @@ export function WineForm({
             </p>
           )}
         </div>
+        )}
 
         <div className="form-grid">
           <label className="field span-2">
@@ -383,7 +410,8 @@ export function WineForm({
           </label>
         </div>
 
-        <div className="taste-section">
+        {!wishlistForm && (
+          <div className="taste-section">
           <span className="taste-section-title">Taste characteristics</span>
           <p className="taste-caption">
             {tasteTouched ? (
@@ -405,7 +433,8 @@ export function WineForm({
               setTasteTouched(true)
             }}
           />
-        </div>
+          </div>
+        )}
 
         <div className="form-grid">
           <label className="field span-2">
@@ -426,7 +455,7 @@ export function WineForm({
             Cancel
           </button>
           <button type="submit" className="btn primary">
-            {initial ? 'Save changes' : 'Add wine'}
+            {submitLabel}
           </button>
         </div>
       </form>

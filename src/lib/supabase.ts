@@ -51,6 +51,7 @@ export interface WineRow {
   purchased_at: string
   taste: Record<string, number>
   taste_source: string | null
+  status?: string | null
   added_at: number
 }
 

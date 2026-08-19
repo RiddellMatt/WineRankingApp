@@ -431,6 +431,90 @@ a.icon-btn {
   padding: 0.4rem 0.6rem;
 }
 
+/* ── Cellar segment (tried / wishlist) ───────────────── */
+
+.cellar-segment {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cellar-segment-btn {
+  flex: 1;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.cellar-segment-btn:hover {
+  background: var(--surface-hover);
+}
+
+.cellar-segment-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* ── Wishlist ───────────────────────────────────────── */
+
+.wishlist-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.wishlist-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+}
+
+.wishlist-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.wishlist-price {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.wishlist-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.wishlist-remove {
+  margin-left: auto;
+}
+
+.menu-save-btn {
+  margin-top: 0.65rem;
+}
+
+.menu-save-btn.saved {
+  opacity: 0.75;
+}
+
 /* ── Wine list ──────────────────────────────────────── */
 
 .wine-list {

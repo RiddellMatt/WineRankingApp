@@ -1,16 +1,19 @@
 import { useRef, useState } from 'react'
 import { MENU_SCAN_CONFIG } from '../config'
+import { isWishlistDuplicate, menuMatchToWishlist } from '../lib/wishlist'
 import { matchMenu, matchParsedMenuWines, type MenuMatch } from '../menuMatch'
 import { MenuScanError, scanMenuWithAi } from '../lib/menuScanApi'
 import type { RankingPreference, Wine } from '../types'
 
 interface Props {
   wines: Wine[]
+  wishlist: Wine[]
   rankingPreference: RankingPreference
   pro: boolean
   signedIn: boolean
   cloudConfigured: boolean
   onUpgrade: () => void
+  onSaveWishlist: (wine: Wine) => void | Promise<void>
 }
 
 type State =
@@ -27,13 +30,17 @@ function scoreClass(score: number): string {
 
 export function MenuScan({
   wines,
+  wishlist,
   rankingPreference,
   pro,
   signedIn,
   cloudConfigured,
   onUpgrade,
+  onSaveWishlist,
 }: Props) {
   const [state, setState] = useState<State>({ phase: 'idle' })
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set())
+  const [savingKey, setSavingKey] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const ratedCount = wines.length
   const aiAvailable = pro && signedIn && cloudConfigured
@@ -129,6 +136,30 @@ export function MenuScan({
         : `Reading menu… ${state.pct}%`
       : null
 
+  function matchKey(match: MenuMatch, index: number): string {
+    return `${match.line}|${match.price ?? ''}|${index}`
+  }
+
+  function isSaved(match: MenuMatch): boolean {
+    const stub = menuMatchToWishlist(match)
+    return isWishlistDuplicate(wishlist, stub)
+  }
+
+  async function handleSaveToWishlist(match: MenuMatch, key: string) {
+    if (!pro) {
+      onUpgrade()
+      return
+    }
+    if (isSaved(match)) return
+    setSavingKey(key)
+    try {
+      await onSaveWishlist(menuMatchToWishlist(match))
+      setSavedKeys((prev) => new Set(prev).add(key))
+    } finally {
+      setSavingKey(null)
+    }
+  }
+
   return (
     <div className="menu-scan">
       <section className="menu-scan-hero">
@@ -196,8 +227,12 @@ export function MenuScan({
 
       {state.phase === 'results' && (
         <ol className="menu-results">
-          {state.matches.map((m, i) => (
-            <li className="menu-result" key={`${m.line}-${i}`}>
+          {state.matches.map((m, i) => {
+            const key = matchKey(m, i)
+            const saved = isSaved(m) || savedKeys.has(key)
+            const saving = savingKey === key
+            return (
+            <li className="menu-result" key={key}>
               <div className={`menu-score ${scoreClass(m.score)}`}>
                 {m.score}
                 <span className="menu-score-label">match</span>
@@ -215,10 +250,19 @@ export function MenuScan({
                     </span>
                   ))}
                 </div>
+                <button
+                  type="button"
+                  className={`btn ghost small menu-save-btn ${saved ? 'saved' : ''}`}
+                  disabled={saved || saving}
+                  onClick={() => handleSaveToWishlist(m, key)}
+                >
+                  {saved ? 'Saved to try ✓' : saving ? 'Saving…' : pro ? '♡ Save to try' : '♡ Save to try · Pro'}
+                </button>
               </div>
               {m.price && <span className="menu-price">{m.price}</span>}
             </li>
-          ))}
+            )
+          })}
         </ol>
       )}
     </div>

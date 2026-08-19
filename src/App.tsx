@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { WINE_TYPES, type RankingPreference, type SortKey, type Wine, type WineType } from './types'
 import { loadWines, saveWines, SAMPLE_WINES } from './storage'
-import { FREE_WINE_LIMIT } from './config'
+import { FREE_WINE_LIMIT, FREE_WISHLIST_LIMIT } from './config'
 import { syncProSubscription } from './lib/checkoutApi'
 import { loadProStatus, syncProFromServer } from './pro'
 import { isCheckoutSuccessUrl } from './lib/authRedirect'
@@ -10,6 +10,7 @@ import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
 import { WineCard } from './components/WineCard'
+import { WishlistCard } from './components/WishlistCard'
 import { WineForm } from './components/WineForm'
 import { Insights } from './components/Insights'
 import { MenuScan } from './components/MenuScan'
@@ -29,6 +30,13 @@ import {
   resolveRankingPreference,
   saveLocalRankingPreference,
 } from './lib/ranking'
+import {
+  isWishlistDuplicate,
+  triedCount,
+  triedWines,
+  wishlistCount,
+  wishlistWines,
+} from './lib/wishlist'
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'rating', label: 'Rating' },
@@ -39,6 +47,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 ]
 
 type View = 'cellar' | 'sommelier' | 'insights' | 'friends' | 'account'
+type CellarSegment = 'tried' | 'wishlist'
 
 function sortWines(list: Wine[], sortKey: SortKey, rankingPreference: RankingPreference): Wine[] {
   return [...list].sort((a, b) => {
@@ -82,6 +91,8 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<WineType | 'All'>('All')
   const [sortKey, setSortKey] = useState<SortKey>('rating')
+  const [cellarSegment, setCellarSegment] = useState<CellarSegment>('tried')
+  const [formMode, setFormMode] = useState<'tried' | 'wishlist'>('tried')
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Wine | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -91,6 +102,9 @@ export default function App() {
   const importInputRef = useRef<HTMLInputElement>(null)
 
   const rankingPreference = resolveRankingPreference(profile?.rankingPreference)
+
+  const cellarTried = useMemo(() => triedWines(wines), [wines])
+  const cellarWishlist = useMemo(() => wishlistWines(wines), [wines])
 
   function goToAccount(highlightSubscription = false) {
     setFriendView(null)
@@ -268,18 +282,20 @@ export default function App() {
   }, [wines, offlineMode])
 
   const rankById = useMemo(() => {
-    const ordered = [...wines].sort((a, b) => compareByRank(a, b, rankingPreference))
+    const ordered = [...cellarTried].sort((a, b) => compareByRank(a, b, rankingPreference))
     return new Map(ordered.map((w, i) => [w.id, i + 1]))
-  }, [wines, rankingPreference])
+  }, [cellarTried, rankingPreference])
 
   const friendRankById = useMemo(() => {
-    const ordered = [...friendWines].sort((a, b) => compareByRank(a, b, rankingPreference))
+    const tried = triedWines(friendWines)
+    const ordered = [...tried].sort((a, b) => compareByRank(a, b, rankingPreference))
     return new Map(ordered.map((w, i) => [w.id, i + 1]))
   }, [friendWines, rankingPreference])
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase()
-    let list = wines.filter((w) => {
+    const base = cellarSegment === 'wishlist' ? cellarWishlist : cellarTried
+    let list = base.filter((w) => {
       if (typeFilter !== 'All' && w.type !== typeFilter) return false
       if (!q) return true
       return [w.name, w.winery, w.varietal, w.region, w.notes, w.purchasedAt]
@@ -287,24 +303,38 @@ export default function App() {
         .toLowerCase()
         .includes(q)
     })
-    return sortWines(list, sortKey, rankingPreference)
-  }, [wines, search, typeFilter, sortKey, rankingPreference])
+    const effectiveSort = cellarSegment === 'wishlist' && sortKey === 'rating' ? 'addedAt' : sortKey
+    return sortWines(list, effectiveSort, rankingPreference)
+  }, [cellarSegment, cellarTried, cellarWishlist, search, typeFilter, sortKey, rankingPreference])
 
   const stats = useMemo(() => {
-    if (wines.length === 0) return null
+    if (cellarTried.length === 0) return null
     const avg =
-      wines.reduce((sum, w) => sum + compositeScore(w, rankingPreference), 0) / wines.length
-    const best = [...wines].sort((a, b) => compareByRank(a, b, rankingPreference))[0]
-    return { count: wines.length, avg, best }
-  }, [wines, rankingPreference])
+      cellarTried.reduce((sum, w) => sum + compositeScore(w, rankingPreference), 0) /
+      cellarTried.length
+    const best = [...cellarTried].sort((a, b) => compareByRank(a, b, rankingPreference))[0]
+    return { count: cellarTried.length, avg, best }
+  }, [cellarTried, rankingPreference])
 
-  const atFreeLimit = !pro && wines.length >= FREE_WINE_LIMIT
+  const atFreeLimit = !pro && triedCount(wines) >= FREE_WINE_LIMIT
+  const atWishlistLimit = !pro && wishlistCount(wines) >= FREE_WISHLIST_LIMIT
 
   function openAddForm() {
     if (atFreeLimit) {
       goToAccount(true)
       return
     }
+    setFormMode('tried')
+    setEditing(null)
+    setFormOpen(true)
+  }
+
+  function openAddWishlistForm() {
+    if (atWishlistLimit) {
+      goToAccount(true)
+      return
+    }
+    setFormMode('wishlist')
     setEditing(null)
     setFormOpen(true)
   }
@@ -338,22 +368,16 @@ export default function App() {
     }
   }
 
-  async function handleSave(wine: Wine) {
-    const normalized = applyCompositeRating(wine, rankingPreference)
+  async function persistWine(wine: Wine) {
     setWines((prev) => {
-      const exists = prev.some((w) => w.id === normalized.id)
-      if (!exists && !pro && prev.length >= FREE_WINE_LIMIT) return prev
-      return exists
-        ? prev.map((w) => (w.id === normalized.id ? normalized : w))
-        : [...prev, normalized]
+      const exists = prev.some((w) => w.id === wine.id)
+      return exists ? prev.map((w) => (w.id === wine.id ? wine : w)) : [...prev, wine]
     })
-    setFormOpen(false)
-    setEditing(null)
     if (cloudUser) {
       try {
-        const synced = await upsertWine(cloudUser.id, normalized, rankingPreference)
-        if (synced.id !== normalized.id) {
-          setWines((prev) => prev.map((w) => (w.id === normalized.id ? synced : w)))
+        const synced = await upsertWine(cloudUser.id, wine, rankingPreference)
+        if (synced.id !== wine.id) {
+          setWines((prev) => prev.map((w) => (w.id === wine.id ? synced : w)))
         }
       } catch (e) {
         window.alert(`Saved locally but cloud sync failed: ${(e as Error).message}`)
@@ -361,8 +385,46 @@ export default function App() {
     }
   }
 
+  async function handleSave(wine: Wine) {
+    const savingWishlist = wine.status === 'wishlist'
+    const exists = wines.some((w) => w.id === wine.id)
+    const wasWishlist = exists && wines.find((w) => w.id === wine.id)?.status === 'wishlist'
+
+    if (savingWishlist) {
+      if (!exists && !pro && wishlistCount(wines) >= FREE_WISHLIST_LIMIT) {
+        goToAccount(true)
+        return
+      }
+    } else if (!exists && !pro && triedCount(wines) >= FREE_WINE_LIMIT) {
+      goToAccount(true)
+      return
+    }
+
+    const normalized = applyCompositeRating(
+      { ...wine, status: savingWishlist ? 'wishlist' : 'tried' },
+      rankingPreference,
+    )
+    await persistWine(normalized)
+    setFormOpen(false)
+    setEditing(null)
+    if (!savingWishlist && wasWishlist) {
+      setCellarSegment('tried')
+    }
+  }
+
+  async function handleSaveWishlistFromMenu(wine: Wine) {
+    if (!pro) {
+      goToAccount(true)
+      return
+    }
+    if (isWishlistDuplicate(wines, wine)) return
+    const normalized = applyCompositeRating({ ...wine, status: 'wishlist' }, rankingPreference)
+    await persistWine(normalized)
+  }
+
   async function handleDelete(wine: Wine) {
-    if (!window.confirm(`Remove “${wine.name}” from your cellar?`)) return
+    const label = wine.status === 'wishlist' ? 'wishlist' : 'cellar'
+    if (!window.confirm(`Remove “${wine.name}” from your ${label}?`)) return
     setWines((prev) => prev.filter((w) => w.id !== wine.id))
     if (cloudUser) {
       try {
@@ -460,10 +522,16 @@ export default function App() {
             </div>
           </div>
           <div className="header-actions">
-            {!friendView && (
-              <button className="btn primary" onClick={openAddForm}>
-                + Add wine
+            {!friendView && view === 'cellar' && cellarSegment === 'wishlist' ? (
+              <button className="btn primary" onClick={openAddWishlistForm}>
+                + Add to wishlist
               </button>
+            ) : (
+              !friendView && (
+                <button className="btn primary" onClick={openAddForm}>
+                  + Add wine
+                </button>
+              )
             )}
           </div>
         </div>
@@ -482,7 +550,7 @@ export default function App() {
             offlineMode={offlineMode}
             cloudConfigured={configured}
             pro={pro}
-            wineCount={wines.length}
+            wineCount={triedCount(wines)}
             rankingPreference={rankingPreference}
             highlightSubscription={accountHighlight}
             onProfileSaved={setProfile}
@@ -510,13 +578,13 @@ export default function App() {
                 />
                 <h2 className="friend-cellar-title">{friendView.name}&apos;s cellar</h2>
               </div>
-              {friendWines.length === 0 ? (
+              {friendWines.length === 0 || triedWines(friendWines).length === 0 ? (
                 <section className="empty">
                   <p>They haven&apos;t logged any wines yet.</p>
                 </section>
               ) : (
                 <ol className="wine-list">
-                  {sortWines(friendWines, 'rating', rankingPreference).map((wine) => (
+                  {sortWines(triedWines(friendWines), 'rating', rankingPreference).map((wine) => (
                     <WineCard
                       key={wine.id}
                       wine={wine}
@@ -535,16 +603,18 @@ export default function App() {
           )
         ) : view === 'sommelier' ? (
           <MenuScan
-            wines={wines}
+            wines={cellarTried}
+            wishlist={cellarWishlist}
             rankingPreference={rankingPreference}
             pro={pro}
             signedIn={Boolean(cloudUser)}
             cloudConfigured={configured}
             onUpgrade={() => goToAccount(true)}
+            onSaveWishlist={handleSaveWishlistFromMenu}
           />
         ) : view === 'insights' ? (
           pro ? (
-            <Insights wines={wines} rankingPreference={rankingPreference} />
+            <Insights wines={cellarTried} rankingPreference={rankingPreference} />
           ) : (
             <section className="empty locked">
               <span className="empty-icon" aria-hidden="true">
@@ -564,7 +634,24 @@ export default function App() {
           )
         ) : (
           <>
-            {stats && (
+            <section className="cellar-segment" aria-label="Cellar view">
+              <button
+                type="button"
+                className={`cellar-segment-btn ${cellarSegment === 'tried' ? 'active' : ''}`}
+                onClick={() => setCellarSegment('tried')}
+              >
+                Tried ({cellarTried.length})
+              </button>
+              <button
+                type="button"
+                className={`cellar-segment-btn ${cellarSegment === 'wishlist' ? 'active' : ''}`}
+                onClick={() => setCellarSegment('wishlist')}
+              >
+                Want to try ({cellarWishlist.length})
+              </button>
+            </section>
+
+            {cellarSegment === 'tried' && stats && (
               <section className="stats">
                 <div className="stat">
                   <span className="stat-value">
@@ -588,7 +675,7 @@ export default function App() {
               </section>
             )}
 
-            {atFreeLimit && (
+            {cellarSegment === 'tried' && atFreeLimit && (
               <div className="limit-banner">
                 <span>You&apos;ve reached the free limit of {FREE_WINE_LIMIT} wines.</span>
                 <button className="btn primary small" onClick={() => goToAccount(true)}>
@@ -597,7 +684,18 @@ export default function App() {
               </div>
             )}
 
-            {wines.length > 0 && (
+            {cellarSegment === 'wishlist' && atWishlistLimit && (
+              <div className="limit-banner">
+                <span>
+                  You&apos;ve reached the free wishlist limit of {FREE_WISHLIST_LIMIT} wines.
+                </span>
+                <button className="btn primary small" onClick={() => goToAccount(true)}>
+                  Upgrade in Account
+                </button>
+              </div>
+            )}
+
+            {(cellarSegment === 'tried' ? cellarTried : cellarWishlist).length > 0 && (
               <section className="toolbar">
                 <input
                   className="search"
@@ -654,7 +752,7 @@ export default function App() {
               </section>
             )}
 
-            {wines.length === 0 ? (
+            {cellarSegment === 'tried' && cellarTried.length === 0 ? (
               <section className="empty">
                 <span className="empty-icon" aria-hidden="true">
                   🍇
@@ -683,11 +781,59 @@ export default function App() {
                   </button>
                 </div>
               </section>
+            ) : cellarSegment === 'wishlist' && cellarWishlist.length === 0 ? (
+              <section className="empty">
+                <span className="empty-icon" aria-hidden="true">
+                  ♡
+                </span>
+                <h2>Nothing on your radar yet</h2>
+                <p>
+                  Save wines from the menu sommelier (Pro) or add bottles you want to try later.
+                </p>
+                <div className="empty-actions">
+                  <button className="btn primary" onClick={openAddWishlistForm}>
+                    Add to wishlist
+                  </button>
+                  <button
+                    className="btn ghost"
+                    onClick={() => {
+                      setFriendView(null)
+                      setView('sommelier')
+                    }}
+                  >
+                    Scan a menu
+                  </button>
+                </div>
+              </section>
             ) : visible.length === 0 ? (
               <section className="empty">
                 <h2>No matches</h2>
                 <p>No wines match your search or filter.</p>
               </section>
+            ) : cellarSegment === 'wishlist' ? (
+              <ol className="wishlist-list">
+                {visible.map((wine) => (
+                  <WishlistCard
+                    key={wine.id}
+                    wine={wine}
+                    onMarkTried={() => {
+                      if (atFreeLimit) {
+                        goToAccount(true)
+                        return
+                      }
+                      setFormMode('tried')
+                      setEditing(wine)
+                      setFormOpen(true)
+                    }}
+                    onEdit={() => {
+                      setFormMode('wishlist')
+                      setEditing(wine)
+                      setFormOpen(true)
+                    }}
+                    onDelete={() => handleDelete(wine)}
+                  />
+                ))}
+              </ol>
             ) : (
               <ol className="wine-list">
                 {visible.map((wine) => (
@@ -697,6 +843,7 @@ export default function App() {
                     rank={rankById.get(wine.id) ?? 0}
                     rankingPreference={rankingPreference}
                     onEdit={() => {
+                      setFormMode('tried')
                       setEditing(wine)
                       setFormOpen(true)
                     }}
@@ -763,6 +910,7 @@ export default function App() {
       {formOpen && (
         <WineForm
           initial={editing}
+          formMode={formMode}
           onSave={handleSave}
           onClose={() => {
             setFormOpen(false)

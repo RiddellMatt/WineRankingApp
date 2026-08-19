@@ -191,6 +191,12 @@ alter table public.profiles
     or ranking_preference in ('taste_first', 'balanced', 'value_first')
   );
 
+-- ── 3d) Want-to-try wishlist status ───────────────────────────────────────
+
+alter table public.wines
+  add column if not exists status text not null default 'tried'
+  check (status in ('tried', 'wishlist'));
+
 
 -- ── 4) Stripe subscription tracking ──────────────────────────────────────
 
