@@ -2,16 +2,21 @@ import type { RankingPreference, Wine } from './types'
 import { REGIONS, VARIETALS } from './scanner'
 import { containsPhrase, findPhrase, findRegion } from './textMatch'
 import { compositeScore, wineEnjoyment } from './lib/ranking'
+import { formatMenuWineLine, normalizeMenuWineFields } from './lib/menuWineParse'
 
 export interface ParsedMenuWine {
   vintage: string
   name: string
+  winery?: string
   price: string | null
   description?: string
 }
 
 export interface MenuMatch {
   line: string
+  winery?: string
+  wineName?: string
+  vintage?: string
   description?: string
   price: string | null
   score: number
@@ -251,8 +256,9 @@ export function matchParsedMenuWines(
   const matches: MenuMatch[] = []
 
   for (const wine of parsed) {
-    const displayLine = `${wine.vintage} ${wine.name}`.trim()
-    const searchText = `${displayLine} ${wine.description ?? ''}`.toLowerCase()
+    const { winery, name: wineName } = normalizeMenuWineFields(wine.winery, wine.name)
+    const displayLine = formatMenuWineLine(wine.vintage, winery, wineName)
+    const searchText = `${winery} ${wineName} ${displayLine} ${wine.description ?? ''}`.toLowerCase()
 
     let cellarWine: Wine | undefined
     for (const w of cellar) {
@@ -308,6 +314,9 @@ export function matchParsedMenuWines(
 
     matches.push({
       line: displayLine,
+      winery: winery || undefined,
+      wineName,
+      vintage: wine.vintage,
       description: wine.description || undefined,
       price: wine.price,
       score: Math.round(Math.min(score, 100)),

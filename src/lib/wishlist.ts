@@ -1,4 +1,5 @@
 import type { MenuMatch } from '../menuMatch'
+import { normalizeMenuWineFields } from './menuWineParse'
 import { VARIETALS } from '../scanner'
 import type { Wine, WineType } from '../types'
 import { normalizeWine } from './ranking'
@@ -23,22 +24,34 @@ export function wishlistCount(wines: Wine[]): number {
   return wishlistWines(wines).length
 }
 
-function wishlistKey(name: string, vintage: number | null): string {
-  return `${name.trim().toLowerCase()}|${vintage ?? ''}`
+function wishlistKey(name: string, winery: string, vintage: number | null): string {
+  return `${name.trim().toLowerCase()}|${winery.trim().toLowerCase()}|${vintage ?? ''}`
 }
 
 export function isWishlistDuplicate(
   wines: Wine[],
-  candidate: Pick<Wine, 'name' | 'vintage'>,
+  candidate: Pick<Wine, 'name' | 'winery' | 'vintage'>,
 ): boolean {
-  const key = wishlistKey(candidate.name, candidate.vintage)
-  return wines.some((w) => isWishlist(w) && wishlistKey(w.name, w.vintage) === key)
+  const key = wishlistKey(candidate.name, candidate.winery ?? '', candidate.vintage)
+  return wines.some(
+    (w) =>
+      isWishlist(w) &&
+      wishlistKey(w.name, w.winery ?? '', w.vintage) === key,
+  )
 }
 
 function parseMenuPrice(raw: string | null): number | null {
   if (!raw) return null
   const n = parseFloat(raw.replace(/[^0-9.]/g, ''))
   return Number.isFinite(n) ? n : null
+}
+
+function parseVintageToken(raw: string | undefined): number | null {
+  if (!raw) return null
+  const token = raw.trim().toUpperCase()
+  if (!token || token === 'NV') return null
+  const year = Number(token)
+  return Number.isFinite(year) ? year : null
 }
 
 function inferWineTypeFromText(text: string): WineType {
@@ -60,18 +73,29 @@ function inferWineTypeFromText(text: string): WineType {
 
 /** Build a wishlist stub from a menu scan result line. */
 export function menuMatchToWishlist(match: MenuMatch): Wine {
-  const vintageMatch = match.line.match(/^(NV|19[5-9]\d|20\d{2})\s+(.*)$/i)
-  let vintage: number | null = null
-  let name = match.line.trim()
-  if (vintageMatch) {
-    const token = vintageMatch[1].toUpperCase()
-    vintage = token === 'NV' ? null : Number(token)
-    name = vintageMatch[2].trim()
+  let winery = match.winery?.trim() ?? ''
+  let wineName = match.wineName?.trim() ?? ''
+
+  if (!wineName) {
+    const vintageMatch = match.line.match(/^(NV|19[5-9]\d|20\d{2})\s+(.*)$/i)
+    wineName = vintageMatch ? vintageMatch[2]!.trim() : match.line.trim()
   }
 
-  const searchText = `${match.line} ${match.description ?? ''}`
+  const split = normalizeMenuWineFields(winery || undefined, wineName)
+  winery = split.winery
+  wineName = split.name
+
+  const vintage =
+    parseVintageToken(match.vintage) ??
+    (() => {
+      const fromLine = match.line.match(/^(NV|19[5-9]\d|20\d{2})\b/i)
+      return fromLine ? parseVintageToken(fromLine[1]) : null
+    })()
+
+  const searchText = `${winery} ${wineName} ${match.line} ${match.description ?? ''}`
   return normalizeWine({
-    name: name || match.line.trim(),
+    name: wineName || match.line.trim(),
+    winery,
     vintage,
     price: parseMenuPrice(match.price),
     type: inferWineTypeFromText(searchText),

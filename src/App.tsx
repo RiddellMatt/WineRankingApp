@@ -599,7 +599,15 @@ export default function App() {
               )}
             </>
           ) : (
-            <FriendsPanel userId={cloudUser.id} onViewCellar={viewFriendCellar} />
+            <FriendsPanel
+              userId={cloudUser.id}
+              userEmail={cloudUser.email}
+              userDisplayName={profile?.displayName}
+              userAvatarUrl={profile?.avatarUrl}
+              wines={wines}
+              rankingPreference={rankingPreference}
+              onViewCellar={viewFriendCellar}
+            />
           )
         ) : view === 'sommelier' ? (
           <MenuScan

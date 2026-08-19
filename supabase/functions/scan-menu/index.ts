@@ -21,18 +21,21 @@ const MODEL_FALLBACKS = [
 const MENU_PROMPT = `You extract wines from restaurant menu photos.
 
 Return ONLY valid JSON matching this schema:
-{"wines":[{"vintage":"2020 or NV","name":"producer and wine name","price":"$45 or null","description":"optional menu blurb or null"}]}
+{"wines":[{"vintage":"2020 or NV","winery":"producer/winery name only","name":"wine or cuvée name only","price":"$45 or null","description":"optional menu blurb or null"}]}
 
 Rules:
 - Include every wine by the glass or bottle with a price when visible.
 - vintage: use "NV" when non-vintage.
-- name: combine producer/winery and cuvée; do not include vintage or price in name.
+- winery: producer or winery ONLY — do not include the cuvée, grape, or appellation here.
+- name: wine/cuvée name ONLY — do not repeat the producer; do not include vintage or price.
+- If the menu shows "Producer, Wine Name", put them in separate winery and name fields.
 - Ignore food dishes, cocktails, beer, section headers, and footer text.
 - For two-column menus, read each column top-to-bottom; do not merge unrelated wines.
 - If no wines found, return {"wines":[]}.`
 
 interface AiWine {
   vintage?: string
+  winery?: string
   name?: string
   price?: string | null
   description?: string | null
@@ -240,16 +243,22 @@ Deno.serve(async (req) => {
     }
 
     const wines = (parsed.wines ?? [])
-      .map((w) => ({
-        vintage: String(w.vintage ?? 'NV').trim() || 'NV',
-        name: String(w.name ?? '').trim(),
-        price: w.price != null && String(w.price).trim() ? String(w.price).trim() : null,
-        description:
-          w.description != null && String(w.description).trim()
-            ? String(w.description).trim()
-            : null,
-      }))
-      .filter((w) => w.name.length >= 2)
+      .map((w) => {
+        const name = String(w.name ?? '').trim()
+        const winery = String(w.winery ?? '').trim()
+        return {
+          vintage: String(w.vintage ?? 'NV').trim() || 'NV',
+          winery,
+          name,
+          price: w.price != null && String(w.price).trim() ? String(w.price).trim() : null,
+          description:
+            w.description != null && String(w.description).trim()
+              ? String(w.description).trim()
+              : null,
+        }
+      })
+      .filter((w) => w.name.length >= 2 || w.winery.length >= 2)
+      .map((w) => (w.name.length >= 2 ? w : { ...w, name: w.winery, winery: '' }))
 
     await admin.from('menu_scan_usage').insert({ user_id: user.id })
 
