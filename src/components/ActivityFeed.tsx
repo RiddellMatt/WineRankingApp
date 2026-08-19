@@ -8,8 +8,8 @@ import {
   wineActivityTitle,
 } from '../lib/activityFeed'
 import { compositeScore } from '../lib/ranking'
-import { isWishlist } from '../lib/wishlist'
-import type { RankingPreference } from '../types'
+import { isWishlist, wishlistIdentityKey } from '../lib/wishlist'
+import type { RankingPreference, Wine } from '../types'
 
 interface Props {
   events: ActivityEvent[]
@@ -18,6 +18,9 @@ interface Props {
   loading?: boolean
   emptyHint: string
   onViewCellar: (friendId: string, friendName: string, avatarUrl?: string) => void
+  onSaveToWishlist?: (wine: Wine, friendName: string) => void | Promise<void>
+  isWishlistSaved?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
+  savingWishlistKey?: string | null
 }
 
 export function ActivityFeed({
@@ -27,6 +30,9 @@ export function ActivityFeed({
   loading = false,
   emptyHint,
   onViewCellar,
+  onSaveToWishlist,
+  isWishlistSaved,
+  savingWishlistKey = null,
 }: Props) {
   if (loading) {
     return <p className="auth-info activity-loading">Loading activity…</p>
@@ -51,6 +57,13 @@ export function ActivityFeed({
         const subtitle = wineActivitySubtitle(event.wine)
         const score = compositeScore(event.wine, rankingPreference)
         const isOwn = event.actor.id === viewerId
+        const canSave =
+          !isOwn &&
+          event.type === 'logged' &&
+          !isWishlist(event.wine) &&
+          Boolean(onSaveToWishlist)
+        const saved = canSave && (isWishlistSaved?.(event.wine) ?? false)
+        const saving = canSave && savingWishlistKey === wishlistIdentityKey(event.wine)
 
         return (
           <li className="activity-item" key={event.id}>
@@ -85,6 +98,16 @@ export function ActivityFeed({
                     }
                   >
                     View cellar
+                  </button>
+                )}
+                {canSave && (
+                  <button
+                    type="button"
+                    className={`link-btn activity-save-btn ${saved ? 'saved' : ''}`}
+                    disabled={saved || saving}
+                    onClick={() => onSaveToWishlist!(event.wine, name)}
+                  >
+                    {saved ? 'Saved to try ✓' : saving ? 'Saving…' : '♡ Save to try'}
                   </button>
                 )}
               </div>

@@ -515,6 +515,19 @@ a.icon-btn {
   opacity: 0.75;
 }
 
+.wine-save-wishlist-btn {
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.wine-save-wishlist-btn.saved {
+  opacity: 0.75;
+}
+
+.activity-save-btn.saved {
+  opacity: 0.75;
+}
+
 /* ── Wine list ──────────────────────────────────────── */
 
 .wine-list {

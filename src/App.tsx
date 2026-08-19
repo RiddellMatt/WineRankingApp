@@ -31,10 +31,12 @@ import {
   saveLocalRankingPreference,
 } from './lib/ranking'
 import {
+  friendWineToWishlist,
   isWishlistDuplicate,
   triedCount,
   triedWines,
   wishlistCount,
+  wishlistIdentityKey,
   wishlistWines,
 } from './lib/wishlist'
 
@@ -99,6 +101,7 @@ export default function App() {
   const [profileLoaded, setProfileLoaded] = useState(false)
   const [rankingSetupOpen, setRankingSetupOpen] = useState(false)
   const [rankingSetupBusy, setRankingSetupBusy] = useState(false)
+  const [savingFriendWishlistKey, setSavingFriendWishlistKey] = useState<string | null>(null)
   const importInputRef = useRef<HTMLInputElement>(null)
 
   const rankingPreference = resolveRankingPreference(profile?.rankingPreference)
@@ -422,6 +425,23 @@ export default function App() {
     await persistWine(normalized)
   }
 
+  async function handleSaveWishlistFromFriend(wine: Wine, friendName: string) {
+    if (isWishlistDuplicate(wines, wine)) return
+    if (!pro && wishlistCount(wines) >= FREE_WISHLIST_LIMIT) {
+      goToAccount(true)
+      return
+    }
+    const key = wishlistIdentityKey(wine)
+    setSavingFriendWishlistKey(key)
+    try {
+      const stub = friendWineToWishlist(wine, friendName)
+      const normalized = applyCompositeRating(stub, rankingPreference)
+      await persistWine(normalized)
+    } finally {
+      setSavingFriendWishlistKey(null)
+    }
+  }
+
   async function handleDelete(wine: Wine) {
     const label = wine.status === 'wishlist' ? 'wishlist' : 'cellar'
     if (!window.confirm(`Remove “${wine.name}” from your ${label}?`)) return
@@ -593,6 +613,11 @@ export default function App() {
                       onEdit={() => {}}
                       onDelete={() => {}}
                       readOnly
+                      onSaveToWishlist={() =>
+                        handleSaveWishlistFromFriend(wine, friendView.name)
+                      }
+                      wishlistSaved={isWishlistDuplicate(wines, wine)}
+                      wishlistSaving={savingFriendWishlistKey === wishlistIdentityKey(wine)}
                     />
                   ))}
                 </ol>
@@ -607,6 +632,9 @@ export default function App() {
               wines={wines}
               rankingPreference={rankingPreference}
               onViewCellar={viewFriendCellar}
+              onSaveToWishlist={handleSaveWishlistFromFriend}
+              isWishlistSaved={(wine) => isWishlistDuplicate(wines, wine)}
+              savingWishlistKey={savingFriendWishlistKey}
             />
           )
         ) : view === 'sommelier' ? (

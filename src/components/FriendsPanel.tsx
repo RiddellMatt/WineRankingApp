@@ -25,6 +25,9 @@ interface Props {
   wines: Wine[]
   rankingPreference: RankingPreference
   onViewCellar: (friendId: string, friendName: string, avatarUrl?: string) => void
+  onSaveToWishlist?: (wine: Wine, friendName: string) => void | Promise<void>
+  isWishlistSaved?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
+  savingWishlistKey?: string | null
 }
 
 type FriendsTab = 'feed' | 'manage'
@@ -69,6 +72,9 @@ export function FriendsPanel({
   wines,
   rankingPreference,
   onViewCellar,
+  onSaveToWishlist,
+  isWishlistSaved,
+  savingWishlistKey = null,
 }: Props) {
   const [tab, setTab] = useState<FriendsTab>('feed')
   const [friendships, setFriendships] = useState<Friendship[]>([])
@@ -222,6 +228,9 @@ export function FriendsPanel({
             loading={activityLoading}
             emptyHint={feedEmptyHint}
             onViewCellar={onViewCellar}
+            onSaveToWishlist={onSaveToWishlist}
+            isWishlistSaved={isWishlistSaved}
+            savingWishlistKey={savingWishlistKey}
           />
         </section>
       ) : (

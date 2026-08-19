@@ -24,20 +24,38 @@ export function wishlistCount(wines: Wine[]): number {
   return wishlistWines(wines).length
 }
 
-function wishlistKey(name: string, winery: string, vintage: number | null): string {
-  return `${name.trim().toLowerCase()}|${winery.trim().toLowerCase()}|${vintage ?? ''}`
+export function wishlistIdentityKey(
+  wine: Pick<Wine, 'name' | 'winery' | 'vintage'>,
+): string {
+  return `${wine.name.trim().toLowerCase()}|${(wine.winery ?? '').trim().toLowerCase()}|${wine.vintage ?? ''}`
 }
 
 export function isWishlistDuplicate(
   wines: Wine[],
   candidate: Pick<Wine, 'name' | 'winery' | 'vintage'>,
 ): boolean {
-  const key = wishlistKey(candidate.name, candidate.winery ?? '', candidate.vintage)
-  return wines.some(
-    (w) =>
-      isWishlist(w) &&
-      wishlistKey(w.name, w.winery ?? '', w.vintage) === key,
-  )
+  const key = wishlistIdentityKey(candidate)
+  return wines.some((w) => isWishlist(w) && wishlistIdentityKey(w) === key)
+}
+
+/** Build a wishlist stub from a friend's logged wine. */
+export function friendWineToWishlist(wine: Wine, friendName?: string): Wine {
+  const notes = friendName ? `Saved from ${friendName}'s cellar` : ''
+  return normalizeWine({
+    name: wine.name,
+    winery: wine.winery ?? '',
+    vintage: wine.vintage,
+    type: wine.type,
+    varietal: wine.varietal ?? '',
+    region: wine.region ?? '',
+    price: wine.price,
+    status: 'wishlist',
+    ratingEnjoyment: 0,
+    ratingValue: null,
+    ratingBuyAgain: null,
+    notes,
+    addedAt: Date.now(),
+  })
 }
 
 function parseMenuPrice(raw: string | null): number | null {
