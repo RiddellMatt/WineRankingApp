@@ -28,16 +28,16 @@ export const THEME_OPTIONS: {
     label: 'Navy',
     description: 'Logo navy with wine-red splash',
     swatches: ['#1a3674', '#8b2d23', '#ffffff'],
-    previewSrc: `${brandBase}/theme-preview-navy.svg`,
-    logoSrc: `${brandBase}/logo-navy.svg`,
+    previewSrc: `${brandBase}/logo-navy.png`,
+    logoSrc: `${brandBase}/logo-navy.png`,
   },
   {
     id: 'light',
     label: 'Daylight',
     description: 'White canvas with terracotta',
     swatches: ['#ffffff', '#a35447', '#231f20'],
-    previewSrc: `${brandBase}/theme-preview-light.svg`,
-    logoSrc: `${brandBase}/logo-light.svg`,
+    previewSrc: `${brandBase}/logo-light.png`,
+    logoSrc: `${brandBase}/logo-light.png`,
   },
 ]
 
