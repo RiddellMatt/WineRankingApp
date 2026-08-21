@@ -571,6 +571,7 @@ export default function App() {
             cloudConfigured={configured}
             pro={pro}
             wineCount={triedCount(wines)}
+            wines={wines}
             rankingPreference={rankingPreference}
             highlightSubscription={accountHighlight}
             onProfileSaved={setProfile}

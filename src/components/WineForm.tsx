@@ -401,11 +401,11 @@ export function WineForm({
             />
           </label>
           <label className="field span-2">
-            <span>Purchased at</span>
+            <span>Where you drank it</span>
             <input
               value={purchasedAt}
               onChange={(e) => setPurchasedAt(e.target.value)}
-              placeholder="e.g. Trader Joe's, restaurant, winery visit…"
+              placeholder="e.g. Charleston, SC · Rome, Italy · winery visit"
             />
           </label>
         </div>

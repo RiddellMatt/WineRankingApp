@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityFeed } from './ActivityFeed'
 import { Avatar } from './Avatar'
+import { WinePassport } from './WinePassport'
 import {
   fetchFriendActivity,
   ownRecentActivity,
@@ -30,7 +31,7 @@ interface Props {
   savingWishlistKey?: string | null
 }
 
-type FriendsTab = 'feed' | 'manage'
+type FriendsTab = 'feed' | 'passport' | 'manage'
 
 function FriendIdentity({
   friendship,
@@ -204,6 +205,13 @@ export function FriendsPanel({
         </button>
         <button
           type="button"
+          className={`friends-tab ${tab === 'passport' ? 'active' : ''}`}
+          onClick={() => setTab('passport')}
+        >
+          Passport
+        </button>
+        <button
+          type="button"
           className={`friends-tab ${tab === 'manage' ? 'active' : ''}`}
           onClick={() => setTab('manage')}
         >
@@ -232,6 +240,14 @@ export function FriendsPanel({
             isWishlistSaved={isWishlistSaved}
             savingWishlistKey={savingWishlistKey}
           />
+        </section>
+      ) : tab === 'passport' ? (
+        <section className="friends-section">
+          <h2>Wine passport</h2>
+          <p className="friends-hint">
+            Where your wines come from, where you drank them, and how you compare with friends.
+          </p>
+          <WinePassport userId={userId} wines={wines} />
         </section>
       ) : (
         <>
