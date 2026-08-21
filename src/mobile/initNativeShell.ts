@@ -3,6 +3,7 @@ import { SplashScreen } from '@capacitor/splash-screen'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import { getSupabase } from '../lib/supabase'
 import { isNativeApp } from '../lib/platform'
+import { loadStoredTheme, THEME_META } from '../lib/themes'
 import { completeOAuthFromUrl } from '../lib/mobileOAuth'
 import { emitMobileDeepLinkEvent, parseMobileDeepLink } from '../lib/mobileDeepLinks'
 
@@ -22,8 +23,10 @@ export async function initNativeShell(): Promise<void> {
   document.body.classList.add('native-app')
 
   try {
-    await StatusBar.setStyle({ style: Style.Dark })
-    await StatusBar.setBackgroundColor({ color: '#12080c' })
+    const theme = loadStoredTheme()
+    const color = THEME_META[theme]
+    await StatusBar.setStyle({ style: theme === 'light' ? Style.Light : Style.Dark })
+    await StatusBar.setBackgroundColor({ color })
   } catch {
     // Status bar plugin is unavailable in some web previews.
   }
