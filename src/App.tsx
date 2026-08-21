@@ -619,6 +619,7 @@ export default function App() {
                       }
                       wishlistSaved={isWishlistDuplicate(wines, wine)}
                       wishlistSaving={savingFriendWishlistKey === wishlistIdentityKey(wine)}
+                      shareAttribution={`From ${friendView.name}'s cellar`}
                     />
                   ))}
                 </ol>
