@@ -12,6 +12,7 @@ import type { RankingPreference, Wine } from '../types'
 import { APP_NAME_PRO } from '../brand'
 import { Avatar } from './Avatar'
 import { BadgeGrid } from './BadgeGrid'
+import { ThemePicker } from './ThemePicker'
 
 const PRO_FEATURES = [
   'Unlimited wines',
@@ -306,6 +307,12 @@ export function AccountPanel({
           <BadgeGrid badges={badges} />
         </section>
       )}
+
+      <section className="account-section">
+        <h3>Appearance</h3>
+        <p className="account-hint">Choose a color theme inspired by the Decanti logo.</p>
+        <ThemePicker />
+      </section>
 
       <section className="account-section">
         <h3>Ranking style</h3>
