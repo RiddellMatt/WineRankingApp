@@ -5,6 +5,7 @@ import { getPairings } from '../pairings'
 import { hasTaste, lookupTaste } from '../tasteData'
 import { StarDisplay } from './StarRating'
 import { TasteDisplay } from './TasteProfile'
+import { ShareWineButton } from './ShareWineButton'
 
 interface Props {
   wine: Wine
@@ -16,6 +17,7 @@ interface Props {
   onSaveToWishlist?: () => void
   wishlistSaved?: boolean
   wishlistSaving?: boolean
+  shareAttribution?: string
 }
 
 const TYPE_CLASS: Record<string, string> = {
@@ -38,6 +40,7 @@ export function WineCard({
   onSaveToWishlist,
   wishlistSaved = false,
   wishlistSaving = false,
+  shareAttribution,
 }: Props) {
   const medal = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : ''
   const meta = [wine.varietal, wine.region].filter(Boolean).join(' · ')
@@ -110,19 +113,27 @@ export function WineCard({
         </div>
         {wine.price != null && <span className="wine-price">${wine.price.toFixed(0)}</span>}
         {readOnly && onSaveToWishlist ? (
-          <button
-            type="button"
-            className={`btn ghost small wine-save-wishlist-btn ${wishlistSaved ? 'saved' : ''}`}
-            disabled={wishlistSaved || wishlistSaving}
-            onClick={(e) => {
-              e.stopPropagation()
-              onSaveToWishlist()
-            }}
-          >
-            {wishlistSaved ? 'Saved to try ✓' : wishlistSaving ? 'Saving…' : '♡ Save to try'}
-          </button>
+          <div className="wine-readonly-actions">
+            <ShareWineButton
+              wine={wine}
+              score={score}
+              attribution={shareAttribution}
+            />
+            <button
+              type="button"
+              className={`btn ghost small wine-save-wishlist-btn ${wishlistSaved ? 'saved' : ''}`}
+              disabled={wishlistSaved || wishlistSaving}
+              onClick={(e) => {
+                e.stopPropagation()
+                onSaveToWishlist()
+              }}
+            >
+              {wishlistSaved ? 'Saved to try ✓' : wishlistSaving ? 'Saving…' : '♡ Save to try'}
+            </button>
+          </div>
         ) : !readOnly ? (
           <div className="wine-actions">
+          <ShareWineButton wine={wine} score={score} />
           <a
             className="icon-btn"
             href={shopUrl(wine)}

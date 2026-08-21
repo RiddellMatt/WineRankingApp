@@ -1,4 +1,5 @@
 import { Avatar } from './Avatar'
+import { ShareWineButton } from './ShareWineButton'
 import {
   activityEventLabel,
   actorLabel,
@@ -62,6 +63,9 @@ export function ActivityFeed({
           event.type === 'logged' &&
           !isWishlist(event.wine) &&
           Boolean(onSaveToWishlist)
+        const canShare =
+          event.type === 'logged' && !isWishlist(event.wine) && score > 0
+        const shareAttribution = isOwn ? undefined : `${name}'s pick`
         const saved = canSave && (isWishlistSaved?.(event.wine) ?? false)
         const saving = canSave && savingWishlistKey === wishlistIdentityKey(event.wine)
 
@@ -99,6 +103,14 @@ export function ActivityFeed({
                   >
                     View cellar
                   </button>
+                )}
+                {canShare && (
+                  <ShareWineButton
+                    wine={event.wine}
+                    score={score}
+                    attribution={shareAttribution}
+                    compact
+                  />
                 )}
                 {canSave && (
                   <button
