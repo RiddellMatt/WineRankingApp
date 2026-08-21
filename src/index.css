@@ -235,15 +235,26 @@ textarea::placeholder {
   align-self: flex-start;
 }
 
+.decanti-logo-navy.decanti-logo-header,
+.decanti-logo-light.decanti-logo-header {
+  height: 2.25rem;
+  width: min(10rem, 46vw);
+  object-fit: cover;
+  object-position: center;
+}
+
 .decanti-logo-auth {
   height: 3.25rem;
   width: auto;
   margin: 0 auto 0.75rem;
 }
 
-[data-theme='navy'] .decanti-logo-header,
-[data-theme='light'] .decanti-logo-header {
-  height: 2.1rem;
+.decanti-logo-navy.decanti-logo-auth,
+.decanti-logo-light.decanti-logo-auth {
+  height: 3.5rem;
+  width: min(14rem, 78vw);
+  object-fit: cover;
+  object-position: center;
 }
 
 .brand-pro-line {
