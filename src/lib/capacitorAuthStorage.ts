@@ -1,7 +1,8 @@
 import type { SupportedStorage } from '@supabase/supabase-js'
+import { STORAGE_PREFIX } from '../brand'
 import { isNativeApp } from './platform'
 
-const AUTH_PREFIX = 'cellar-rank.auth.'
+const AUTH_PREFIX = `${STORAGE_PREFIX}.auth.`
 
 /** Native SharedPreferences/UserDefaults — survives WebView reloads and Chrome Custom Tab OAuth. */
 export function createNativeAuthStorage(): SupportedStorage | undefined {

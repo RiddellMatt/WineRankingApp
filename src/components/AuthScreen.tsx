@@ -1,5 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { APP_DESCRIPTION, APP_NAME } from '../brand'
+import { BrandMark } from './BrandMark'
 import { OAUTH_ERROR_EVENT, OAUTH_SUCCESS_EVENT } from '../lib/mobileOAuth'
 import { isNativeApp } from '../lib/platform'
 
@@ -71,13 +73,9 @@ export function AuthScreen() {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <span className="brand-icon auth-icon" aria-hidden="true">
-          🍷
-        </span>
-        <h1>Cellar Rank</h1>
-        <p className="auth-tagline">
-          Sign in to sync your cellar across devices and share ratings with friends.
-        </p>
+        <BrandMark className="auth-brand-mark" size={56} />
+        <h1 className="brand-wordmark auth-wordmark">{APP_NAME}</h1>
+        <p className="auth-tagline">{APP_DESCRIPTION}</p>
 
         {configError && <p className="form-error auth-config-error">{configError}</p>}
 

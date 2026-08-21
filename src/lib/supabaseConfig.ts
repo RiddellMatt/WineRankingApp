@@ -76,7 +76,7 @@ export function friendlyAuthError(message: string): string {
   if (/flow state/i.test(message)) {
     return (
       'Sign-in timed out or was interrupted. Force-close the app, reopen it, and tap Continue with Google once — ' +
-      'finish login in the Chrome tab that opens, then wait to return to Cellar Rank automatically.'
+      'finish login in the Chrome tab that opens, then wait to return to Decanti automatically.'
     )
   }
   if (/400|malformed|disallowed_useragent/i.test(message)) {

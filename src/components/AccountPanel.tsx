@@ -9,6 +9,7 @@ import { computeBadgeProgress } from '../lib/badges'
 import { fetchFriendships } from '../lib/friendsDb'
 import { updateDisplayName, uploadAvatar, removeAvatar, type UserProfile } from '../lib/profileDb'
 import type { RankingPreference, Wine } from '../types'
+import { APP_NAME_PRO } from '../brand'
 import { Avatar } from './Avatar'
 import { BadgeGrid } from './BadgeGrid'
 
@@ -352,7 +353,7 @@ export function AccountPanel({
         <h3>Subscription</h3>
         <div className={`account-plan ${pro ? 'pro' : 'free'}`}>
           <div className="account-plan-header">
-            <span className="account-plan-name">{pro ? 'Cellar Rank Pro' : 'Free plan'}</span>
+            <span className="account-plan-name">{pro ? APP_NAME_PRO : 'Free plan'}</span>
             {pro && <span className="pro-badge">PRO</span>}
           </div>
           <p className="account-plan-detail">

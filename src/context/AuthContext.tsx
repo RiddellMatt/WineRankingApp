@@ -15,6 +15,7 @@ import {
   isWebOAuthCallback,
 } from '../lib/webOAuth'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
+import { STORAGE_PREFIX } from '../brand'
 import {
   friendlyAuthError,
   friendlySupabaseConfigError,
@@ -40,7 +41,7 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null)
 
-const OFFLINE_KEY = 'cellar-rank.offline-mode'
+const OFFLINE_KEY = `${STORAGE_PREFIX}.offline-mode`
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const configured = isSupabaseConfigured

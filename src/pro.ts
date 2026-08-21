@@ -1,4 +1,6 @@
-const PRO_KEY = 'wine-rank.pro.v1'
+import { PRO_STORAGE_KEY } from './brand'
+
+const PRO_KEY = PRO_STORAGE_KEY
 
 export function loadProStatus(): boolean {
   try {

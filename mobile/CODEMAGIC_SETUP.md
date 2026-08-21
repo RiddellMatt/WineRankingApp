@@ -1,6 +1,6 @@
 # Codemagic — iOS TestFlight without a Mac
 
-Cellar Rank uses **Codemagic** cloud Mac builders to produce signed iOS IPAs and upload them to **TestFlight**. You can develop on Windows/Android Studio and still ship to the App Store.
+Decanti uses **Codemagic** cloud Mac builders to produce signed iOS IPAs and upload them to **TestFlight**. You can develop on Windows/Android Studio and still ship to the App Store.
 
 Android Play Store builds are optional in the same `codemagic.yaml` (second workflow).
 
@@ -10,16 +10,16 @@ Android Play Store builds are optional in the same `codemagic.yaml` (second work
 |------|------|---------|
 | [Apple Developer Program](https://developer.apple.com/programs/) | $99/yr | App Store + TestFlight |
 | [Codemagic account](https://codemagic.io/) | Free tier available | Cloud Mac CI |
-| App Store Connect app record | — | Bundle ID `com.northline.cellarrank` |
+| App Store Connect app record | — | Bundle ID `com.northline.decanti` |
 
 > **Before App Store review:** Apple expects **In-App Purchase** for digital subscriptions in iOS apps. Stripe Pro is fine for Android testing; plan RevenueCat/StoreKit before iOS production submission.
 
 ## 1. Apple Developer + App Store Connect
 
 1. Enroll in the Apple Developer Program.
-2. **Certificates, Identifiers & Profiles → Identifiers** — register App ID `com.northline.cellarrank`.
+2. **Certificates, Identifiers & Profiles → Identifiers** — register App ID `com.northline.decanti`.
 3. Enable **Sign in with Apple** on the App ID (required when offering Google sign-in).
-4. **App Store Connect → Apps → +** — create **Cellar Rank** with bundle ID `com.northline.cellarrank`.
+4. **App Store Connect → Apps → +** — create **Decanti** with bundle ID `com.northline.decanti`.
 5. Note the numeric **Apple ID** (General → App Information). Update `APP_STORE_APPLE_ID` in `codemagic.yaml`.
 6. **TestFlight → Internal Testing** — create a group named **Internal Testers** (matches `beta_groups` in `codemagic.yaml`).
 
@@ -42,7 +42,7 @@ Team settings → **Team integrations → Developer Portal → Manage keys**:
 
 | Field | Value |
 |-------|--------|
-| Key name | `cellar_rank_asc` (must match `codemagic.yaml`) |
+| Key name | `decanti_asc` (must match `codemagic.yaml`) |
 | Issuer ID | from App Store Connect |
 | Key ID | from App Store Connect |
 | .p8 file | downloaded API key |
@@ -51,14 +51,14 @@ Team settings → **Team integrations → Developer Portal → Manage keys**:
 
 Team settings → **codemagic.yaml settings → Code signing identities**:
 
-1. **iOS certificates** → **Generate certificate** → type **Apple Distribution**, API key `cellar_rank_asc`.
-2. **iOS provisioning profiles** → **Fetch profiles** → select **App Store** profile for `com.northline.cellarrank`.
+1. **iOS certificates** → **Generate certificate** → type **Apple Distribution**, API key `decanti_asc`.
+2. **iOS provisioning profiles** → **Fetch profiles** → select **App Store** profile for `com.northline.decanti`.
 
 Codemagic matches `distribution_type: app_store` and `bundle_identifier` from `codemagic.yaml` — no manual profile references needed in the YAML.
 
-### Environment variable group: `cellar_rank_env`
+### Environment variable group: `decanti_env`
 
-Team settings → **Environment variables** → group `cellar_rank_env`:
+Team settings → **Environment variables** → group `decanti_env`:
 
 | Variable | Value |
 |----------|--------|
@@ -72,7 +72,7 @@ Mark both as **Secure**.
 Dashboard → **Authentication → URL Configuration** — ensure this is listed:
 
 ```
-com.northline.cellarrank://login-callback
+com.northline.decanti://login-callback
 ```
 
 ## 5. First iOS build
@@ -88,10 +88,10 @@ Test **Continue with Google** on the TestFlight build (uses the native deep link
 
 Only needed if you want Codemagic to upload AABs (you can also build locally in Android Studio).
 
-1. Create a Play Console app with package `com.northline.cellarrank`.
+1. Create a Play Console app with package `com.northline.decanti`.
 2. Create a Google Cloud service account with Play Console API access; download JSON credentials.
 3. Codemagic → environment group `google_play` → variable `GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS` (paste JSON, secure).
-4. Generate/upload a release keystore under **Code signing identities → Android keystores**, reference name `cellar_rank_keystore`.
+4. Generate/upload a release keystore under **Code signing identities → Android keystores**, reference name `decanti_keystore`.
 
 Then run the **Android Play internal track** workflow.
 
@@ -109,7 +109,7 @@ Then run the **Android Play internal track** workflow.
 | Build fails at signing | Regenerate/fetch Distribution cert + App Store profile in Codemagic |
 | `get-latest-app-store-build-number` fails | Set correct `APP_STORE_APPLE_ID` in `codemagic.yaml` |
 | Google sign-in fails on TestFlight | Confirm Supabase redirect URL + Google OAuth test users |
-| Blank app / no backend | Check `cellar_rank_env` group has both `VITE_*` variables |
+| Blank app / no backend | Check `decanti_env` group has both `VITE_*` variables |
 | Stripe Pro on iOS | Works for testing; replace with IAP before App Store review |
 
 See also: `mobile/STORE_RELEASE.md`, `mobile/SAFARI_TESTING.md`.

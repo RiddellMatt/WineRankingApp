@@ -1,4 +1,4 @@
-export const MOBILE_APP_SCHEME = 'com.northline.cellarrank'
+export const MOBILE_APP_SCHEME = 'com.northline.decanti'
 
 export function mobileCheckoutUrls(): { successUrl: string; cancelUrl: string } {
   const scheme = Deno.env.get('MOBILE_APP_SCHEME') ?? MOBILE_APP_SCHEME

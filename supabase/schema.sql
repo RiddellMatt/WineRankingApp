@@ -1,5 +1,5 @@
 -- Run once in Supabase Dashboard → SQL Editor → New query → Run
--- Cellar Rank: profiles, wines, friendships + Row Level Security
+-- Decanti: profiles, wines, friendships + Row Level Security
 
 -- ── Tables ────────────────────────────────────────────────────────────────
 

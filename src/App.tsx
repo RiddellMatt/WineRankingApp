@@ -18,6 +18,8 @@ import { FriendsPanel } from './components/FriendsPanel'
 import { AccountPanel } from './components/AccountPanel'
 import { RankingPreferenceModal } from './components/RankingPreferenceModal'
 import { Avatar } from './components/Avatar'
+import { BrandMark } from './components/BrandMark'
+import { APP_NAME, APP_NAME_PRO, APP_TAGLINE, STORAGE_PREFIX } from './brand'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
 import { fetchMyProfile, updateRankingPreference, type UserProfile } from './lib/profileDb'
 import { isSupabaseConfigured } from './lib/supabase'
@@ -184,7 +186,7 @@ export default function App() {
     if (!cloudUser?.email || !profile?.displayName) return
     const emailPrefix = cloudUser.email.split('@')[0]?.toLowerCase()
     if (!emailPrefix || profile.displayName.toLowerCase() !== emailPrefix) return
-    const key = 'cellar-rank.profile-name-prompt'
+    const key = `${STORAGE_PREFIX}.profile-name-prompt`
     if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, '1')
     goToAccount(false)
@@ -464,7 +466,7 @@ export default function App() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `cellar-rank-export-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `decanti-export-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -495,7 +497,7 @@ export default function App() {
         setWines(synced)
       }
     } catch {
-      window.alert("That file doesn't look like a Cellar Rank export.")
+      window.alert("That file doesn't look like a Decanti export.")
     }
   }
 
@@ -530,15 +532,13 @@ export default function App() {
       <header className="header">
         <div className="header-inner">
           <div className="brand">
-            <span className="brand-icon" aria-hidden="true">
-              🍷
-            </span>
+            <BrandMark className="brand-mark-header" size={44} />
             <div>
-              <h1>
-                Cellar Rank
+              <h1 className="brand-wordmark">
+                {APP_NAME}
                 {pro && <span className="pro-badge inline"> PRO</span>}
               </h1>
-              <p className="tagline">Every bottle you&apos;ve tried, ranked.</p>
+              <p className="tagline">{APP_TAGLINE}</p>
             </div>
           </div>
           <div className="header-actions">
@@ -660,7 +660,7 @@ export default function App() {
               <h2>Your cellar, decoded</h2>
               <p>
                 Total spend, best-value bottles, rating distribution, and your taste profile by
-                type, region, and varietal — all in Cellar Rank Pro.
+                type, region, and varietal — all in {APP_NAME_PRO}.
               </p>
               <div className="empty-actions">
                 <button className="btn primary" onClick={() => goToAccount(true)}>
