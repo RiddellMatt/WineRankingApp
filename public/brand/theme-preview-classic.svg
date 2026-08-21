@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 120" role="img" aria-label="Decanti Cellar theme">
+  <rect width="280" height="120" rx="14" fill="#12080c"/>
+  <defs>
+    <linearGradient id="mark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f4d58d"/>
+      <stop offset="50%" stop-color="#e8b04b"/>
+      <stop offset="100%" stop-color="#b62c4a"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#mark)" transform="translate(24 24) scale(0.9)" d="M30 4h4c0 10-1.5 16-4 19v22h-6a2.5 2.5 0 0 0 0 5h20a2.5 2.5 0 0 0 0-5h-6V23c-2.5-3-4-9-4-19z"/>
+  <text x="78" y="72" fill="#f7eef1" font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="700">Decanti</text>
+</svg>

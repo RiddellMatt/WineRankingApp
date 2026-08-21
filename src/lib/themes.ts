@@ -4,30 +4,40 @@ import { isNativeApp } from './platform'
 export type AppTheme = 'classic' | 'navy' | 'light'
 
 export const THEME_STORAGE_KEY = `${STORAGE_PREFIX}.theme`
+export const THEME_CHANGE_EVENT = 'decanti:theme-change'
+
+const brandBase = `${import.meta.env.BASE_URL}brand`
 
 export const THEME_OPTIONS: {
   id: AppTheme
   label: string
   description: string
   swatches: [string, string, string]
+  previewSrc: string
+  logoSrc?: string
 }[] = [
   {
     id: 'classic',
     label: 'Cellar',
     description: 'Deep burgundy with gold accents',
     swatches: ['#12080c', '#c41e3a', '#e8b04b'],
+    previewSrc: `${brandBase}/theme-preview-classic.svg`,
   },
   {
     id: 'navy',
     label: 'Navy',
     description: 'Logo navy with wine-red splash',
     swatches: ['#1a3674', '#8b2d23', '#ffffff'],
+    previewSrc: `${brandBase}/theme-preview-navy.svg`,
+    logoSrc: `${brandBase}/logo-navy.svg`,
   },
   {
     id: 'light',
     label: 'Daylight',
     description: 'White canvas with terracotta',
     swatches: ['#ffffff', '#a35447', '#231f20'],
+    previewSrc: `${brandBase}/theme-preview-light.svg`,
+    logoSrc: `${brandBase}/logo-light.svg`,
   },
 ]
 
@@ -66,6 +76,8 @@ export function applyTheme(theme: AppTheme): void {
   if (isNativeApp()) {
     void updateNativeChrome(theme)
   }
+
+  window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: theme }))
 }
 
 async function updateNativeChrome(theme: AppTheme): Promise<void> {
