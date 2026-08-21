@@ -1,13 +1,16 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { FREE_WINE_LIMIT, PRO_CONFIG } from '../config'
 import { activatePro } from '../pro'
 import { createBillingPortal, createProCheckout } from '../lib/checkoutApi'
 import { openExternalUrl } from '../lib/openUrl'
 import { redeemProOnServer } from '../lib/proApi'
 import { RANKING_PREFERENCE_OPTIONS } from '../lib/ranking'
+import { computeBadgeProgress } from '../lib/badges'
+import { fetchFriendships } from '../lib/friendsDb'
 import { updateDisplayName, uploadAvatar, removeAvatar, type UserProfile } from '../lib/profileDb'
-import type { RankingPreference } from '../types'
+import type { RankingPreference, Wine } from '../types'
 import { Avatar } from './Avatar'
+import { BadgeGrid } from './BadgeGrid'
 
 const PRO_FEATURES = [
   'Unlimited wines',
@@ -24,6 +27,7 @@ interface Props {
   cloudConfigured: boolean
   pro: boolean
   wineCount: number
+  wines: Wine[]
   rankingPreference: RankingPreference
   highlightSubscription?: boolean
   onProfileSaved: (profile: UserProfile) => void
@@ -41,6 +45,7 @@ export function AccountPanel({
   cloudConfigured,
   pro,
   wineCount,
+  wines,
   rankingPreference,
   highlightSubscription = false,
   onProfileSaved,
@@ -63,6 +68,7 @@ export function AccountPanel({
   const [checkoutBusy, setCheckoutBusy] = useState(false)
   const [billingBusy, setBillingBusy] = useState(false)
   const [rankingBusy, setRankingBusy] = useState(false)
+  const [friendCount, setFriendCount] = useState(0)
 
   const resolvedEmail = profile?.email || email || ''
   const resolvedName =
@@ -77,6 +83,21 @@ export function AccountPanel({
     if (!highlightSubscription || !subscriptionRef.current) return
     subscriptionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [highlightSubscription])
+
+  useEffect(() => {
+    if (!signedIn || !profile?.id || offlineMode) {
+      setFriendCount(0)
+      return
+    }
+    fetchFriendships(profile.id)
+      .then((rows) => setFriendCount(rows.filter((f) => f.status === 'accepted').length))
+      .catch(() => setFriendCount(0))
+  }, [signedIn, profile?.id, offlineMode])
+
+  const badges = useMemo(
+    () => computeBadgeProgress({ wines, friendCount }),
+    [wines, friendCount],
+  )
 
   async function handleSaveProfile(e: FormEvent) {
     e.preventDefault()
@@ -272,6 +293,16 @@ export function AccountPanel({
             <input value={resolvedEmail} readOnly />
           </label>
           <p className="account-hint">Used for sign-in and finding friends.</p>
+        </section>
+      )}
+
+      {signedIn && (
+        <section className="account-section">
+          <h3>Badges</h3>
+          <p className="account-hint">
+            Earn metallic tiers as you log wines, explore origins, and connect with friends.
+          </p>
+          <BadgeGrid badges={badges} />
         </section>
       )}
 

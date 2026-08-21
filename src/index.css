@@ -2357,6 +2357,297 @@ textarea {
   }
 }
 
+/* ── Wine passport ───────────────────────────────────── */
+
+.wine-passport {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.passport-empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+}
+
+.passport-highlight {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(122, 31, 61, 0.18), rgba(90, 44, 59, 0.08));
+  border: 1px solid rgba(122, 31, 61, 0.25);
+}
+
+.passport-highlight p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.passport-highlight-icon {
+  font-size: 1.35rem;
+}
+
+.passport-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+}
+
+.passport-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.85rem 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.passport-stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.passport-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.passport-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.passport-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+}
+
+.passport-card h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.passport-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.passport-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.passport-bar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.passport-bar-label {
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.passport-bar-track {
+  height: 0.45rem;
+  background: var(--surface-hover);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.passport-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #a04562);
+  border-radius: 999px;
+}
+
+.passport-bar-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-width: 1.25rem;
+  text-align: right;
+}
+
+.standings-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.standing-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.standing-row:last-child {
+  border-bottom: none;
+}
+
+.standing-category {
+  display: block;
+  font-weight: 600;
+}
+
+.standing-you {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.standing-leader {
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.standing-leader.you-lead {
+  color: var(--gold);
+}
+
+.passport-friend-avatars {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+/* ── Badges (metallic tiers) ─────────────────────────── */
+
+.badge-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.badge-card {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.85rem 0.95rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.badge-card.locked {
+  opacity: 0.72;
+}
+
+.badge-medal {
+  position: relative;
+  flex-shrink: 0;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    inset 0 2px 5px rgba(255, 255, 255, 0.45),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.35),
+    0 4px 10px rgba(0, 0, 0, 0.28);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.badge-medal-icon {
+  font-size: 1.45rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+.badge-medal-tier {
+  position: absolute;
+  bottom: -0.35rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  white-space: nowrap;
+}
+
+.badge-tier-locked {
+  background: linear-gradient(145deg, #6b6b6b, #3a3a3a);
+}
+
+.badge-tier-bronze {
+  background: linear-gradient(145deg, #e8a86b, #9c5c28 45%, #cd7f32 70%, #6b3e12);
+}
+
+.badge-tier-silver {
+  background: linear-gradient(145deg, #f0f0f0, #9aa0a6 40%, #d8dde3 65%, #70757a);
+}
+
+.badge-tier-gold {
+  background: linear-gradient(145deg, #ffe98a, #c9a227 42%, #ffd700 68%, #9a7b0a);
+}
+
+.badge-tier-diamond {
+  background: linear-gradient(145deg, #e8fdff, #7ec8e3 35%, #b9f2ff 55%, #5eb7d4 75%, #2a6f87);
+}
+
+.badge-copy {
+  min-width: 0;
+}
+
+.badge-title {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.badge-desc {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.badge-progress {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+@media (min-width: 720px) {
+  .passport-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .badge-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* Capacitor native shell — same bottom nav even on wider tablets in portrait */
 html.native-app body {
   padding-bottom: 0;
