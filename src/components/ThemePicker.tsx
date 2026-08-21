@@ -19,10 +19,8 @@ export function ThemePicker() {
           onClick={() => choose(option.id)}
           aria-pressed={theme === option.id}
         >
-          <span className="theme-swatches" aria-hidden="true">
-            {option.swatches.map((color) => (
-              <span className="theme-swatch" key={color} style={{ background: color }} />
-            ))}
+          <span className="theme-preview" aria-hidden="true">
+            <img src={option.previewSrc} alt="" className="theme-preview-img" />
           </span>
           <span className="theme-option-copy">
             <span className="theme-option-label">{option.label}</span>

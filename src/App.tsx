@@ -18,7 +18,8 @@ import { FriendsPanel } from './components/FriendsPanel'
 import { AccountPanel } from './components/AccountPanel'
 import { RankingPreferenceModal } from './components/RankingPreferenceModal'
 import { Avatar } from './components/Avatar'
-import { BrandMark } from './components/BrandMark'
+import { DecantiLogo, usesThemeWordmarkLogo } from './components/DecantiLogo'
+import { useAppTheme } from './lib/useAppTheme'
 import { APP_NAME, APP_NAME_PRO, APP_TAGLINE, STORAGE_PREFIX } from './brand'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
 import { fetchMyProfile, updateRankingPreference, type UserProfile } from './lib/profileDb'
@@ -79,6 +80,8 @@ export default function App() {
     exitOffline,
     configured,
   } = useAuth()
+  const theme = useAppTheme()
+  const showThemeLogo = usesThemeWordmarkLogo(theme)
   const cloudUser = user && !offlineMode ? user : null
 
   const [wines, setWines] = useState<Wine[]>(() => (offlineMode ? loadWines() : []))
@@ -532,12 +535,20 @@ export default function App() {
       <header className="header">
         <div className="header-inner">
           <div className="brand">
-            <BrandMark className="brand-mark-header" size={44} />
+            <DecantiLogo context="header" />
             <div>
-              <h1 className="brand-wordmark">
-                {APP_NAME}
-                {pro && <span className="pro-badge inline"> PRO</span>}
-              </h1>
+              {showThemeLogo ? (
+                pro && (
+                  <p className="brand-pro-line">
+                    <span className="pro-badge inline">PRO</span>
+                  </p>
+                )
+              ) : (
+                <h1 className="brand-wordmark">
+                  {APP_NAME}
+                  {pro && <span className="pro-badge inline"> PRO</span>}
+                </h1>
+              )}
               <p className="tagline">{APP_TAGLINE}</p>
             </div>
           </div>

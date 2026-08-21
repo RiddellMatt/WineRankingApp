@@ -1,11 +1,14 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { APP_DESCRIPTION, APP_NAME } from '../brand'
-import { BrandMark } from './BrandMark'
+import { DecantiLogo, usesThemeWordmarkLogo } from './DecantiLogo'
+import { useAppTheme } from '../lib/useAppTheme'
 import { OAUTH_ERROR_EVENT, OAUTH_SUCCESS_EVENT } from '../lib/mobileOAuth'
 import { isNativeApp } from '../lib/platform'
 
 export function AuthScreen() {
+  const theme = useAppTheme()
+  const showThemeLogo = usesThemeWordmarkLogo(theme)
   const { signIn, signUp, signInWithOAuth, continueOffline, user, configError } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [displayName, setDisplayName] = useState('')
@@ -73,8 +76,8 @@ export function AuthScreen() {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <BrandMark className="auth-brand-mark" size={56} />
-        <h1 className="brand-wordmark auth-wordmark">{APP_NAME}</h1>
+        <DecantiLogo context="auth" />
+        {!showThemeLogo && <h1 className="brand-wordmark auth-wordmark">{APP_NAME}</h1>}
         <p className="auth-tagline">{APP_DESCRIPTION}</p>
 
         {configError && <p className="form-error auth-config-error">{configError}</p>}
