@@ -1,5 +1,6 @@
 import { APP_NAME, APP_TAGLINE } from '../brand'
-import type { Wine } from '../types'
+import { hasTaste, lookupTaste } from '../tasteData'
+import { TASTE_AXES, type TasteProfile, type Wine } from '../types'
 
 export interface ShareWineCardInput {
   wine: Wine
@@ -9,7 +10,9 @@ export interface ShareWineCardInput {
 }
 
 const CARD_WIDTH = 1080
-const CARD_HEIGHT = 1350
+const CARD_HEIGHT = 1420
+const MAX_TASTE_ROWS = 4
+const MAX_NOTE_LINES_WITH_TASTE = 2
 
 const COLORS = {
   bgTop: '#1c0e14',
@@ -149,6 +152,99 @@ function slugify(name: string): string {
     .slice(0, 40)
 }
 
+interface ShareTasteSection {
+  taste: TasteProfile
+  caption: string
+  rows: { left: string; right: string; value: number }[]
+}
+
+function resolveShareTaste(wine: Wine): ShareTasteSection | null {
+  const reference = lookupTaste(wine.varietal, wine.name, wine.type)
+  const ownTaste = hasTaste(wine.taste)
+  const taste = ownTaste ? wine.taste : reference.taste
+  const isTypical = !ownTaste || wine.tasteSource === 'typical'
+
+  const axes = TASTE_AXES.filter(
+    (axis) => (!axis.sparklingOnly || wine.type === 'Sparkling') && taste[axis.key] != null,
+  ).slice(0, MAX_TASTE_ROWS)
+
+  if (axes.length === 0) return null
+
+  const caption = isTypical
+    ? `Typical ${reference.basedOn} profile`
+    : 'How it tasted to me'
+
+  return {
+    taste,
+    caption,
+    rows: axes.map((axis) => ({
+      left: axis.left,
+      right: axis.right,
+      value: taste[axis.key]!,
+    })),
+  }
+}
+
+function drawTasteSliderRow(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  left: string,
+  right: string,
+  value: number,
+): number {
+  const labelW = 108
+  const trackX = x + labelW
+  const trackW = width - labelW * 2
+  const trackY = y + 14
+  const trackH = 10
+
+  ctx.font = '600 22px Inter, system-ui, sans-serif'
+  ctx.fillStyle = value < 50 ? COLORS.text : COLORS.textMuted
+  ctx.textAlign = 'left'
+  ctx.fillText(left, x, y + 22)
+
+  ctx.fillStyle = value >= 50 ? COLORS.text : COLORS.textMuted
+  ctx.textAlign = 'right'
+  ctx.fillText(right, x + width, y + 22)
+  ctx.textAlign = 'left'
+
+  ctx.fillStyle = '#4a2c36'
+  roundRect(ctx, trackX, trackY, trackW, trackH, trackH / 2)
+  ctx.fill()
+
+  const pillX = trackX + (value / 100) * trackW
+  ctx.beginPath()
+  ctx.fillStyle = COLORS.gold
+  ctx.arc(pillX, trackY + trackH / 2, 12, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = COLORS.goldSoft
+  ctx.lineWidth = 2
+  ctx.stroke()
+
+  return y + 48
+}
+
+function drawTasteSection(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  section: ShareTasteSection,
+): number {
+  ctx.font = '600 24px Inter, system-ui, sans-serif'
+  ctx.fillStyle = COLORS.textMuted
+  ctx.fillText(section.caption, x, y)
+  y += 36
+
+  for (const row of section.rows) {
+    y = drawTasteSliderRow(ctx, x, y, width, row.left, row.right, row.value)
+  }
+
+  return y + 8
+}
+
 export function shareWineCardFilename(wine: Pick<Wine, 'name'>): string {
   const slug = slugify(wine.name) || 'wine'
   return `decanti-${slug}.png`
@@ -177,7 +273,7 @@ export async function renderShareWineCard(input: ShareWineCardInput): Promise<Bl
   const panelX = 72
   const panelY = 200
   const panelW = CARD_WIDTH - panelX * 2
-  const panelH = 880
+  const panelH = 980
   const radius = 28
 
   ctx.fillStyle = COLORS.surface
@@ -239,12 +335,22 @@ export async function renderShareWineCard(input: ShareWineCardInput): Promise<Bl
   ctx.fillStyle = COLORS.gold
   ctx.fillText(score.toFixed(1), textX + 5 * 44 + 4 * 15 + 24, y + 38)
 
+  const tasteSection = resolveShareTaste(wine)
+  if (tasteSection) {
+    y += 88
+    y = drawTasteSection(ctx, textX, y, maxText, tasteSection)
+  }
+
   if (wine.notes.trim()) {
-    y += 100
+    y += tasteSection ? 24 : 100
     ctx.font = 'italic 32px Georgia, "Times New Roman", serif'
     ctx.fillStyle = COLORS.textMuted
     const note = `"${wine.notes.trim()}"`
-    for (const line of wrapText(ctx, note, maxText)) {
+    const noteLines = wrapText(ctx, note, maxText)
+    const linesToShow = tasteSection
+      ? noteLines.slice(0, MAX_NOTE_LINES_WITH_TASTE)
+      : noteLines
+    for (const line of linesToShow) {
       ctx.fillText(line, textX, y)
       y += 42
     }
