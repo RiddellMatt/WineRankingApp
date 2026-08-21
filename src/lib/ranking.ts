@@ -1,4 +1,5 @@
 import type { RankingPreference, Wine } from '../types'
+import { STORAGE_PREFIX } from '../brand'
 
 export const RANKING_PREFERENCE_OPTIONS: {
   value: RankingPreference
@@ -22,8 +23,8 @@ export const RANKING_PREFERENCE_OPTIONS: {
   },
 ]
 
-const LOCAL_PREF_KEY = 'cellar-rank.ranking-preference'
-const SETUP_DONE_KEY = 'cellar-rank.ranking-preference-setup-done'
+const LOCAL_PREF_KEY = `${STORAGE_PREFIX}.ranking-preference`
+const SETUP_DONE_KEY = `${STORAGE_PREFIX}.ranking-preference-setup-done`
 
 export function getScoreWeights(pref: RankingPreference): { enjoyment: number; value: number } {
   switch (pref) {

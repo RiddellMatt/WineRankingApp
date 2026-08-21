@@ -9,10 +9,10 @@ def getVersionName = { ->
 }
 
 android {
-    namespace = "com.northline.cellarrank"
+    namespace = "com.northline.decanti"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.northline.cellarrank"
+        applicationId "com.northline.decanti"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode getVersionCode()

@@ -1,7 +1,8 @@
 import type { Wine } from './types'
+import { WINE_STORAGE_KEY } from './brand'
 import { normalizeWine } from './lib/ranking'
 
-const STORAGE_KEY = 'wine-rank.wines.v1'
+const STORAGE_KEY = WINE_STORAGE_KEY
 
 export function loadWines(): Wine[] {
   try {

@@ -1,12 +1,12 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
-  appId: 'com.northline.cellarrank',
-  appName: 'Cellar Rank',
+  appId: 'com.northline.decanti',
+  appName: 'Decanti',
   webDir: 'dist',
   ios: {
     contentInset: 'automatic',
-    scheme: 'Cellar Rank',
+    scheme: 'Decanti',
   },
   android: {
     allowMixedContent: true,
@@ -26,12 +26,12 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 1200,
       launchAutoHide: false,
-      backgroundColor: '#16090d',
+      backgroundColor: '#12080c',
       showSpinner: false,
     },
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#16090d',
+      backgroundColor: '#12080c',
     },
     Keyboard: {
       resize: 'body',

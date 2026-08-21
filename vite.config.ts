@@ -19,11 +19,11 @@ export default defineConfig(({ mode }) => {
               registerType: 'autoUpdate',
               includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
               manifest: {
-                name: 'Cellar Rank',
-                short_name: 'Cellar Rank',
-                description: "Rank and keep notes on every wine you've tried.",
-                theme_color: '#16090d',
-                background_color: '#16090d',
+                name: 'Decanti',
+                short_name: 'Decanti',
+                description: "Decanti — rank, remember, and share every wine you've tried.",
+                theme_color: '#12080c',
+                background_color: '#12080c',
                 display: 'standalone',
                 icons: [
                   { src: 'icons/pwa-192.png', sizes: '192x192', type: 'image/png' },

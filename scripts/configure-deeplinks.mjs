@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Ensures iOS and Android native projects register the Cellar Rank URL scheme
+ * Ensures iOS and Android native projects register the Decanti URL scheme
  * for Supabase OAuth and Stripe return links. Run after `npx cap sync`.
  */
 import fs from 'node:fs'
 import path from 'node:path'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
-const SCHEME = 'com.northline.cellarrank'
+const SCHEME = 'com.northline.decanti'
 
 function patchIosInfoPlist() {
   const plistPath = path.join(ROOT, 'ios/App/App/Info.plist')

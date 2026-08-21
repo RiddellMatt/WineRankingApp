@@ -1,6 +1,6 @@
-# Cellar Rank — App Store & Play Store release path
+# Decanti — App Store & Play Store release path
 
-Cellar Rank ships as a **native mobile app** (iOS + Android) using **Capacitor** to wrap the existing React UI. Supabase remains the backend.
+Decanti ships as a **native mobile app** (iOS + Android) using **Capacitor** to wrap the existing React UI. Supabase remains the backend.
 
 ## Prerequisites
 
@@ -53,7 +53,7 @@ Rebuild after changing env: `npm run cap:sync`.
 **Authentication → URL Configuration → Redirect URLs** — add:
 
 ```
-com.northline.cellarrank://login-callback
+com.northline.decanti://login-callback
 ```
 
 Enable **Google** and **Apple** providers in Supabase (same as web OAuth setup).
@@ -65,7 +65,7 @@ Run **section 5** of `supabase/run-in-sql-editor.sql` so OAuth names/avatars see
 In **Supabase → Edge Functions → Secrets**, set (optional — defaults match app scheme):
 
 ```
-MOBILE_APP_SCHEME=com.northline.cellarrank
+MOBILE_APP_SCHEME=com.northline.decanti
 ```
 
 Redeploy checkout functions after pulling this branch:
@@ -77,8 +77,8 @@ npx supabase functions deploy create-billing-portal
 
 The mobile app passes `platform: "mobile"` so Stripe redirects back to:
 
-- `com.northline.cellarrank://checkout-success`
-- `com.northline.cellarrank://account` (billing portal)
+- `com.northline.decanti://checkout-success`
+- `com.northline.decanti://account` (billing portal)
 
 > **App Store note:** Apple expects In-App Purchase for digital subscriptions consumed in the app. Stripe checkout works for testing and Android interim; plan **RevenueCat / StoreKit** before iOS App Store submission.
 
@@ -98,7 +98,7 @@ npm run cap:sync
 
 1. **Xcode → App target → Signing & Capabilities**
    - Team: your Apple Developer team
-   - Bundle ID: `com.northline.cellarrank` (must match `capacitor.config.ts`)
+   - Bundle ID: `com.northline.decanti` (must match `capacitor.config.ts`)
    - Enable **Sign in with Apple** capability (required when offering Google sign-in)
 2. **Info.plist** — URL scheme added by `scripts/configure-deeplinks.mjs`
 3. **Privacy**
@@ -136,14 +136,14 @@ npm run cap:sync
 
 | Platform | ID |
 |----------|-----|
-| iOS / Android | `com.northline.cellarrank` |
-| URL scheme | `com.northline.cellarrank://` |
+| iOS / Android | `com.northline.decanti` |
+| URL scheme | `com.northline.decanti://` |
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
 | **Invalid API key** on Google sign-in | This is the **Supabase anon key** baked into the app at build time — not your Google OAuth client. In Supabase → **Project Settings → API**, copy the **anon public** key into `.env.local` on your dev machine, then run `npm run cap:sync` and rebuild in Android Studio. |
-| **Invalid flow state** on Android | Pull latest code, `npm run cap:sync`, rebuild. OAuth must complete in the app WebView. Force-close the app, reopen, tap Google once (don’t open multiple login tabs). Add `com.northline.cellarrank://login-callback` to Supabase → Authentication → URL Configuration → Redirect URLs if missing. |
+| **Invalid flow state** on Android | Pull latest code, `npm run cap:sync`, rebuild. OAuth must complete in the app WebView. Force-close the app, reopen, tap Google once (don’t open multiple login tabs). Add `com.northline.decanti://login-callback` to Supabase → Authentication → URL Configuration → Redirect URLs if missing. |
 | Cloud sync disabled | Same as above — env vars must exist before `npm run build:mobile`. |
-| Google redirect error | Add `com.northline.cellarrank://login-callback` to Supabase redirect URLs (see `mobile/SAFARI_TESTING.md`). |
+| Google redirect error | Add `com.northline.decanti://login-callback` to Supabase redirect URLs (see `mobile/SAFARI_TESTING.md`). |

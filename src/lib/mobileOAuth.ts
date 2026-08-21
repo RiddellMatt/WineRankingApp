@@ -6,8 +6,8 @@ import { isNativeApp, nativePlatform } from './platform'
 import { getSupabase } from './supabase'
 import { friendlyAuthError } from './supabaseConfig'
 
-export const OAUTH_SUCCESS_EVENT = 'cellar-rank:oauth-success'
-export const OAUTH_ERROR_EVENT = 'cellar-rank:oauth-error'
+export const OAUTH_SUCCESS_EVENT = 'decanti:oauth-success'
+export const OAUTH_ERROR_EVENT = 'decanti:oauth-error'
 
 function emitOAuthError(message: string): void {
   window.dispatchEvent(new CustomEvent(OAUTH_ERROR_EVENT, { detail: message }))

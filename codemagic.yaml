@@ -1,4 +1,4 @@
-# Cellar Rank — cloud iOS builds (no Mac required).
+# Decanti — cloud iOS builds (no Mac required).
 # Setup: mobile/CODEMAGIC_SETUP.md
 
 workflows:
@@ -8,14 +8,14 @@ workflows:
     instance_type: mac_mini_m2
     integrations:
       # Must match Team integrations → Developer Portal → key name in Codemagic UI.
-      app_store_connect: cellar_rank_asc
+      app_store_connect: decanti_asc
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.northline.cellarrank
+        bundle_identifier: com.northline.decanti
       groups:
         # Create in Codemagic: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
-        - cellar_rank_env
+        - decanti_env
       vars:
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
@@ -62,12 +62,12 @@ workflows:
     instance_type: mac_mini_m2
     environment:
       android_signing:
-        - cellar_rank_keystore
+        - decanti_keystore
       groups:
-        - cellar_rank_env
+        - decanti_env
         - google_play
       vars:
-        PACKAGE_NAME: com.northline.cellarrank
+        PACKAGE_NAME: com.northline.decanti
       node: v20
       java: 21
     triggering:

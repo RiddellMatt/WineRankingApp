@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (profile?.is_pro) {
-      return jsonResponse({ error: 'You already have Cellar Rank Pro.' }, 400)
+      return jsonResponse({ error: 'You already have Decanti Pro.' }, 400)
     }
 
     const { successUrl, cancelUrl } =

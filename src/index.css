@@ -1,17 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  --bg: #16090d;
-  --bg-soft: #221016;
-  --surface: #2b141c;
-  --surface-hover: #341a23;
-  --border: #47222e;
-  --text: #f3e6e9;
-  --text-dim: #b99aa4;
-  --text-faint: #8a6a75;
-  --accent: #b62c4a;
-  --accent-hover: #cf3a5b;
-  --accent-soft: rgba(182, 44, 74, 0.16);
+  --bg: #12080c;
+  --bg-soft: #1c0e14;
+  --surface: #26141c;
+  --surface-hover: #301a24;
+  --border: #4a2834;
+  --text: #f7eef1;
+  --text-dim: #c4a8b0;
+  --text-faint: #917580;
+  --accent: #c41e3a;
+  --accent-hover: #db3450;
+  --accent-soft: rgba(196, 30, 58, 0.16);
+  --brand-gold: #e8b04b;
+  --brand-gold-soft: #f4d58d;
   --star: #e8b04b;
   --star-empty: #4a2c36;
   --gold: #e8b04b;
@@ -19,7 +21,7 @@
   --bronze: #c98a5a;
   --danger: #e06a6a;
   --radius: 14px;
-  --font-display: 'Playfair Display', Georgia, serif;
+  --font-display: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -51,7 +53,10 @@ body {
     var(--safe-bottom)
     var(--safe-left);
   background: var(--bg);
-  background-image: radial-gradient(1200px 600px at 70% -10%, #3a1220 0%, var(--bg) 55%);
+  background-image:
+    radial-gradient(1100px 520px at 72% -8%, rgba(196, 30, 58, 0.22) 0%, transparent 55%),
+    radial-gradient(800px 400px at 12% 0%, rgba(232, 176, 75, 0.08) 0%, transparent 50%),
+    linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 100%);
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-body);
@@ -130,7 +135,38 @@ textarea::placeholder {
 
 .brand-icon {
   font-size: 2.4rem;
-  filter: drop-shadow(0 4px 10px rgba(182, 44, 74, 0.4));
+  filter: drop-shadow(0 4px 10px rgba(196, 30, 58, 0.4));
+}
+
+.brand-mark {
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 12px rgba(232, 176, 75, 0.25));
+}
+
+.brand-mark-header {
+  align-self: flex-start;
+}
+
+.brand-wordmark {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.04em;
+  background: linear-gradient(120deg, var(--brand-gold-soft) 0%, var(--brand-gold) 42%, #f7eef1 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.auth-wordmark {
+  font-size: 2.35rem;
+  text-align: center;
+}
+
+.auth-brand-mark {
+  display: block;
+  margin: 0 auto 0.75rem;
 }
 
 .brand h1 {
@@ -139,6 +175,11 @@ textarea::placeholder {
   font-weight: 700;
   margin: 0;
   letter-spacing: 0.01em;
+}
+
+.brand h1.brand-wordmark {
+  font-size: 2rem;
+  letter-spacing: 0.04em;
 }
 
 .tagline {

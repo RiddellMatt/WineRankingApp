@@ -1,4 +1,4 @@
-package com.northline.cellarrank;
+package com.northline.decanti;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -1,6 +1,7 @@
 import { countDrinkLocations, countOriginCountries } from './wineGeo'
 import { triedWines, wishlistWines } from './wishlist'
 import type { Wine } from '../types'
+import { APP_NAME } from '../brand'
 
 export type BadgeTier = 'locked' | 'bronze' | 'silver' | 'gold' | 'diamond'
 
@@ -61,7 +62,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     id: 'social',
     title: 'Social',
-    description: 'Connect with friends on Cellar Rank',
+    description: `Connect with friends on ${APP_NAME}`,
     icon: '👥',
     thresholds: [1, 3, 5, 10],
   },

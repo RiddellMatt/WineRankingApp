@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- Cellar Rank — database upgrades (copy/paste into Supabase SQL Editor)
+-- Decanti — database upgrades (copy/paste into Supabase SQL Editor)
 -- ═══════════════════════════════════════════════════════════════════════════
 --
 -- HOW TO RUN:
