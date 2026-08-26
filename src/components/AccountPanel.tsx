@@ -5,7 +5,11 @@ import { createBillingPortal, createProCheckout } from '../lib/checkoutApi'
 import { openExternalUrl } from '../lib/openUrl'
 import { redeemProOnServer } from '../lib/proApi'
 import { RANKING_PREFERENCE_OPTIONS } from '../lib/ranking'
-import { computeBadgeProgress } from '../lib/badges'
+import {
+  computeDisplayedBadgeProgress,
+  isBadgeTestingEnabled,
+  resetEarnedBadgeProgressForTesting,
+} from '../lib/badgeUnlocks'
 import { fetchFriendships } from '../lib/friendsDb'
 import { updateDisplayName, uploadAvatar, removeAvatar, type UserProfile } from '../lib/profileDb'
 import type { RankingPreference, Wine } from '../types'
@@ -97,9 +101,24 @@ export function AccountPanel({
   }, [signedIn, profile?.id, offlineMode])
 
   const badges = useMemo(
-    () => computeBadgeProgress({ wines, friendCount }),
+    () => computeDisplayedBadgeProgress({ wines, friendCount }),
     [wines, friendCount],
   )
+
+  const badgeTestingEnabled = isBadgeTestingEnabled()
+
+  function handleResetBadgeProgress() {
+    if (
+      !window.confirm(
+        'Reset all earned badge tiers to locked? The page will reload. ' +
+          'Delete wines or cross a new threshold to see unlock toasts again.',
+      )
+    ) {
+      return
+    }
+    resetEarnedBadgeProgressForTesting()
+    window.location.reload()
+  }
 
   async function handleSaveProfile(e: FormEvent) {
     e.preventDefault()
@@ -305,6 +324,15 @@ export function AccountPanel({
             Earn metallic tiers as you log wines, explore origins, and connect with friends.
           </p>
           <BadgeGrid badges={badges} />
+          {badgeTestingEnabled && (
+            <button
+              type="button"
+              className="btn ghost small account-badge-reset"
+              onClick={handleResetBadgeProgress}
+            >
+              Reset badge progress (testing)
+            </button>
+          )}
         </section>
       )}
 
