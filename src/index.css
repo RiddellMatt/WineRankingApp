@@ -2936,6 +2936,77 @@ textarea {
   }
 }
 
+/* ── Badge unlock toasts ─────────────────────────────── */
+
+.badge-toast-stack {
+  position: fixed;
+  bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 0.85rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(22rem, calc(100vw - 1.5rem));
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  z-index: 1200;
+  pointer-events: none;
+}
+
+.badge-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  animation: badge-toast-in 0.35s ease;
+}
+
+.badge-toast-medal {
+  width: 3.25rem;
+  height: 3.25rem;
+}
+
+.badge-toast-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.badge-toast-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.badge-toast-desc {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+@keyframes badge-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 720px) {
+  .badge-toast-stack {
+    bottom: calc(var(--safe-bottom) + 1.25rem);
+  }
+}
+
 /* Capacitor native shell — same bottom nav even on wider tablets in portrait */
 html.native-app body {
   padding-bottom: 0;

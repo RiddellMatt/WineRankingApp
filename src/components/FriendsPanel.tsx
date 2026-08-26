@@ -29,6 +29,7 @@ interface Props {
   onSaveToWishlist?: (wine: Wine, friendName: string) => void | Promise<void>
   isWishlistSaved?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
   savingWishlistKey?: string | null
+  onFriendshipsChanged?: (friendCount: number) => void
 }
 
 type FriendsTab = 'feed' | 'passport' | 'manage'
@@ -76,6 +77,7 @@ export function FriendsPanel({
   onSaveToWishlist,
   isWishlistSaved,
   savingWishlistKey = null,
+  onFriendshipsChanged,
 }: Props) {
   const [tab, setTab] = useState<FriendsTab>('feed')
   const [friendships, setFriendships] = useState<Friendship[]>([])
@@ -87,8 +89,10 @@ export function FriendsPanel({
   const [busy, setBusy] = useState(false)
 
   const reload = useCallback(async () => {
-    setFriendships(await fetchFriendships(userId))
-  }, [userId])
+    const rows = await fetchFriendships(userId)
+    setFriendships(rows)
+    onFriendshipsChanged?.(rows.filter((f) => f.status === 'accepted').length)
+  }, [userId, onFriendshipsChanged])
 
   useEffect(() => {
     reload().catch((e) => setError(String(e.message ?? e)))
