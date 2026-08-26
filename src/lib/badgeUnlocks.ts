@@ -89,21 +89,15 @@ export function detectBadgeUnlocks(
 
 /**
  * One-time sync after cellar + friends are loaded.
- * Never emits toasts — merges persisted tiers forward and seeds session baseline.
+ * Never emits toasts — persists the current tier snapshot only.
  */
 export function hydrateBadgeTracking(input: BadgeInput): BadgeTierSnapshot {
   const current = snapshotFromBadgeInput(input)
-  const stored = loadBadgeTierSnapshot()
-  if (!stored) {
-    saveBadgeTierSnapshot(current)
-    return current
-  }
-  const merged = maxTierSnapshot(stored, current)
-  saveBadgeTierSnapshot(merged)
+  saveBadgeTierSnapshot(current)
   return current
 }
 
-/** Diff two progress snapshots, persist max tiers, return unlocks for toasts. */
+/** Diff two progress snapshots, persist current tiers, return unlocks for toasts. */
 export function commitBadgeProgressChange(
   previous: BadgeInput,
   next: BadgeInput,
@@ -111,8 +105,7 @@ export function commitBadgeProgressChange(
   const previousSnapshot = snapshotFromBadgeInput(previous)
   const nextSnapshot = snapshotFromBadgeInput(next)
   const unlocks = detectBadgeUnlocks(previousSnapshot, next)
-  const stored = loadBadgeTierSnapshot()
-  saveBadgeTierSnapshot(stored ? maxTierSnapshot(stored, nextSnapshot) : nextSnapshot)
+  saveBadgeTierSnapshot(nextSnapshot)
   return unlocks
 }
 

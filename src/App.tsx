@@ -580,7 +580,11 @@ export default function App() {
   async function handleDelete(wine: Wine) {
     const label = wine.status === 'wishlist' ? 'wishlist' : 'cellar'
     if (!window.confirm(`Remove “${wine.name}” from your ${label}?`)) return
-    setWines((prev) => prev.filter((w) => w.id !== wine.id))
+    const previousWines = winesRef.current
+    const nextWines = previousWines.filter((w) => w.id !== wine.id)
+    setWines(nextWines)
+    winesRef.current = nextWines
+    notifyWineCellarChange(previousWines, nextWines, friendCount)
     if (cloudUser) {
       try {
         await deleteWine(wine.id)
