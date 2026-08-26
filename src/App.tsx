@@ -16,7 +16,11 @@ import { Insights } from './components/Insights'
 import { MenuScan } from './components/MenuScan'
 import { FriendsPanel } from './components/FriendsPanel'
 import { AccountPanel } from './components/AccountPanel'
-import { BadgeUnlockToasts } from './components/BadgeUnlockToasts'
+import {
+  BadgeUnlockToasts,
+  createBadgeToastItems,
+  type BadgeToastItem,
+} from './components/BadgeUnlockToasts'
 import { RankingPreferenceModal } from './components/RankingPreferenceModal'
 import { Avatar } from './components/Avatar'
 import { DecantiLogo, usesThemeWordmarkLogo } from './components/DecantiLogo'
@@ -24,7 +28,11 @@ import { useAppTheme } from './lib/useAppTheme'
 import { APP_NAME, APP_NAME_PRO, APP_TAGLINE, STORAGE_PREFIX } from './brand'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
 import { fetchFriendships } from './lib/friendsDb'
-import { consumeBadgeUnlocks, ensureBadgeTierSnapshot, type BadgeUnlock } from './lib/badgeUnlocks'
+import {
+  advanceBadgeTracking,
+  hydrateBadgeTracking,
+  type BadgeTierSnapshot,
+} from './lib/badgeUnlocks'
 import { fetchMyProfile, updateRankingPreference, type UserProfile } from './lib/profileDb'
 import { isSupabaseConfigured } from './lib/supabase'
 import {
@@ -112,17 +120,50 @@ export default function App() {
   const [savingFriendWishlistKey, setSavingFriendWishlistKey] = useState<string | null>(null)
   const [friendCount, setFriendCount] = useState(0)
   const [friendCountLoaded, setFriendCountLoaded] = useState(false)
-  const [badgeToasts, setBadgeToasts] = useState<BadgeUnlock[]>([])
-  const badgeReadyRef = useRef(false)
+  const [badgeToastItems, setBadgeToastItems] = useState<BadgeToastItem[]>([])
+  const badgeBaselineRef = useRef<BadgeTierSnapshot | null>(null)
+  const badgeHydratedRef = useRef(false)
+  const winesRef = useRef(wines)
   const importInputRef = useRef<HTMLInputElement>(null)
 
   const badgeReady =
     !cellarLoading && (!cloudUser || profileLoaded) && friendCountLoaded
 
+  useEffect(() => {
+    winesRef.current = wines
+  }, [wines])
+
   const rankingPreference = resolveRankingPreference(profile?.rankingPreference)
 
   const cellarTried = useMemo(() => triedWines(wines), [wines])
   const cellarWishlist = useMemo(() => wishlistWines(wines), [wines])
+
+  const pushBadgeUnlocks = useCallback((unlocks: ReturnType<typeof advanceBadgeTracking>['unlocks']) => {
+    if (unlocks.length === 0) return
+    setBadgeToastItems((prev) => [...prev, ...createBadgeToastItems(unlocks)])
+  }, [])
+
+  const dismissBadgeToast = useCallback((toastId: string) => {
+    setBadgeToastItems((prev) => prev.filter((item) => item.toastId !== toastId))
+  }, [])
+
+  const runBadgeUnlockCheck = useCallback(
+    (nextWines: Wine[], nextFriendCount: number) => {
+      if (!badgeHydratedRef.current || !badgeBaselineRef.current) return
+      const { unlocks, baseline } = advanceBadgeTracking(badgeBaselineRef.current, {
+        wines: nextWines,
+        friendCount: nextFriendCount,
+      })
+      badgeBaselineRef.current = baseline
+      pushBadgeUnlocks(unlocks)
+    },
+    [pushBadgeUnlocks],
+  )
+
+  function handleFriendshipsChanged(count: number) {
+    setFriendCount(count)
+    runBadgeUnlockCheck(winesRef.current, count)
+  }
 
   function goToAccount(highlightSubscription = false) {
     setFriendView(null)
@@ -208,18 +249,15 @@ export default function App() {
   }, [cloudUser?.id])
 
   useEffect(() => {
-    if (!badgeReady) return
-    const input = { wines, friendCount }
-    if (!badgeReadyRef.current) {
-      ensureBadgeTierSnapshot(input)
-      badgeReadyRef.current = true
-      return
-    }
-    const unlocks = consumeBadgeUnlocks(input)
-    if (unlocks.length > 0) setBadgeToasts(unlocks)
-  }, [wines, friendCount, badgeReady])
+    badgeHydratedRef.current = false
+    badgeBaselineRef.current = null
+  }, [cloudUser?.id, offlineMode])
 
-  const handleBadgeToastsConsumed = useCallback(() => setBadgeToasts([]), [])
+  useEffect(() => {
+    if (!badgeReady || badgeHydratedRef.current) return
+    badgeBaselineRef.current = hydrateBadgeTracking({ wines, friendCount })
+    badgeHydratedRef.current = true
+  }, [badgeReady, wines, friendCount])
 
   // Nudge existing accounts that still use the auto-generated email prefix as their name.
   useEffect(() => {
@@ -414,10 +452,14 @@ export default function App() {
   }
 
   async function persistWine(wine: Wine) {
+    let nextWines: Wine[] = []
     setWines((prev) => {
       const exists = prev.some((w) => w.id === wine.id)
-      return exists ? prev.map((w) => (w.id === wine.id ? wine : w)) : [...prev, wine]
+      nextWines = exists ? prev.map((w) => (w.id === wine.id ? wine : w)) : [...prev, wine]
+      return nextWines
     })
+    winesRef.current = nextWines
+    runBadgeUnlockCheck(nextWines, friendCount)
     if (cloudUser) {
       try {
         const synced = await upsertWine(cloudUser.id, wine, rankingPreference)
@@ -532,9 +574,13 @@ export default function App() {
       }
       const next = [...byId.values()].map((w) => applyCompositeRating(w, rankingPreference))
       setWines(next)
+      winesRef.current = next
+      runBadgeUnlockCheck(next, friendCount)
       if (cloudUser) {
         const synced = await bulkUpsertWines(cloudUser.id, next, rankingPreference)
         setWines(synced)
+        winesRef.current = synced
+        runBadgeUnlockCheck(synced, friendCount)
       }
     } catch {
       window.alert("That file doesn't look like a Decanti export.")
@@ -685,7 +731,7 @@ export default function App() {
               onSaveToWishlist={handleSaveWishlistFromFriend}
               isWishlistSaved={(wine) => isWishlistDuplicate(wines, wine)}
               savingWishlistKey={savingFriendWishlistKey}
-              onFriendshipsChanged={setFriendCount}
+              onFriendshipsChanged={handleFriendshipsChanged}
             />
           )
         ) : view === 'sommelier' ? (
@@ -854,10 +900,14 @@ export default function App() {
                     className="btn ghost"
                     onClick={async () => {
                       setWines(SAMPLE_WINES)
+                      winesRef.current = SAMPLE_WINES
+                      runBadgeUnlockCheck(SAMPLE_WINES, friendCount)
                       if (cloudUser) {
                         try {
                           const synced = await bulkUpsertWines(cloudUser.id, SAMPLE_WINES)
                           setWines(synced)
+                          winesRef.current = synced
+                          runBadgeUnlockCheck(synced, friendCount)
                         } catch (e) {
                           window.alert(`Loaded samples but cloud sync failed: ${(e as Error).message}`)
                         }
@@ -1014,7 +1064,7 @@ export default function App() {
         <RankingPreferenceModal onChoose={handleRankingPreferenceChoose} busy={rankingSetupBusy} />
       )}
 
-      <BadgeUnlockToasts unlocks={badgeToasts} onConsumed={handleBadgeToastsConsumed} />
+      <BadgeUnlockToasts items={badgeToastItems} onDismiss={dismissBadgeToast} />
 
       {!isSupabaseConfigured && (
         <p className="auth-offline-note app-footer-note">

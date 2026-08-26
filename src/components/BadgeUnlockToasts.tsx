@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import type { BadgeTier } from '../lib/badges'
 import { tierLabel } from '../lib/badges'
 import type { BadgeUnlock } from '../lib/badgeUnlocks'
@@ -14,69 +14,59 @@ const TIER_CLASS: Record<BadgeTier, string> = {
   diamond: 'badge-tier-diamond',
 }
 
-interface ToastItem extends BadgeUnlock {
+export interface BadgeToastItem extends BadgeUnlock {
   toastId: string
 }
 
 interface Props {
-  unlocks: BadgeUnlock[]
-  onConsumed: () => void
+  items: BadgeToastItem[]
+  onDismiss: (toastId: string) => void
 }
 
-export function BadgeUnlockToasts({ unlocks, onConsumed }: Props) {
-  const [visible, setVisible] = useState<ToastItem[]>([])
-  const consumedKeyRef = useRef('')
+export function createBadgeToastItems(unlocks: BadgeUnlock[]): BadgeToastItem[] {
+  return unlocks.map((unlock) => ({
+    ...unlock,
+    toastId: `${unlock.id}-${unlock.tier}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  }))
+}
 
-  useEffect(() => {
-    if (unlocks.length === 0) return
-    const key = unlocks.map((unlock) => `${unlock.id}:${unlock.tier}`).join('|')
-    if (key === consumedKeyRef.current) return
-    consumedKeyRef.current = key
-
-    const next = unlocks.map((unlock) => ({
-      ...unlock,
-      toastId: `${unlock.id}-${unlock.tier}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    }))
-    setVisible((prev) => [...prev, ...next])
-    onConsumed()
-  }, [unlocks, onConsumed])
-
-  const dismiss = useCallback((toastId: string) => {
-    setVisible((prev) => prev.filter((item) => item.toastId !== toastId))
-  }, [])
-
-  useEffect(() => {
-    if (visible.length === 0) return
-    const timers = visible.map((item) =>
-      window.setTimeout(() => dismiss(item.toastId), TOAST_MS),
-    )
-    return () => timers.forEach((timer) => window.clearTimeout(timer))
-  }, [visible, dismiss])
-
-  if (visible.length === 0) return null
+export function BadgeUnlockToasts({ items, onDismiss }: Props) {
+  if (items.length === 0) return null
 
   return (
     <div className="badge-toast-stack" aria-live="polite" aria-atomic="false">
-      {visible.map((item) => (
-        <button
-          key={item.toastId}
-          type="button"
-          className="badge-toast"
-          onClick={() => dismiss(item.toastId)}
-        >
-          <span
-            className={`badge-toast-medal badge-medal ${TIER_CLASS[item.tier]}`}
-            aria-hidden="true"
-          >
-            <span className="badge-medal-icon">{item.icon}</span>
-            <span className="badge-medal-tier">{tierLabel(item.tier)}</span>
-          </span>
-          <span className="badge-toast-copy">
-            <span className="badge-toast-title">{unlockHeadline(item)}</span>
-            <span className="badge-toast-desc">{unlockDetail(item)}</span>
-          </span>
-        </button>
+      {items.map((item) => (
+        <BadgeToast key={item.toastId} item={item} onDismiss={onDismiss} />
       ))}
     </div>
+  )
+}
+
+function BadgeToast({
+  item,
+  onDismiss,
+}: {
+  item: BadgeToastItem
+  onDismiss: (toastId: string) => void
+}) {
+  useEffect(() => {
+    const timer = window.setTimeout(() => onDismiss(item.toastId), TOAST_MS)
+    return () => window.clearTimeout(timer)
+  }, [item.toastId, onDismiss])
+
+  return (
+    <button type="button" className="badge-toast" onClick={() => onDismiss(item.toastId)}>
+      <span
+        className={`badge-toast-medal badge-medal ${TIER_CLASS[item.tier]}`}
+        aria-hidden="true"
+      >
+        <span className="badge-medal-icon">{item.icon}</span>
+        <span className="badge-medal-tier">{tierLabel(item.tier)}</span>
+      </span>
+      <span className="badge-toast-copy">
+        <span className="badge-toast-title">{unlockHeadline(item)}</span>
+        <span className="badge-toast-desc">{unlockDetail(item)}</span>
+      </span>
+    </button>
   )
 }
