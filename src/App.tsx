@@ -164,6 +164,28 @@ export default function App() {
     [pushBadgeUnlocks],
   )
 
+  const ensureBadgeSessionHydrated = useCallback(
+    (baselineWines: Wine[], nextFriendCount: number) => {
+      if (!badgeReady || badgeHydratedRef.current) return
+      badgeBaselineRef.current = hydrateBadgeTracking({
+        wines: baselineWines,
+        friendCount: nextFriendCount,
+      })
+      badgeFriendCountRef.current = nextFriendCount
+      badgeHydratedRef.current = true
+    },
+    [badgeReady],
+  )
+
+  const runBadgeUnlockCheckAfterSave = useCallback(
+    (previousWines: Wine[], nextWines: Wine[], nextFriendCount: number) => {
+      if (!badgeReady) return
+      ensureBadgeSessionHydrated(previousWines, nextFriendCount)
+      runBadgeUnlockCheck(nextWines, nextFriendCount)
+    },
+    [badgeReady, ensureBadgeSessionHydrated, runBadgeUnlockCheck],
+  )
+
   const handleFriendshipsChanged = useCallback(
     (count: number) => {
       setFriendCount(count)
@@ -274,28 +296,20 @@ export default function App() {
   }, [cloudUser?.id, offlineMode])
 
   useEffect(() => {
-    if (!badgeReady) return
+    if (!badgeReady || badgeHydratedRef.current) return
+    ensureBadgeSessionHydrated(winesRef.current, friendCount)
+  }, [badgeReady, friendCount, ensureBadgeSessionHydrated])
 
-    const input = { wines, friendCount }
-    const current = snapshotFromBadgeInput(input)
-
-    if (!badgeHydratedRef.current) {
-      badgeBaselineRef.current = hydrateBadgeTracking(input)
-      badgeFriendCountRef.current = friendCount
-      badgeHydratedRef.current = true
-      return
-    }
-
+  useEffect(() => {
+    if (!badgeReady || !badgeHydratedRef.current) return
     const baseline = badgeBaselineRef.current
-    if (
-      baseline &&
-      wines.length > 0 &&
-      isLockedBadgeBaseline(baseline) &&
-      !isLockedBadgeBaseline(current)
-    ) {
-      badgeBaselineRef.current = current
-      badgeFriendCountRef.current = friendCount
-    }
+    if (!baseline || !isLockedBadgeBaseline(baseline) || wines.length === 0) return
+
+    const current = snapshotFromBadgeInput({ wines, friendCount })
+    if (isLockedBadgeBaseline(current)) return
+
+    badgeBaselineRef.current = current
+    badgeFriendCountRef.current = friendCount
   }, [badgeReady, wines, friendCount])
 
   // Nudge existing accounts that still use the auto-generated email prefix as their name.
@@ -491,6 +505,7 @@ export default function App() {
   }
 
   async function persistWine(wine: Wine) {
+    const previousWines = winesRef.current
     let nextWines: Wine[] = []
     setWines((prev) => {
       const exists = prev.some((w) => w.id === wine.id)
@@ -498,7 +513,7 @@ export default function App() {
       return nextWines
     })
     winesRef.current = nextWines
-    runBadgeUnlockCheck(nextWines, friendCount)
+    runBadgeUnlockCheckAfterSave(previousWines, nextWines, friendCount)
     if (cloudUser) {
       try {
         const synced = await upsertWine(cloudUser.id, wine, rankingPreference)
@@ -612,14 +627,15 @@ export default function App() {
         }
       }
       const next = [...byId.values()].map((w) => applyCompositeRating(w, rankingPreference))
+      const previousWines = winesRef.current
       setWines(next)
       winesRef.current = next
-      runBadgeUnlockCheck(next, friendCount)
+      runBadgeUnlockCheckAfterSave(previousWines, next, friendCount)
       if (cloudUser) {
         const synced = await bulkUpsertWines(cloudUser.id, next, rankingPreference)
         setWines(synced)
         winesRef.current = synced
-        runBadgeUnlockCheck(synced, friendCount)
+        runBadgeUnlockCheckAfterSave(next, synced, friendCount)
       }
     } catch {
       window.alert("That file doesn't look like a Decanti export.")
@@ -938,15 +954,16 @@ export default function App() {
                   <button
                     className="btn ghost"
                     onClick={async () => {
+                      const previousWines = winesRef.current
                       setWines(SAMPLE_WINES)
                       winesRef.current = SAMPLE_WINES
-                      runBadgeUnlockCheck(SAMPLE_WINES, friendCount)
+                      runBadgeUnlockCheckAfterSave(previousWines, SAMPLE_WINES, friendCount)
                       if (cloudUser) {
                         try {
                           const synced = await bulkUpsertWines(cloudUser.id, SAMPLE_WINES)
                           setWines(synced)
                           winesRef.current = synced
-                          runBadgeUnlockCheck(synced, friendCount)
+                          runBadgeUnlockCheckAfterSave(SAMPLE_WINES, synced, friendCount)
                         } catch (e) {
                           window.alert(`Loaded samples but cloud sync failed: ${(e as Error).message}`)
                         }
