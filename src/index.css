@@ -49,16 +49,16 @@
   --bg-soft: #152d63;
   --surface: #1e3470;
   --surface-hover: #243c7e;
-  --border: #2f4a8a;
+  --border: #3d5f9e;
   --text: #ffffff;
   --text-dim: #c8d4ec;
   --text-faint: #8fa3cc;
   --text-muted: #c8d4ec;
-  --accent: #8b2d23;
-  --accent-hover: #a33629;
-  --accent-soft: rgba(139, 45, 35, 0.22);
-  --brand-gold: #ffffff;
-  --brand-gold-soft: #e8eef8;
+  --accent: #d4af6a;
+  --accent-hover: #e2c078;
+  --accent-soft: rgba(212, 175, 106, 0.2);
+  --brand-gold: #f0d080;
+  --brand-gold-soft: #f5e6c0;
   --wordmark-gradient: none;
   --star: #f0d080;
   --star-empty: #2f4a8a;
@@ -67,7 +67,8 @@
   --bronze: #c98a5a;
   --danger: #e06a6a;
   --body-gradient:
-    radial-gradient(900px 480px at 78% -5%, rgba(139, 45, 35, 0.28) 0%, transparent 55%),
+    radial-gradient(900px 480px at 78% -5%, rgba(212, 175, 106, 0.16) 0%, transparent 55%),
+    radial-gradient(700px 420px at 8% 100%, rgba(255, 255, 255, 0.07) 0%, transparent 52%),
     linear-gradient(180deg, #1e3470 0%, #1a3674 100%);
   --font-display: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
 }
@@ -237,9 +238,10 @@ textarea::placeholder {
 
 .decanti-logo-navy.decanti-logo-header,
 .decanti-logo-light.decanti-logo-header {
-  height: 2.25rem;
-  width: min(10rem, 46vw);
-  object-fit: cover;
+  height: 3rem;
+  width: auto;
+  max-width: min(12rem, 52vw);
+  object-fit: contain;
   object-position: center;
 }
 
@@ -251,9 +253,10 @@ textarea::placeholder {
 
 .decanti-logo-navy.decanti-logo-auth,
 .decanti-logo-light.decanti-logo-auth {
-  height: 3.5rem;
-  width: min(14rem, 78vw);
-  object-fit: cover;
+  height: 4.75rem;
+  width: auto;
+  max-width: min(16rem, 85vw);
+  object-fit: contain;
   object-position: center;
 }
 
@@ -2878,6 +2881,11 @@ textarea {
   height: auto;
   aspect-ratio: 280 / 120;
   object-fit: cover;
+}
+
+.theme-preview-logo .theme-preview-img {
+  aspect-ratio: 1;
+  object-fit: contain;
 }
 
 .theme-swatches {

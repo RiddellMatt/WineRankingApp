@@ -26,8 +26,8 @@ export const THEME_OPTIONS: {
   {
     id: 'navy',
     label: 'Navy',
-    description: 'Logo navy with wine-red splash',
-    swatches: ['#1a3674', '#8b2d23', '#ffffff'],
+    description: 'Logo navy with champagne gold accents',
+    swatches: ['#1a3674', '#d4af6a', '#ffffff'],
     previewSrc: `${brandBase}/logo-navy.png`,
     logoSrc: `${brandBase}/logo-navy.png`,
   },

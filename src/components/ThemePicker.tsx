@@ -19,7 +19,7 @@ export function ThemePicker() {
           onClick={() => choose(option.id)}
           aria-pressed={theme === option.id}
         >
-          <span className="theme-preview" aria-hidden="true">
+          <span className={`theme-preview${option.logoSrc ? ' theme-preview-logo' : ''}`} aria-hidden="true">
             <img src={option.previewSrc} alt="" className="theme-preview-img" />
           </span>
           <span className="theme-option-copy">
