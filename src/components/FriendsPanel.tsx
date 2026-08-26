@@ -91,7 +91,8 @@ export function FriendsPanel({
   const reload = useCallback(async () => {
     const rows = await fetchFriendships(userId)
     setFriendships(rows)
-    onFriendshipsChanged?.(rows.filter((f) => f.status === 'accepted').length)
+    const count = rows.filter((f) => f.status === 'accepted').length
+    onFriendshipsChanged?.(count)
   }, [userId, onFriendshipsChanged])
 
   useEffect(() => {

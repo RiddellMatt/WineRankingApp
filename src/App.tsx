@@ -31,6 +31,8 @@ import { fetchFriendships } from './lib/friendsDb'
 import {
   advanceBadgeTracking,
   hydrateBadgeTracking,
+  isLockedBadgeBaseline,
+  snapshotFromBadgeInput,
   type BadgeTierSnapshot,
 } from './lib/badgeUnlocks'
 import { fetchMyProfile, updateRankingPreference, type UserProfile } from './lib/profileDb'
@@ -103,6 +105,7 @@ export default function App() {
     avatarUrl?: string
   } | null>(null)
   const [cellarLoading, setCellarLoading] = useState(false)
+  const [cellarReady, setCellarReady] = useState(false)
   const [pro, setPro] = useState<boolean>(loadProStatus)
   const [view, setView] = useState<View>('cellar')
   const [accountHighlight, setAccountHighlight] = useState(false)
@@ -123,11 +126,12 @@ export default function App() {
   const [badgeToastItems, setBadgeToastItems] = useState<BadgeToastItem[]>([])
   const badgeBaselineRef = useRef<BadgeTierSnapshot | null>(null)
   const badgeHydratedRef = useRef(false)
+  const badgeFriendCountRef = useRef(0)
   const winesRef = useRef(wines)
   const importInputRef = useRef<HTMLInputElement>(null)
 
   const badgeReady =
-    !cellarLoading && (!cloudUser || profileLoaded) && friendCountLoaded
+    cellarReady && (!cloudUser || profileLoaded) && friendCountLoaded
 
   useEffect(() => {
     winesRef.current = wines
@@ -160,10 +164,19 @@ export default function App() {
     [pushBadgeUnlocks],
   )
 
-  function handleFriendshipsChanged(count: number) {
-    setFriendCount(count)
-    runBadgeUnlockCheck(winesRef.current, count)
-  }
+  const handleFriendshipsChanged = useCallback(
+    (count: number) => {
+      setFriendCount(count)
+      if (!badgeHydratedRef.current || !badgeBaselineRef.current) return
+
+      const previousCount = badgeFriendCountRef.current
+      badgeFriendCountRef.current = count
+      if (count <= previousCount) return
+
+      runBadgeUnlockCheck(winesRef.current, count)
+    },
+    [runBadgeUnlockCheck],
+  )
 
   function goToAccount(highlightSubscription = false) {
     setFriendView(null)
@@ -175,8 +188,10 @@ export default function App() {
   useEffect(() => {
     if (!cloudUser) {
       if (offlineMode) setWines(loadWines())
+      setCellarReady(true)
       return
     }
+    setCellarReady(false)
     let cancelled = false
     setCellarLoading(true)
     ;(async () => {
@@ -200,7 +215,10 @@ export default function App() {
           setWines(loadWines())
         }
       } finally {
-        if (!cancelled) setCellarLoading(false)
+        if (!cancelled) {
+          setCellarLoading(false)
+          setCellarReady(true)
+        }
       }
     })()
     return () => {
@@ -251,12 +269,33 @@ export default function App() {
   useEffect(() => {
     badgeHydratedRef.current = false
     badgeBaselineRef.current = null
+    badgeFriendCountRef.current = 0
+    setCellarReady(false)
   }, [cloudUser?.id, offlineMode])
 
   useEffect(() => {
-    if (!badgeReady || badgeHydratedRef.current) return
-    badgeBaselineRef.current = hydrateBadgeTracking({ wines, friendCount })
-    badgeHydratedRef.current = true
+    if (!badgeReady) return
+
+    const input = { wines, friendCount }
+    const current = snapshotFromBadgeInput(input)
+
+    if (!badgeHydratedRef.current) {
+      badgeBaselineRef.current = hydrateBadgeTracking(input)
+      badgeFriendCountRef.current = friendCount
+      badgeHydratedRef.current = true
+      return
+    }
+
+    const baseline = badgeBaselineRef.current
+    if (
+      baseline &&
+      wines.length > 0 &&
+      isLockedBadgeBaseline(baseline) &&
+      !isLockedBadgeBaseline(current)
+    ) {
+      badgeBaselineRef.current = current
+      badgeFriendCountRef.current = friendCount
+    }
   }, [badgeReady, wines, friendCount])
 
   // Nudge existing accounts that still use the auto-generated email prefix as their name.

@@ -129,3 +129,7 @@ export function unlockDetail(unlock: BadgeUnlock): string {
   }
   return `Upgraded to ${tierLabel(unlock.tier)}`
 }
+
+export function isLockedBadgeBaseline(snapshot: BadgeTierSnapshot): boolean {
+  return BADGE_DEFINITIONS.every((def) => (snapshot[def.id] ?? 'locked') === 'locked')
+}
