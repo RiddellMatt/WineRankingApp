@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { WINE_TYPES, type RankingPreference, type SortKey, type Wine, type WineType } from './types'
 import { loadWines, saveWines, SAMPLE_WINES } from './storage'
 import { FREE_WINE_LIMIT, FREE_WISHLIST_LIMIT } from './config'
@@ -16,12 +16,15 @@ import { Insights } from './components/Insights'
 import { MenuScan } from './components/MenuScan'
 import { FriendsPanel } from './components/FriendsPanel'
 import { AccountPanel } from './components/AccountPanel'
+import { BadgeUnlockToasts } from './components/BadgeUnlockToasts'
 import { RankingPreferenceModal } from './components/RankingPreferenceModal'
 import { Avatar } from './components/Avatar'
 import { DecantiLogo, usesThemeWordmarkLogo } from './components/DecantiLogo'
 import { useAppTheme } from './lib/useAppTheme'
 import { APP_NAME, APP_NAME_PRO, APP_TAGLINE, STORAGE_PREFIX } from './brand'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
+import { fetchFriendships } from './lib/friendsDb'
+import { consumeBadgeUnlocks, ensureBadgeTierSnapshot, type BadgeUnlock } from './lib/badgeUnlocks'
 import { fetchMyProfile, updateRankingPreference, type UserProfile } from './lib/profileDb'
 import { isSupabaseConfigured } from './lib/supabase'
 import {
@@ -107,7 +110,14 @@ export default function App() {
   const [rankingSetupOpen, setRankingSetupOpen] = useState(false)
   const [rankingSetupBusy, setRankingSetupBusy] = useState(false)
   const [savingFriendWishlistKey, setSavingFriendWishlistKey] = useState<string | null>(null)
+  const [friendCount, setFriendCount] = useState(0)
+  const [friendCountLoaded, setFriendCountLoaded] = useState(false)
+  const [badgeToasts, setBadgeToasts] = useState<BadgeUnlock[]>([])
+  const badgeReadyRef = useRef(false)
   const importInputRef = useRef<HTMLInputElement>(null)
+
+  const badgeReady =
+    !cellarLoading && (!cloudUser || profileLoaded) && friendCountLoaded
 
   const rankingPreference = resolveRankingPreference(profile?.rankingPreference)
 
@@ -183,6 +193,33 @@ export default function App() {
       cancelled = true
     }
   }, [cloudUser?.id])
+
+  useEffect(() => {
+    if (!cloudUser) {
+      setFriendCount(0)
+      setFriendCountLoaded(true)
+      return
+    }
+    setFriendCountLoaded(false)
+    fetchFriendships(cloudUser.id)
+      .then((rows) => setFriendCount(rows.filter((f) => f.status === 'accepted').length))
+      .catch(() => setFriendCount(0))
+      .finally(() => setFriendCountLoaded(true))
+  }, [cloudUser?.id])
+
+  useEffect(() => {
+    if (!badgeReady) return
+    const input = { wines, friendCount }
+    if (!badgeReadyRef.current) {
+      ensureBadgeTierSnapshot(input)
+      badgeReadyRef.current = true
+      return
+    }
+    const unlocks = consumeBadgeUnlocks(input)
+    if (unlocks.length > 0) setBadgeToasts(unlocks)
+  }, [wines, friendCount, badgeReady])
+
+  const handleBadgeToastsConsumed = useCallback(() => setBadgeToasts([]), [])
 
   // Nudge existing accounts that still use the auto-generated email prefix as their name.
   useEffect(() => {
@@ -648,6 +685,7 @@ export default function App() {
               onSaveToWishlist={handleSaveWishlistFromFriend}
               isWishlistSaved={(wine) => isWishlistDuplicate(wines, wine)}
               savingWishlistKey={savingFriendWishlistKey}
+              onFriendshipsChanged={setFriendCount}
             />
           )
         ) : view === 'sommelier' ? (
@@ -975,6 +1013,8 @@ export default function App() {
       {rankingSetupOpen && (
         <RankingPreferenceModal onChoose={handleRankingPreferenceChoose} busy={rankingSetupBusy} />
       )}
+
+      <BadgeUnlockToasts unlocks={badgeToasts} onConsumed={handleBadgeToastsConsumed} />
 
       {!isSupabaseConfigured && (
         <p className="auth-offline-note app-footer-note">
