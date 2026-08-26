@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import type { BadgeTier } from '../lib/badges'
 import { tierLabel } from '../lib/badges'
 import type { BadgeUnlock } from '../lib/badgeUnlocks'
@@ -33,12 +34,13 @@ export function createBadgeToastItems(unlocks: BadgeUnlock[]): BadgeToastItem[] 
 export function BadgeUnlockToasts({ items, onDismiss }: Props) {
   if (items.length === 0) return null
 
-  return (
+  return createPortal(
     <div className="badge-toast-stack" aria-live="polite" aria-atomic="false">
       {items.map((item) => (
         <BadgeToast key={item.toastId} item={item} onDismiss={onDismiss} />
       ))}
-    </div>
+    </div>,
+    document.body,
   )
 }
 
