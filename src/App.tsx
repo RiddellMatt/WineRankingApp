@@ -29,12 +29,11 @@ import { APP_NAME, APP_NAME_PRO, APP_TAGLINE, STORAGE_PREFIX } from './brand'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
 import { fetchFriendships } from './lib/friendsDb'
 import {
-  advanceBadgeTracking,
-  hydrateBadgeTracking,
-  isLockedBadgeBaseline,
-  snapshotFromBadgeInput,
-  type BadgeTierSnapshot,
+  commitBadgeProgressChange,
+  syncBadgeTrackingSilently,
+  type BadgeUnlock,
 } from './lib/badgeUnlocks'
+import type { BadgeInput } from './lib/badges'
 import { fetchMyProfile, updateRankingPreference, type UserProfile } from './lib/profileDb'
 import { isSupabaseConfigured } from './lib/supabase'
 import {
@@ -124,9 +123,9 @@ export default function App() {
   const [friendCount, setFriendCount] = useState(0)
   const [friendCountLoaded, setFriendCountLoaded] = useState(false)
   const [badgeToastItems, setBadgeToastItems] = useState<BadgeToastItem[]>([])
-  const badgeBaselineRef = useRef<BadgeTierSnapshot | null>(null)
   const badgeHydratedRef = useRef(false)
   const badgeFriendCountRef = useRef(0)
+  const pendingBadgeCheckRef = useRef<{ previous: BadgeInput; next: BadgeInput } | null>(null)
   const winesRef = useRef(wines)
   const importInputRef = useRef<HTMLInputElement>(null)
 
@@ -142,7 +141,7 @@ export default function App() {
   const cellarTried = useMemo(() => triedWines(wines), [wines])
   const cellarWishlist = useMemo(() => wishlistWines(wines), [wines])
 
-  const pushBadgeUnlocks = useCallback((unlocks: ReturnType<typeof advanceBadgeTracking>['unlocks']) => {
+  const pushBadgeUnlocks = useCallback((unlocks: BadgeUnlock[]) => {
     if (unlocks.length === 0) return
     setBadgeToastItems((prev) => [...prev, ...createBadgeToastItems(unlocks)])
   }, [])
@@ -151,53 +150,51 @@ export default function App() {
     setBadgeToastItems((prev) => prev.filter((item) => item.toastId !== toastId))
   }, [])
 
-  const runBadgeUnlockCheck = useCallback(
-    (nextWines: Wine[], nextFriendCount: number) => {
-      if (!badgeHydratedRef.current || !badgeBaselineRef.current) return
-      const { unlocks, baseline } = advanceBadgeTracking(badgeBaselineRef.current, {
-        wines: nextWines,
-        friendCount: nextFriendCount,
-      })
-      badgeBaselineRef.current = baseline
+  const applyBadgeProgressChange = useCallback(
+    (previous: BadgeInput, next: BadgeInput) => {
+      const unlocks = commitBadgeProgressChange(previous, next)
+      badgeFriendCountRef.current = next.friendCount
       pushBadgeUnlocks(unlocks)
     },
     [pushBadgeUnlocks],
   )
 
-  const ensureBadgeSessionHydrated = useCallback(
-    (baselineWines: Wine[], nextFriendCount: number) => {
-      if (!badgeReady || badgeHydratedRef.current) return
-      badgeBaselineRef.current = hydrateBadgeTracking({
-        wines: baselineWines,
-        friendCount: nextFriendCount,
-      })
-      badgeFriendCountRef.current = nextFriendCount
-      badgeHydratedRef.current = true
+  const notifyBadgeProgressChange = useCallback(
+    (previous: BadgeInput, next: BadgeInput) => {
+      if (!badgeReady) {
+        pendingBadgeCheckRef.current = { previous, next }
+        return
+      }
+      applyBadgeProgressChange(previous, next)
     },
-    [badgeReady],
+    [applyBadgeProgressChange, badgeReady],
   )
 
-  const runBadgeUnlockCheckAfterSave = useCallback(
+  const notifyWineCellarChange = useCallback(
     (previousWines: Wine[], nextWines: Wine[], nextFriendCount: number) => {
-      if (!badgeReady) return
-      ensureBadgeSessionHydrated(previousWines, nextFriendCount)
-      runBadgeUnlockCheck(nextWines, nextFriendCount)
+      notifyBadgeProgressChange(
+        { wines: previousWines, friendCount: nextFriendCount },
+        { wines: nextWines, friendCount: nextFriendCount },
+      )
     },
-    [badgeReady, ensureBadgeSessionHydrated, runBadgeUnlockCheck],
+    [notifyBadgeProgressChange],
   )
 
   const handleFriendshipsChanged = useCallback(
     (count: number) => {
       setFriendCount(count)
-      if (!badgeHydratedRef.current || !badgeBaselineRef.current) return
+      if (!badgeReady) return
 
       const previousCount = badgeFriendCountRef.current
       badgeFriendCountRef.current = count
       if (count <= previousCount) return
 
-      runBadgeUnlockCheck(winesRef.current, count)
+      notifyBadgeProgressChange(
+        { wines: winesRef.current, friendCount: previousCount },
+        { wines: winesRef.current, friendCount: count },
+      )
     },
-    [runBadgeUnlockCheck],
+    [badgeReady, notifyBadgeProgressChange],
   )
 
   function goToAccount(highlightSubscription = false) {
@@ -290,27 +287,27 @@ export default function App() {
 
   useEffect(() => {
     badgeHydratedRef.current = false
-    badgeBaselineRef.current = null
     badgeFriendCountRef.current = 0
+    pendingBadgeCheckRef.current = null
     setCellarReady(false)
   }, [cloudUser?.id, offlineMode])
 
   useEffect(() => {
-    if (!badgeReady || badgeHydratedRef.current) return
-    ensureBadgeSessionHydrated(winesRef.current, friendCount)
-  }, [badgeReady, friendCount, ensureBadgeSessionHydrated])
+    if (!badgeReady) return
 
-  useEffect(() => {
-    if (!badgeReady || !badgeHydratedRef.current) return
-    const baseline = badgeBaselineRef.current
-    if (!baseline || !isLockedBadgeBaseline(baseline) || wines.length === 0) return
+    if (pendingBadgeCheckRef.current) {
+      const { previous, next } = pendingBadgeCheckRef.current
+      pendingBadgeCheckRef.current = null
+      applyBadgeProgressChange(previous, next)
+      return
+    }
 
-    const current = snapshotFromBadgeInput({ wines, friendCount })
-    if (isLockedBadgeBaseline(current)) return
+    if (badgeHydratedRef.current) return
 
-    badgeBaselineRef.current = current
+    syncBadgeTrackingSilently({ wines: winesRef.current, friendCount })
     badgeFriendCountRef.current = friendCount
-  }, [badgeReady, wines, friendCount])
+    badgeHydratedRef.current = true
+  }, [badgeReady, friendCount, applyBadgeProgressChange])
 
   // Nudge existing accounts that still use the auto-generated email prefix as their name.
   useEffect(() => {
@@ -513,7 +510,7 @@ export default function App() {
       return nextWines
     })
     winesRef.current = nextWines
-    runBadgeUnlockCheckAfterSave(previousWines, nextWines, friendCount)
+    notifyWineCellarChange(previousWines, nextWines, friendCount)
     if (cloudUser) {
       try {
         const synced = await upsertWine(cloudUser.id, wine, rankingPreference)
@@ -630,12 +627,12 @@ export default function App() {
       const previousWines = winesRef.current
       setWines(next)
       winesRef.current = next
-      runBadgeUnlockCheckAfterSave(previousWines, next, friendCount)
+      notifyWineCellarChange(previousWines, next, friendCount)
       if (cloudUser) {
         const synced = await bulkUpsertWines(cloudUser.id, next, rankingPreference)
         setWines(synced)
         winesRef.current = synced
-        runBadgeUnlockCheckAfterSave(next, synced, friendCount)
+        notifyWineCellarChange(next, synced, friendCount)
       }
     } catch {
       window.alert("That file doesn't look like a Decanti export.")
@@ -957,13 +954,13 @@ export default function App() {
                       const previousWines = winesRef.current
                       setWines(SAMPLE_WINES)
                       winesRef.current = SAMPLE_WINES
-                      runBadgeUnlockCheckAfterSave(previousWines, SAMPLE_WINES, friendCount)
+                      notifyWineCellarChange(previousWines, SAMPLE_WINES, friendCount)
                       if (cloudUser) {
                         try {
                           const synced = await bulkUpsertWines(cloudUser.id, SAMPLE_WINES)
                           setWines(synced)
                           winesRef.current = synced
-                          runBadgeUnlockCheckAfterSave(SAMPLE_WINES, synced, friendCount)
+                          notifyWineCellarChange(SAMPLE_WINES, synced, friendCount)
                         } catch (e) {
                           window.alert(`Loaded samples but cloud sync failed: ${(e as Error).message}`)
                         }

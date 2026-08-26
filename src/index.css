@@ -2947,7 +2947,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
-  z-index: 1200;
+  z-index: 10000;
   pointer-events: none;
 }
 

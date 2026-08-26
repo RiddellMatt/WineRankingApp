@@ -103,17 +103,22 @@ export function hydrateBadgeTracking(input: BadgeInput): BadgeTierSnapshot {
   return current
 }
 
-/** Diff against session baseline, advance baseline, persist max tiers. */
-export function advanceBadgeTracking(
-  baseline: BadgeTierSnapshot,
-  input: BadgeInput,
-): { unlocks: BadgeUnlock[]; baseline: BadgeTierSnapshot } {
-  const current = snapshotFromBadgeInput(input)
-  const unlocks = detectBadgeUnlocks(baseline, input)
+/** Diff two progress snapshots, persist max tiers, return unlocks for toasts. */
+export function commitBadgeProgressChange(
+  previous: BadgeInput,
+  next: BadgeInput,
+): BadgeUnlock[] {
+  const previousSnapshot = snapshotFromBadgeInput(previous)
+  const nextSnapshot = snapshotFromBadgeInput(next)
+  const unlocks = detectBadgeUnlocks(previousSnapshot, next)
   const stored = loadBadgeTierSnapshot()
-  const persisted = stored ? maxTierSnapshot(stored, current) : current
-  saveBadgeTierSnapshot(persisted)
-  return { unlocks, baseline: current }
+  saveBadgeTierSnapshot(stored ? maxTierSnapshot(stored, nextSnapshot) : nextSnapshot)
+  return unlocks
+}
+
+/** Sync persisted tiers on load without emitting unlocks. */
+export function syncBadgeTrackingSilently(input: BadgeInput): BadgeTierSnapshot {
+  return hydrateBadgeTracking(input)
 }
 
 export function unlockHeadline(unlock: BadgeUnlock): string {
