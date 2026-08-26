@@ -110,8 +110,7 @@ export function AccountPanel({
   function handleResetBadgeProgress() {
     if (
       !window.confirm(
-        'Reset all earned badge tiers to locked? The page will reload. ' +
-          'Delete wines or cross a new threshold to see unlock toasts again.',
+        'Reset all earned badge tiers? The page will reload and the next time you add or edit a wine, unlock toasts should appear again for tiers your cellar already qualifies for.',
       )
     ) {
       return
@@ -317,24 +316,22 @@ export function AccountPanel({
         </section>
       )}
 
-      {signedIn && (
-        <section className="account-section">
-          <h3>Badges</h3>
-          <p className="account-hint">
-            Earn metallic tiers as you log wines, explore origins, and connect with friends.
-          </p>
-          <BadgeGrid badges={badges} />
-          {badgeTestingEnabled && (
-            <button
-              type="button"
-              className="btn ghost small account-badge-reset"
-              onClick={handleResetBadgeProgress}
-            >
-              Reset badge progress (testing)
-            </button>
-          )}
-        </section>
-      )}
+      <section className="account-section">
+        <h3>Badges</h3>
+        <p className="account-hint">
+          Earn metallic tiers as you log wines, explore origins, and connect with friends.
+        </p>
+        <BadgeGrid badges={badges} />
+        {badgeTestingEnabled && (
+          <button
+            type="button"
+            className="btn ghost small account-badge-reset"
+            onClick={handleResetBadgeProgress}
+          >
+            Reset badge progress (testing)
+          </button>
+        )}
+      </section>
 
       <section className="account-section">
         <h3>Appearance</h3>

@@ -13,6 +13,8 @@ import { STORAGE_PREFIX } from '../brand'
 
 /** Permanent earned tiers — never downgraded when wines are removed. */
 const EARNED_KEY = `${STORAGE_PREFIX}.badge-tiers.v1`
+/** After testing reset, the next cellar change may re-toast tiers already live in the cellar. */
+const CATCHUP_KEY = `${STORAGE_PREFIX}.badge-catchup-testing.v1`
 
 export type BadgeTierSnapshot = Record<string, BadgeTier>
 
@@ -23,6 +25,10 @@ export interface BadgeUnlock {
   icon: string
   tier: BadgeTier
   previousTier: BadgeTier
+}
+
+export function lockedBadgeSnapshot(): BadgeTierSnapshot {
+  return Object.fromEntries(BADGE_DEFINITIONS.map((def) => [def.id, 'locked' as BadgeTier]))
 }
 
 export function snapshotFromBadgeInput(input: BadgeInput): BadgeTierSnapshot {
@@ -50,6 +56,24 @@ export function saveEarnedBadgeTiers(snapshot: BadgeTierSnapshot): void {
   }
 }
 
+export function markCatchUpTestingUnlocks(): void {
+  try {
+    localStorage.setItem(CATCHUP_KEY, '1')
+  } catch {
+    // ignore
+  }
+}
+
+export function consumeCatchUpTestingFlag(): boolean {
+  try {
+    if (localStorage.getItem(CATCHUP_KEY) !== '1') return false
+    localStorage.removeItem(CATCHUP_KEY)
+    return true
+  } catch {
+    return false
+  }
+}
+
 /** Keep the highest tier recorded for each badge. */
 export function maxTierSnapshot(
   a: BadgeTierSnapshot,
@@ -62,17 +86,27 @@ export function maxTierSnapshot(
   return merged
 }
 
-/** Unlock when live progress exceeds the permanent earned ledger. */
-export function detectEarnedUnlocks(
+/**
+ * Detect unlocks for a cellar change.
+ * Normal: action must cross a tier AND tier must beat the earned ledger (no re-toast after delete).
+ * Catch-up (testing reset): any live tier above earned counts once, even without an action tier jump.
+ */
+export function detectBadgeUnlocksForAction(
   earned: BadgeTierSnapshot,
+  previous: BadgeTierSnapshot,
   next: BadgeTierSnapshot,
+  options?: { catchUpAfterReset?: boolean },
 ): BadgeUnlock[] {
   const unlocks: BadgeUnlock[] = []
+  const catchUp = options?.catchUpAfterReset ?? false
 
   for (const def of BADGE_DEFINITIONS) {
-    const previousTier = earned[def.id] ?? 'locked'
+    const earnedTier = earned[def.id] ?? 'locked'
+    const previousTier = previous[def.id] ?? 'locked'
     const newTier = next[def.id] ?? 'locked'
-    if (compareTiers(newTier, previousTier) <= 0) continue
+
+    if (compareTiers(newTier, earnedTier) <= 0) continue
+    if (!catchUp && compareTiers(newTier, previousTier) <= 0) continue
 
     unlocks.push({
       id: def.id,
@@ -80,7 +114,7 @@ export function detectEarnedUnlocks(
       description: def.description,
       icon: def.icon,
       tier: newTier,
-      previousTier,
+      previousTier: earnedTier,
     })
   }
 
@@ -91,11 +125,14 @@ export function detectEarnedUnlocks(
 
 /**
  * Account UI: show the best of earned (permanent) and live cellar progress.
- * Progress counts stay live; tier medals reflect once-earned unlocks.
+ * Pass `earned` when available to avoid stale localStorage reads during the same session.
  */
-export function computeDisplayedBadgeProgress(input: BadgeInput): BadgeProgress[] {
+export function computeDisplayedBadgeProgress(
+  input: BadgeInput,
+  earnedOverride?: BadgeTierSnapshot | null,
+): BadgeProgress[] {
   const live = computeBadgeProgress(input)
-  const earned = loadEarnedBadgeTiers() ?? {}
+  const earned = earnedOverride ?? loadEarnedBadgeTiers() ?? {}
 
   return live.map((badge) => {
     const earnedTier = earned[badge.id] ?? 'locked'
@@ -122,34 +159,49 @@ export function computeDisplayedBadgeProgress(input: BadgeInput): BadgeProgress[
 }
 
 /**
- * One-time sync after cellar + friends are loaded.
- * Never emits toasts — seeds ledger for existing cellars, otherwise preserves earned tiers.
+ * Load earned tiers on startup.
+ * When `seedIfMissing` is false (pending save queued), keep locked rather than seeding from live wines.
  */
-export function hydrateBadgeTracking(input: BadgeInput): BadgeTierSnapshot {
-  const current = snapshotFromBadgeInput(input)
+export function hydrateEarnedBadgeTiers(
+  input: BadgeInput,
+  options?: { seedIfMissing?: boolean },
+): BadgeTierSnapshot {
   const stored = loadEarnedBadgeTiers()
-  if (!stored) {
-    saveEarnedBadgeTiers(current)
-    return current
+  if (stored) return stored
+
+  if (options?.seedIfMissing === false) {
+    return lockedBadgeSnapshot()
   }
-  return stored
+
+  const current = snapshotFromBadgeInput(input)
+  saveEarnedBadgeTiers(current)
+  return current
 }
 
-/** Persist new earned tiers and return unlocks for toasts. */
-export function commitBadgeProgressChange(
-  _previous: BadgeInput,
+export function evaluateBadgeProgressChange(
+  earned: BadgeTierSnapshot,
+  previous: BadgeInput,
   next: BadgeInput,
-): BadgeUnlock[] {
-  const earned = loadEarnedBadgeTiers() ?? {}
+  options?: { catchUpAfterReset?: boolean },
+): { unlocks: BadgeUnlock[]; earned: BadgeTierSnapshot } {
+  const previousSnapshot = snapshotFromBadgeInput(previous)
   const nextSnapshot = snapshotFromBadgeInput(next)
-  const unlocks = detectEarnedUnlocks(earned, nextSnapshot)
-  saveEarnedBadgeTiers(maxTierSnapshot(earned, nextSnapshot))
-  return unlocks
+  const unlocks = detectBadgeUnlocksForAction(
+    earned,
+    previousSnapshot,
+    nextSnapshot,
+    options,
+  )
+  const nextEarned = maxTierSnapshot(earned, nextSnapshot)
+  return { unlocks, earned: nextEarned }
 }
 
-/** Sync earned ledger on load without emitting unlocks. */
-export function syncBadgeTrackingSilently(input: BadgeInput): BadgeTierSnapshot {
-  return hydrateBadgeTracking(input)
+/** @deprecated Use hydrateEarnedBadgeTiers */
+export function syncBadgeTrackingSilently(
+  input: BadgeInput,
+  options?: { seedIfMissing?: boolean },
+): BadgeTierSnapshot {
+  return hydrateEarnedBadgeTiers(input, options)
 }
 
 export function unlockHeadline(unlock: BadgeUnlock): string {
@@ -166,20 +218,14 @@ export function unlockDetail(unlock: BadgeUnlock): string {
   return `Upgraded to ${tierLabel(unlock.tier)}`
 }
 
-export function isLockedBadgeBaseline(snapshot: BadgeTierSnapshot): boolean {
-  return BADGE_DEFINITIONS.every((def) => (snapshot[def.id] ?? 'locked') === 'locked')
-}
-
 export function isBadgeTestingEnabled(): boolean {
   if (import.meta.env.DEV) return true
   if (typeof window === 'undefined') return false
   return window.location.hostname.endsWith('github.io')
 }
 
-/** Clear earned tiers so unlock toasts can be exercised again on this deployment. */
+/** Clear earned tiers and allow the next cellar change to re-toast live tiers (testing). */
 export function resetEarnedBadgeProgressForTesting(): void {
-  const locked: BadgeTierSnapshot = Object.fromEntries(
-    BADGE_DEFINITIONS.map((def) => [def.id, 'locked' as BadgeTier]),
-  )
-  saveEarnedBadgeTiers(locked)
+  saveEarnedBadgeTiers(lockedBadgeSnapshot())
+  markCatchUpTestingUnlocks()
 }

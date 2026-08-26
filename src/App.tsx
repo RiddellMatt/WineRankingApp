@@ -29,8 +29,12 @@ import { APP_NAME, APP_NAME_PRO, APP_TAGLINE, STORAGE_PREFIX } from './brand'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
 import { fetchFriendships } from './lib/friendsDb'
 import {
-  commitBadgeProgressChange,
-  syncBadgeTrackingSilently,
+  consumeCatchUpTestingFlag,
+  evaluateBadgeProgressChange,
+  hydrateEarnedBadgeTiers,
+  loadEarnedBadgeTiers,
+  saveEarnedBadgeTiers,
+  type BadgeTierSnapshot,
   type BadgeUnlock,
 } from './lib/badgeUnlocks'
 import type { BadgeInput } from './lib/badges'
@@ -125,12 +129,25 @@ export default function App() {
   const [badgeToastItems, setBadgeToastItems] = useState<BadgeToastItem[]>([])
   const badgeHydratedRef = useRef(false)
   const badgeFriendCountRef = useRef(0)
-  const pendingBadgeCheckRef = useRef<{ previous: BadgeInput; next: BadgeInput } | null>(null)
+  const earnedBadgeTiersRef = useRef<BadgeTierSnapshot | null>(null)
+  const badgeCellarBaselineRef = useRef<Wine[] | null>(null)
   const winesRef = useRef(wines)
   const importInputRef = useRef<HTMLInputElement>(null)
 
   const badgeReady =
     cellarReady && (!cloudUser || profileLoaded) && friendCountLoaded
+
+  const ensureBadgeHydrated = useCallback(
+    (options?: { seedIfMissing?: boolean }) => {
+      if (badgeHydratedRef.current) return
+      earnedBadgeTiersRef.current = hydrateEarnedBadgeTiers(
+        { wines: winesRef.current, friendCount: badgeFriendCountRef.current },
+        options,
+      )
+      badgeHydratedRef.current = true
+    },
+    [],
+  )
 
   useEffect(() => {
     winesRef.current = wines
@@ -152,33 +169,24 @@ export default function App() {
 
   const applyBadgeProgressChange = useCallback(
     (previous: BadgeInput, next: BadgeInput) => {
-      const unlocks = commitBadgeProgressChange(previous, next)
+      const earned = earnedBadgeTiersRef.current ?? loadEarnedBadgeTiers() ?? {}
+      const catchUpAfterReset = consumeCatchUpTestingFlag()
+      const { unlocks, earned: nextEarned } = evaluateBadgeProgressChange(
+        earned,
+        previous,
+        next,
+        { catchUpAfterReset },
+      )
+      earnedBadgeTiersRef.current = nextEarned
+      saveEarnedBadgeTiers(nextEarned)
       badgeFriendCountRef.current = next.friendCount
       pushBadgeUnlocks(unlocks)
     },
     [pushBadgeUnlocks],
   )
 
-  const notifyBadgeProgressChange = useCallback(
-    (previous: BadgeInput, next: BadgeInput) => {
-      if (!badgeReady) {
-        pendingBadgeCheckRef.current = { previous, next }
-        return
-      }
-      applyBadgeProgressChange(previous, next)
-    },
-    [applyBadgeProgressChange, badgeReady],
-  )
-
-  const notifyWineCellarChange = useCallback(
-    (previousWines: Wine[], nextWines: Wine[], nextFriendCount: number) => {
-      notifyBadgeProgressChange(
-        { wines: previousWines, friendCount: nextFriendCount },
-        { wines: nextWines, friendCount: nextFriendCount },
-      )
-    },
-    [notifyBadgeProgressChange],
-  )
+  const applyBadgeProgressChangeRef = useRef(applyBadgeProgressChange)
+  applyBadgeProgressChangeRef.current = applyBadgeProgressChange
 
   const handleFriendshipsChanged = useCallback(
     (count: number) => {
@@ -186,15 +194,15 @@ export default function App() {
       if (!badgeReady) return
 
       const previousCount = badgeFriendCountRef.current
-      badgeFriendCountRef.current = count
       if (count <= previousCount) return
 
-      notifyBadgeProgressChange(
+      ensureBadgeHydrated({ seedIfMissing: false })
+      applyBadgeProgressChange(
         { wines: winesRef.current, friendCount: previousCount },
         { wines: winesRef.current, friendCount: count },
       )
     },
-    [badgeReady, notifyBadgeProgressChange],
+    [applyBadgeProgressChange, badgeReady, ensureBadgeHydrated],
   )
 
   function goToAccount(highlightSubscription = false) {
@@ -288,26 +296,33 @@ export default function App() {
   useEffect(() => {
     badgeHydratedRef.current = false
     badgeFriendCountRef.current = 0
-    pendingBadgeCheckRef.current = null
+    earnedBadgeTiersRef.current = null
+    badgeCellarBaselineRef.current = null
     setCellarReady(false)
   }, [cloudUser?.id, offlineMode])
 
   useEffect(() => {
     if (!badgeReady) return
 
-    if (pendingBadgeCheckRef.current) {
-      const { previous, next } = pendingBadgeCheckRef.current
-      pendingBadgeCheckRef.current = null
-      applyBadgeProgressChange(previous, next)
+    badgeFriendCountRef.current = friendCount
+
+    if (badgeCellarBaselineRef.current === null) {
+      badgeCellarBaselineRef.current = wines
+      ensureBadgeHydrated()
       return
     }
 
-    if (badgeHydratedRef.current) return
+    if (badgeCellarBaselineRef.current === wines) return
 
-    syncBadgeTrackingSilently({ wines: winesRef.current, friendCount })
-    badgeFriendCountRef.current = friendCount
-    badgeHydratedRef.current = true
-  }, [badgeReady, friendCount, applyBadgeProgressChange])
+    const previousWines = badgeCellarBaselineRef.current
+    badgeCellarBaselineRef.current = wines
+
+    ensureBadgeHydrated({ seedIfMissing: false })
+    applyBadgeProgressChange(
+      { wines: previousWines, friendCount: badgeFriendCountRef.current },
+      { wines, friendCount: badgeFriendCountRef.current },
+    )
+  }, [wines, badgeReady, friendCount, applyBadgeProgressChange, ensureBadgeHydrated])
 
   // Nudge existing accounts that still use the auto-generated email prefix as their name.
   useEffect(() => {
@@ -510,7 +525,12 @@ export default function App() {
       return nextWines
     })
     winesRef.current = nextWines
-    notifyWineCellarChange(previousWines, nextWines, friendCount)
+    badgeCellarBaselineRef.current = nextWines
+    ensureBadgeHydrated({ seedIfMissing: false })
+    applyBadgeProgressChangeRef.current(
+      { wines: previousWines, friendCount: badgeFriendCountRef.current },
+      { wines: nextWines, friendCount: friendCount },
+    )
     if (cloudUser) {
       try {
         const synced = await upsertWine(cloudUser.id, wine, rankingPreference)
@@ -624,15 +644,12 @@ export default function App() {
         }
       }
       const next = [...byId.values()].map((w) => applyCompositeRating(w, rankingPreference))
-      const previousWines = winesRef.current
       setWines(next)
       winesRef.current = next
-      notifyWineCellarChange(previousWines, next, friendCount)
       if (cloudUser) {
         const synced = await bulkUpsertWines(cloudUser.id, next, rankingPreference)
         setWines(synced)
         winesRef.current = synced
-        notifyWineCellarChange(next, synced, friendCount)
       }
     } catch {
       window.alert("That file doesn't look like a Decanti export.")
@@ -951,16 +968,13 @@ export default function App() {
                   <button
                     className="btn ghost"
                     onClick={async () => {
-                      const previousWines = winesRef.current
                       setWines(SAMPLE_WINES)
                       winesRef.current = SAMPLE_WINES
-                      notifyWineCellarChange(previousWines, SAMPLE_WINES, friendCount)
                       if (cloudUser) {
                         try {
                           const synced = await bulkUpsertWines(cloudUser.id, SAMPLE_WINES)
                           setWines(synced)
                           winesRef.current = synced
-                          notifyWineCellarChange(SAMPLE_WINES, synced, friendCount)
                         } catch (e) {
                           window.alert(`Loaded samples but cloud sync failed: ${(e as Error).message}`)
                         }
