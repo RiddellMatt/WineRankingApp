@@ -238,9 +238,8 @@ textarea::placeholder {
 
 .decanti-logo-navy.decanti-logo-header,
 .decanti-logo-light.decanti-logo-header {
-  height: 3rem;
-  width: auto;
-  max-width: min(12rem, 52vw);
+  height: clamp(4.5rem, 16vw, 5.5rem);
+  width: clamp(4.5rem, 16vw, 5.5rem);
   object-fit: contain;
   object-position: center;
 }
@@ -253,11 +252,18 @@ textarea::placeholder {
 
 .decanti-logo-navy.decanti-logo-auth,
 .decanti-logo-light.decanti-logo-auth {
-  height: 4.75rem;
-  width: auto;
-  max-width: min(16rem, 85vw);
+  height: clamp(6.5rem, 24vw, 7.75rem);
+  width: clamp(6.5rem, 24vw, 7.75rem);
   object-fit: contain;
   object-position: center;
+}
+
+.brand.brand-theme-logo {
+  align-items: center;
+}
+
+.brand.brand-theme-logo .tagline {
+  margin-top: 0.1rem;
 }
 
 .brand-pro-line {

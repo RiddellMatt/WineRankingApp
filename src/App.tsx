@@ -534,7 +534,7 @@ export default function App() {
     <div className="app">
       <header className="header">
         <div className="header-inner">
-          <div className="brand">
+          <div className={`brand${showThemeLogo ? ' brand-theme-logo' : ''}`}>
             <DecantiLogo context="header" />
             <div>
               {showThemeLogo ? (
