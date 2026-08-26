@@ -139,3 +139,26 @@ export function tierLabel(tier: BadgeTier): string {
 export function compareTiers(a: BadgeTier, b: BadgeTier): number {
   return TIER_ORDER.indexOf(a) - TIER_ORDER.indexOf(b)
 }
+
+export function maxTier(a: BadgeTier, b: BadgeTier): BadgeTier {
+  return compareTiers(a, b) >= 0 ? a : b
+}
+
+/** Next count needed to reach the tier above `tier`. */
+export function nextThresholdAfterTier(
+  tier: BadgeTier,
+  thresholds: [number, number, number, number],
+): number | null {
+  switch (tier) {
+    case 'locked':
+      return thresholds[0]
+    case 'bronze':
+      return thresholds[1]
+    case 'silver':
+      return thresholds[2]
+    case 'gold':
+      return thresholds[3]
+    case 'diamond':
+      return null
+  }
+}
