@@ -1,6 +1,10 @@
 import { Avatar } from './Avatar'
 import { ShareWineButton } from './ShareWineButton'
 import {
+  ACTIVITY_REACTIONS,
+  type ReactionType,
+} from '../lib/activityReactions'
+import {
   activityEventLabel,
   actorLabel,
   formatActivityTime,
@@ -18,10 +22,13 @@ interface Props {
   rankingPreference: RankingPreference
   loading?: boolean
   emptyHint: string
+  reactionsEnabled?: boolean
   onViewCellar: (friendId: string, friendName: string, avatarUrl?: string) => void
   onSaveToWishlist?: (wine: Wine, friendName: string) => void | Promise<void>
   isWishlistSaved?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
   savingWishlistKey?: string | null
+  onToggleReaction?: (event: ActivityEvent, reaction: ReactionType) => void | Promise<void>
+  togglingReactionKey?: string | null
 }
 
 export function ActivityFeed({
@@ -30,10 +37,13 @@ export function ActivityFeed({
   rankingPreference,
   loading = false,
   emptyHint,
+  reactionsEnabled = false,
   onViewCellar,
   onSaveToWishlist,
   isWishlistSaved,
   savingWishlistKey = null,
+  onToggleReaction,
+  togglingReactionKey = null,
 }: Props) {
   if (loading) {
     return <p className="auth-info activity-loading">Loading activity…</p>
@@ -68,6 +78,10 @@ export function ActivityFeed({
         const shareAttribution = isOwn ? undefined : `${name}'s pick`
         const saved = canSave && (isWishlistSaved?.(event.wine) ?? false)
         const saving = canSave && savingWishlistKey === wishlistIdentityKey(event.wine)
+        const canReact =
+          reactionsEnabled && !isOwn && Boolean(onToggleReaction)
+        const reactions = event.reactions
+        const reactionBusy = togglingReactionKey === event.id
 
         return (
           <li className="activity-item" key={event.id}>
@@ -123,6 +137,33 @@ export function ActivityFeed({
                   </button>
                 )}
               </div>
+              {canReact && (
+                <div className="activity-reactions" role="group" aria-label="React to this activity">
+                  {ACTIVITY_REACTIONS.map(({ type, emoji, label }) => {
+                    const count = reactions?.counts[type] ?? 0
+                    const active = reactions?.myReaction === type
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        className={`activity-reaction-btn ${active ? 'active' : ''}`}
+                        disabled={reactionBusy}
+                        aria-pressed={active}
+                        aria-label={`${label}${count > 0 ? `, ${count}` : ''}`}
+                        title={label}
+                        onClick={() => onToggleReaction!(event, type)}
+                      >
+                        <span className="activity-reaction-emoji" aria-hidden="true">
+                          {emoji}
+                        </span>
+                        {count > 0 && (
+                          <span className="activity-reaction-count">{count}</span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </li>
         )

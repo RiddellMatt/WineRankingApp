@@ -1953,6 +1953,54 @@ textarea {
   margin: 0;
 }
 
+.activity-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+}
+
+.activity-reaction-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.activity-reaction-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.activity-reaction-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.activity-reaction-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.activity-reaction-emoji {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.activity-reaction-count {
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
 .friends-add h2,
 .friends-section h3 {
   font-family: var(--font-display);

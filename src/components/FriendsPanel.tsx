@@ -3,6 +3,12 @@ import { ActivityFeed } from './ActivityFeed'
 import { Avatar } from './Avatar'
 import { WinePassport } from './WinePassport'
 import {
+  applyReactionToggle,
+  attachReactionsToEvents,
+  toggleActivityReaction,
+  type ReactionType,
+} from '../lib/activityReactions'
+import {
   fetchFriendActivity,
   ownRecentActivity,
   type ActivityEvent,
@@ -83,6 +89,7 @@ export function FriendsPanel({
   const [friendships, setFriendships] = useState<Friendship[]>([])
   const [activity, setActivity] = useState<ActivityEvent[]>([])
   const [activityLoading, setActivityLoading] = useState(false)
+  const [togglingReactionKey, setTogglingReactionKey] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
@@ -121,7 +128,8 @@ export function FriendsPanel({
     setActivityLoading(true)
     try {
       const events = await fetchFriendActivity(friendIds, 30)
-      setActivity(events)
+      const withReactions = await attachReactionsToEvents(events, userId)
+      setActivity(withReactions)
     } catch (e) {
       setError(String((e as Error).message ?? e))
       setActivity([])
@@ -198,6 +206,27 @@ export function FriendsPanel({
     }
   }
 
+  async function handleToggleReaction(event: ActivityEvent, reaction: ReactionType) {
+    setError('')
+    const previous = activity
+    setTogglingReactionKey(event.id)
+    setActivity(applyReactionToggle(activity, event.id, reaction))
+    try {
+      await toggleActivityReaction({
+        targetUserId: event.actor.id,
+        wineId: event.wine.id,
+        eventType: event.type,
+        reaction,
+        currentReaction: event.reactions?.myReaction ?? null,
+      })
+    } catch (e) {
+      setActivity(previous)
+      setError(String((e as Error).message ?? e))
+    } finally {
+      setTogglingReactionKey(null)
+    }
+  }
+
   return (
     <div className="friends-panel">
       <section className="friends-tabs" aria-label="Friends views">
@@ -240,10 +269,13 @@ export function FriendsPanel({
             rankingPreference={rankingPreference}
             loading={activityLoading}
             emptyHint={feedEmptyHint}
+            reactionsEnabled={friendIds.length > 0}
             onViewCellar={onViewCellar}
             onSaveToWishlist={onSaveToWishlist}
             isWishlistSaved={isWishlistSaved}
             savingWishlistKey={savingWishlistKey}
+            onToggleReaction={handleToggleReaction}
+            togglingReactionKey={togglingReactionKey}
           />
         </section>
       ) : tab === 'passport' ? (
