@@ -15,6 +15,7 @@ import { WineForm } from './components/WineForm'
 import { Insights } from './components/Insights'
 import { MenuScan } from './components/MenuScan'
 import { FriendsPanel } from './components/FriendsPanel'
+import { NotificationsBell } from './components/NotificationsBell'
 import { AccountPanel } from './components/AccountPanel'
 import {
   BadgeUnlockToasts,
@@ -126,6 +127,9 @@ export default function App() {
   const [savingFriendWishlistKey, setSavingFriendWishlistKey] = useState<string | null>(null)
   const [friendCount, setFriendCount] = useState(0)
   const [friendCountLoaded, setFriendCountLoaded] = useState(false)
+  const [friendsRequestedTab, setFriendsRequestedTab] = useState<'feed' | 'manage' | 'passport' | null>(
+    null,
+  )
   const [badgeToastItems, setBadgeToastItems] = useState<BadgeToastItem[]>([])
   const badgeHydratedRef = useRef(false)
   const badgeFriendCountRef = useRef(0)
@@ -705,6 +709,16 @@ export default function App() {
             </div>
           </div>
           <div className="header-actions">
+            {cloudUser && (
+              <NotificationsBell
+                enabled
+                onNavigateFriends={(tab) => {
+                  setFriendView(null)
+                  setView('friends')
+                  setFriendsRequestedTab(tab)
+                }}
+              />
+            )}
             {!friendView && view === 'cellar' && cellarSegment === 'wishlist' ? (
               <button className="btn primary" onClick={openAddWishlistForm}>
                 + Add to wishlist
@@ -801,6 +815,8 @@ export default function App() {
               isWishlistSaved={(wine) => isWishlistDuplicate(wines, wine)}
               savingWishlistKey={savingFriendWishlistKey}
               onFriendshipsChanged={handleFriendshipsChanged}
+              requestedTab={friendsRequestedTab}
+              onRequestedTabHandled={() => setFriendsRequestedTab(null)}
             />
           )
         ) : view === 'sommelier' ? (
