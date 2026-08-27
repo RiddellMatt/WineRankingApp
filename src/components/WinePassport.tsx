@@ -145,7 +145,7 @@ export function WinePassport({ userId, wines, completedJourneys, onViewCellar }:
         return
       }
 
-      const snapshots = await Promise.all(
+      const friendData = await Promise.all(
         accepted.map(async (f) => {
           const friendId =
             f.friend?.id ?? (f.requesterId === userId ? f.addresseeId : f.requesterId)
@@ -155,11 +155,16 @@ export function WinePassport({ userId, wines, completedJourneys, onViewCellar }:
             email: '',
           }
           const friendWines = await fetchWines(friendId)
-          return friendSnapshotFromWines(profile, friendWines)
+          return {
+            snapshot: friendSnapshotFromWines(profile, friendWines),
+            wines: friendWines,
+          }
         }),
       )
-      const friendIds = snapshots.map((snapshot) => snapshot.id)
-      const milestones = await fetchFriendMilestoneSummaries(friendIds)
+      const snapshots = friendData.map((entry) => entry.snapshot)
+      const milestones = await fetchFriendMilestoneSummaries(
+        friendData.map((entry) => ({ userId: entry.snapshot.id, wines: entry.wines })),
+      )
       setFriendSnapshots(snapshots)
       setFriendMilestones(milestones)
     } catch (e) {

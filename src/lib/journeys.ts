@@ -288,3 +288,17 @@ export function completedJourneyCount(earnedCompletions: ReadonlySet<string>): n
 export function journeyById(id: string): JourneyDefinition | undefined {
   return JOURNEY_DEFINITIONS.find((def) => def.id === id)
 }
+
+/** Union of cloud completions and journeys fully satisfied by tried wines in the cellar. */
+export function mergedJourneyCompletions(
+  wines: Wine[],
+  cloudCompletions: ReadonlySet<string>,
+): Set<string> {
+  const merged = new Set(cloudCompletions)
+  for (const def of JOURNEY_DEFINITIONS) {
+    if (matchingJourneyWines(wines, def).length >= def.requiredWines) {
+      merged.add(def.id)
+    }
+  }
+  return merged
+}

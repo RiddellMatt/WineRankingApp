@@ -39,7 +39,7 @@ import {
   type BadgeTierSnapshot,
   type BadgeUnlock,
 } from './lib/badgeUnlocks'
-import { saveEarnedBadgeTiersCloud, syncEarnedBadgeTiers } from './lib/badgeDb'
+import { saveEarnedBadgeTiersCloud, syncEarnedBadgeTiersWithCellar } from './lib/badgeDb'
 import {
   recordBadgeUnlockEvent,
   recordJourneyCompleteEvent,
@@ -419,7 +419,11 @@ export default function App() {
     ;(async () => {
       try {
         const localBadges = loadEarnedBadgeTiers()
-        const syncedBadges = await syncEarnedBadgeTiers(cloudUser.id, localBadges)
+        const syncedBadges = await syncEarnedBadgeTiersWithCellar(
+          cloudUser.id,
+          localBadges,
+          buildBadgeInput(winesRef.current, badgeFriendCountRef.current),
+        )
         const localJourneys = loadCompletedJourneysLocal()
         const syncedJourneys = await syncJourneyCompletions(cloudUser.id, localJourneys)
         if (!cancelled) {
@@ -446,7 +450,7 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [cloudUser?.id, cloudUser, cellarProgressReady, ensureBadgeHydrated])
+  }, [cloudUser?.id, cloudUser, cellarProgressReady, ensureBadgeHydrated, buildBadgeInput])
 
   useEffect(() => {
     if (!badgeReady) return

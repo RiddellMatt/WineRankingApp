@@ -5,9 +5,10 @@ import {
   type BadgeTier,
 } from './badges'
 import { fetchEarnedBadgeTiersForUsers } from './badgeDb'
-import { lockedBadgeSnapshot, type BadgeTierSnapshot } from './badgeUnlocks'
+import { lockedBadgeSnapshot, maxTierSnapshot, snapshotFromBadgeInput, type BadgeTierSnapshot } from './badgeUnlocks'
 import { fetchCompletedJourneysForUsers } from './journeyDb'
-import { JOURNEY_DEFINITIONS } from './journeys'
+import { JOURNEY_DEFINITIONS, mergedJourneyCompletions } from './journeys'
+import type { Wine } from '../types'
 
 export interface BadgeHighlight {
   id: string
@@ -22,6 +23,11 @@ export interface FriendMilestoneSummary {
   earnedBadgeCount: number
   badgeHighlights: BadgeHighlight[]
   summaryLine: string
+}
+
+export interface FriendMilestoneInput {
+  userId: string
+  wines: Wine[]
 }
 
 function summarizeBadges(snapshot: BadgeTierSnapshot): {
@@ -43,7 +49,7 @@ function summarizeBadges(snapshot: BadgeTierSnapshot): {
 export function buildFriendMilestoneSummary(
   userId: string,
   badges: BadgeTierSnapshot,
-  journeys: Set<string>,
+  journeys: ReadonlySet<string>,
 ): FriendMilestoneSummary {
   const { earnedBadgeCount, badgeHighlights } = summarizeBadges(badges)
   const journeyCount = JOURNEY_DEFINITIONS.filter((def) => journeys.has(def.id)).length
@@ -68,26 +74,38 @@ export function buildFriendMilestoneSummary(
   }
 }
 
-export async function fetchFriendMilestoneSummaries(
-  friendIds: string[],
-): Promise<Map<string, FriendMilestoneSummary>> {
-  if (friendIds.length === 0) return new Map()
+function displayBadgesForFriend(
+  wines: Wine[],
+  cloudBadges: BadgeTierSnapshot,
+  journeys: ReadonlySet<string>,
+): BadgeTierSnapshot {
+  const live = snapshotFromBadgeInput({
+    wines,
+    friendCount: 0,
+    completedJourneys: journeys,
+  })
+  return maxTierSnapshot(cloudBadges, live)
+}
 
+/** Friend milestones from cloud + live cellar (same max logic as your Account badges). */
+export async function fetchFriendMilestoneSummaries(
+  friends: FriendMilestoneInput[],
+): Promise<Map<string, FriendMilestoneSummary>> {
+  if (friends.length === 0) return new Map()
+
+  const friendIds = friends.map((friend) => friend.userId)
   const [badgesByUser, journeysByUser] = await Promise.all([
     fetchEarnedBadgeTiersForUsers(friendIds),
     fetchCompletedJourneysForUsers(friendIds),
   ])
 
   const summaries = new Map<string, FriendMilestoneSummary>()
-  for (const friendId of friendIds) {
-    summaries.set(
-      friendId,
-      buildFriendMilestoneSummary(
-        friendId,
-        badgesByUser.get(friendId) ?? lockedBadgeSnapshot(),
-        journeysByUser.get(friendId) ?? new Set(),
-      ),
-    )
+  for (const friend of friends) {
+    const cloudBadges = badgesByUser.get(friend.userId) ?? lockedBadgeSnapshot()
+    const cloudJourneys = journeysByUser.get(friend.userId) ?? new Set()
+    const journeys = mergedJourneyCompletions(friend.wines, cloudJourneys)
+    const badges = displayBadgesForFriend(friend.wines, cloudBadges, journeys)
+    summaries.set(friend.userId, buildFriendMilestoneSummary(friend.userId, badges, journeys))
   }
   return summaries
 }
