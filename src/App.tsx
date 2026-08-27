@@ -20,7 +20,8 @@ import { AccountPanel } from './components/AccountPanel'
 import {
   BadgeUnlockToasts,
   createBadgeToastItems,
-  type BadgeToastItem,
+  createJourneyToastItems,
+  type MilestoneToastItem,
 } from './components/BadgeUnlockToasts'
 import { RankingPreferenceModal } from './components/RankingPreferenceModal'
 import { Avatar } from './components/Avatar'
@@ -38,6 +39,18 @@ import {
   type BadgeTierSnapshot,
   type BadgeUnlock,
 } from './lib/badgeUnlocks'
+import { saveEarnedBadgeTiersCloud, syncEarnedBadgeTiers } from './lib/badgeDb'
+import {
+  recordBadgeUnlockEvent,
+  recordJourneyCompleteEvent,
+} from './lib/activityEventsDb'
+import { detectNewJourneyCompletions, journeyById } from './lib/journeys'
+import {
+  loadCompletedJourneysLocal,
+  markJourneysComplete,
+  saveCompletedJourneysLocal,
+  syncJourneyCompletions,
+} from './lib/journeyDb'
 import type { BadgeInput } from './lib/badges'
 import { fetchMyProfile, updateRankingPreference, type UserProfile } from './lib/profileDb'
 import { isSupabaseConfigured } from './lib/supabase'
@@ -130,32 +143,53 @@ export default function App() {
   const [friendsRequestedTab, setFriendsRequestedTab] = useState<'feed' | 'manage' | 'passport' | null>(
     null,
   )
-  const [badgeToastItems, setBadgeToastItems] = useState<BadgeToastItem[]>([])
+  const [badgeToastItems, setBadgeToastItems] = useState<MilestoneToastItem[]>([])
+  const [completedJourneys, setCompletedJourneys] = useState<Set<string>>(() =>
+    loadCompletedJourneysLocal(),
+  )
   const badgeHydratedRef = useRef(false)
   const badgeFriendCountRef = useRef(0)
   const earnedBadgeTiersRef = useRef<BadgeTierSnapshot | null>(null)
+  const completedJourneysRef = useRef<Set<string>>(completedJourneys)
+  const progressSyncedRef = useRef(false)
+  const [progressSynced, setProgressSynced] = useState(false)
   const badgeCellarBaselineRef = useRef<Wine[] | null>(null)
   const winesRef = useRef(wines)
   const importInputRef = useRef<HTMLInputElement>(null)
 
-  const badgeReady =
+  const cellarProgressReady =
     cellarReady && (!cloudUser || profileLoaded) && friendCountLoaded
+
+  const badgeReady = cellarProgressReady && progressSynced
+
+  const buildBadgeInput = useCallback(
+    (cellarWines: Wine[], friends: number): BadgeInput => ({
+      wines: cellarWines,
+      friendCount: friends,
+      completedJourneys: completedJourneysRef.current,
+    }),
+    [],
+  )
 
   const ensureBadgeHydrated = useCallback(
     (options?: { seedIfMissing?: boolean }) => {
       if (badgeHydratedRef.current) return
       earnedBadgeTiersRef.current = hydrateEarnedBadgeTiers(
-        { wines: winesRef.current, friendCount: badgeFriendCountRef.current },
+        buildBadgeInput(winesRef.current, badgeFriendCountRef.current),
         options,
       )
       badgeHydratedRef.current = true
     },
-    [],
+    [buildBadgeInput],
   )
 
   useEffect(() => {
     winesRef.current = wines
   }, [wines])
+
+  useEffect(() => {
+    completedJourneysRef.current = completedJourneys
+  }, [completedJourneys])
 
   const rankingPreference = resolveRankingPreference(profile?.rankingPreference)
 
@@ -167,6 +201,52 @@ export default function App() {
     setBadgeToastItems((prev) => [...prev, ...createBadgeToastItems(unlocks)])
   }, [])
 
+  const pushJourneyCompletions = useCallback(
+    (journeyIds: ReturnType<typeof detectNewJourneyCompletions>) => {
+      if (journeyIds.length === 0) return
+      setBadgeToastItems((prev) => [...prev, ...createJourneyToastItems(journeyIds)])
+    },
+    [],
+  )
+
+  const persistProgressToCloud = useCallback(
+    async (
+      earned: BadgeTierSnapshot,
+      newJourneyIds: string[],
+      badgeUnlocks: BadgeUnlock[],
+    ) => {
+      if (!cloudUser) return
+      try {
+        await saveEarnedBadgeTiersCloud(cloudUser.id, earned)
+        if (newJourneyIds.length > 0) {
+          await markJourneysComplete(cloudUser.id, newJourneyIds)
+        }
+        await Promise.all([
+          ...badgeUnlocks.map((unlock) =>
+            recordBadgeUnlockEvent(cloudUser.id, {
+              badge_id: unlock.id,
+              badge_title: unlock.title,
+              badge_icon: unlock.icon,
+              tier: unlock.tier,
+              previous_tier: unlock.previousTier,
+            }),
+          ),
+          ...newJourneyIds.map((journeyId) => {
+            const def = journeyById(journeyId)
+            return recordJourneyCompleteEvent(cloudUser.id, {
+              journey_id: journeyId,
+              journey_title: def?.title ?? journeyId,
+              journey_icon: def?.icon ?? '🧭',
+            })
+          }),
+        ])
+      } catch {
+        // Cloud sync is best-effort; local state remains authoritative offline.
+      }
+    },
+    [cloudUser],
+  )
+
   const dismissBadgeToast = useCallback((toastId: string) => {
     setBadgeToastItems((prev) => prev.filter((item) => item.toastId !== toastId))
   }, [])
@@ -175,18 +255,37 @@ export default function App() {
     (previous: BadgeInput, next: BadgeInput) => {
       const earned = earnedBadgeTiersRef.current ?? loadEarnedBadgeTiers() ?? {}
       const catchUpAfterReset = consumeCatchUpTestingFlag()
+
+      const newJourneys = detectNewJourneyCompletions(next.wines, completedJourneysRef.current)
+      const newJourneyIds = newJourneys.map((journey) => journey.id)
+      if (newJourneyIds.length > 0) {
+        const nextCompleted = new Set(completedJourneysRef.current)
+        for (const id of newJourneyIds) {
+          nextCompleted.add(id)
+        }
+        completedJourneysRef.current = nextCompleted
+        saveCompletedJourneysLocal(nextCompleted)
+        setCompletedJourneys(nextCompleted)
+        pushJourneyCompletions(newJourneys)
+      }
+
+      const nextWithJourneys: BadgeInput = {
+        ...next,
+        completedJourneys: completedJourneysRef.current,
+      }
       const { unlocks, earned: nextEarned } = evaluateBadgeProgressChange(
         earned,
         previous,
-        next,
+        nextWithJourneys,
         { catchUpAfterReset },
       )
       earnedBadgeTiersRef.current = nextEarned
       saveEarnedBadgeTiers(nextEarned)
       badgeFriendCountRef.current = next.friendCount
       pushBadgeUnlocks(unlocks)
+      void persistProgressToCloud(nextEarned, newJourneyIds, unlocks)
     },
-    [pushBadgeUnlocks],
+    [pushBadgeUnlocks, pushJourneyCompletions, persistProgressToCloud],
   )
 
   const applyBadgeProgressChangeRef = useRef(applyBadgeProgressChange)
@@ -202,11 +301,11 @@ export default function App() {
 
       ensureBadgeHydrated({ seedIfMissing: false })
       applyBadgeProgressChange(
-        { wines: winesRef.current, friendCount: previousCount },
-        { wines: winesRef.current, friendCount: count },
+        buildBadgeInput(winesRef.current, previousCount),
+        buildBadgeInput(winesRef.current, count),
       )
     },
-    [applyBadgeProgressChange, badgeReady, ensureBadgeHydrated],
+    [applyBadgeProgressChange, badgeReady, buildBadgeInput, ensureBadgeHydrated],
   )
 
   function goToAccount(highlightSubscription = false) {
@@ -301,9 +400,53 @@ export default function App() {
     badgeHydratedRef.current = false
     badgeFriendCountRef.current = 0
     earnedBadgeTiersRef.current = null
+    completedJourneysRef.current = new Set()
+    setCompletedJourneys(new Set())
+    progressSyncedRef.current = false
+    setProgressSynced(false)
     badgeCellarBaselineRef.current = null
     setCellarReady(false)
   }, [cloudUser?.id, offlineMode])
+
+  useEffect(() => {
+    if (!cloudUser) {
+      progressSyncedRef.current = true
+      setProgressSynced(true)
+      return
+    }
+    if (!cellarProgressReady || progressSyncedRef.current) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const localBadges = loadEarnedBadgeTiers()
+        const syncedBadges = await syncEarnedBadgeTiers(cloudUser.id, localBadges)
+        const localJourneys = loadCompletedJourneysLocal()
+        const syncedJourneys = await syncJourneyCompletions(cloudUser.id, localJourneys)
+        if (!cancelled) {
+          earnedBadgeTiersRef.current = syncedBadges
+          saveEarnedBadgeTiers(syncedBadges)
+          completedJourneysRef.current = syncedJourneys
+          saveCompletedJourneysLocal(syncedJourneys)
+          setCompletedJourneys(syncedJourneys)
+          badgeHydratedRef.current = true
+          progressSyncedRef.current = true
+          setProgressSynced(true)
+        }
+      } catch {
+        if (!cancelled) {
+          ensureBadgeHydrated()
+          const localJourneys = loadCompletedJourneysLocal()
+          completedJourneysRef.current = localJourneys
+          setCompletedJourneys(localJourneys)
+          progressSyncedRef.current = true
+          setProgressSynced(true)
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [cloudUser?.id, cloudUser, cellarProgressReady, ensureBadgeHydrated])
 
   useEffect(() => {
     if (!badgeReady) return
@@ -323,10 +466,10 @@ export default function App() {
 
     ensureBadgeHydrated({ seedIfMissing: false })
     applyBadgeProgressChange(
-      { wines: previousWines, friendCount: badgeFriendCountRef.current },
-      { wines, friendCount: badgeFriendCountRef.current },
+      buildBadgeInput(previousWines, badgeFriendCountRef.current),
+      buildBadgeInput(wines, badgeFriendCountRef.current),
     )
-  }, [wines, badgeReady, friendCount, applyBadgeProgressChange, ensureBadgeHydrated])
+  }, [wines, badgeReady, friendCount, applyBadgeProgressChange, buildBadgeInput, ensureBadgeHydrated])
 
   // Nudge existing accounts that still use the auto-generated email prefix as their name.
   useEffect(() => {
@@ -532,8 +675,8 @@ export default function App() {
     badgeCellarBaselineRef.current = nextWines
     ensureBadgeHydrated({ seedIfMissing: false })
     applyBadgeProgressChangeRef.current(
-      { wines: previousWines, friendCount: badgeFriendCountRef.current },
-      { wines: nextWines, friendCount: friendCount },
+      buildBadgeInput(previousWines, badgeFriendCountRef.current),
+      buildBadgeInput(nextWines, friendCount),
     )
     if (cloudUser) {
       try {
@@ -749,6 +892,7 @@ export default function App() {
             pro={pro}
             wineCount={triedCount(wines)}
             wines={wines}
+            completedJourneys={completedJourneys}
             rankingPreference={rankingPreference}
             highlightSubscription={accountHighlight}
             onProfileSaved={setProfile}
@@ -817,6 +961,7 @@ export default function App() {
               onFriendshipsChanged={handleFriendshipsChanged}
               requestedTab={friendsRequestedTab}
               onRequestedTabHandled={() => setFriendsRequestedTab(null)}
+              completedJourneys={completedJourneys}
             />
           )
         ) : view === 'sommelier' ? (

@@ -38,6 +38,7 @@ interface Props {
   onFriendshipsChanged?: (friendCount: number) => void
   requestedTab?: FriendsTab | null
   onRequestedTabHandled?: () => void
+  completedJourneys?: Set<string>
 }
 
 type FriendsTab = 'feed' | 'passport' | 'manage'
@@ -88,6 +89,7 @@ export function FriendsPanel({
   onFriendshipsChanged,
   requestedTab = null,
   onRequestedTabHandled,
+  completedJourneys = new Set(),
 }: Props) {
   const [tab, setTab] = useState<FriendsTab>('feed')
   const [friendships, setFriendships] = useState<Friendship[]>([])
@@ -217,6 +219,7 @@ export function FriendsPanel({
   }
 
   async function handleToggleReaction(event: ActivityEvent, reaction: ReactionType) {
+    if (!event.wine || event.type === 'badge_unlock' || event.type === 'journey_complete') return
     setError('')
     const previous = activity
     setTogglingReactionKey(event.id)
@@ -294,7 +297,7 @@ export function FriendsPanel({
           <p className="friends-hint">
             Where your wines come from, where you drank them, and how you compare with friends.
           </p>
-          <WinePassport userId={userId} wines={wines} />
+          <WinePassport userId={userId} wines={wines} completedJourneys={completedJourneys} />
         </section>
       ) : (
         <>

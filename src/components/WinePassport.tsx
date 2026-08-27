@@ -8,6 +8,7 @@ import {
   type FriendStandingRow,
 } from '../lib/explorerStats'
 import { fetchFriendships } from '../lib/friendsDb'
+import { computeJourneyProgress } from '../lib/journeys'
 import { fetchWines } from '../lib/wineDb'
 import type { CountEntry } from '../lib/wineGeo'
 import type { Wine } from '../types'
@@ -15,6 +16,7 @@ import type { Wine } from '../types'
 interface Props {
   userId: string
   wines: Wine[]
+  completedJourneys: Set<string>
 }
 
 function PassportBars({ title, data, emptyHint }: { title: string; data: CountEntry[]; emptyHint: string }) {
@@ -70,12 +72,17 @@ function StandingRow({ row }: { row: FriendStandingRow }) {
   )
 }
 
-export function WinePassport({ userId, wines }: Props) {
+export function WinePassport({ userId, wines, completedJourneys }: Props) {
   const [friendSnapshots, setFriendSnapshots] = useState<FriendCellarSnapshot[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const passport = useMemo(() => buildPersonalPassport(wines), [wines])
+  const journeys = useMemo(
+    () => computeJourneyProgress(wines, completedJourneys),
+    [wines, completedJourneys],
+  )
+  const completedCount = journeys.filter((j) => j.earnedComplete).length
 
   const loadFriends = useCallback(async () => {
     setLoading(true)
@@ -156,6 +163,48 @@ export function WinePassport({ userId, wines }: Props) {
           <span className="passport-stat-value">{passport.drinkLocations.length}</span>
           <span className="passport-stat-label">places drank</span>
         </div>
+        <div className="passport-stat">
+          <span className="passport-stat-value">{completedCount}</span>
+          <span className="passport-stat-label">journeys done</span>
+        </div>
+      </section>
+
+      <section className="passport-card journeys-card">
+        <h3>Journeys</h3>
+        <p className="passport-journeys-intro">
+          Log tried wines from iconic regions — complete a journey with 3 matching pours.
+        </p>
+        <ul className="journey-list">
+          {journeys.map((journey) => (
+            <li
+              className={`journey-card ${journey.earnedComplete ? 'complete' : ''}`}
+              key={journey.id}
+            >
+              <span className="journey-icon" aria-hidden="true">
+                {journey.icon}
+              </span>
+              <div className="journey-copy">
+                <h4 className="journey-title">{journey.title}</h4>
+                <p className="journey-desc">{journey.description}</p>
+                <div className="journey-progress-row">
+                  <div className="journey-progress-track">
+                    <div
+                      className="journey-progress-fill"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          (Math.min(journey.current, journey.requiredWines) / journey.requiredWines) *
+                            100,
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <span className="journey-progress-label">{journey.progressLabel}</span>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <div className="passport-grid">

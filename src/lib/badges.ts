@@ -1,3 +1,4 @@
+import { completedJourneyCount } from './journeys'
 import { countDrinkLocations, countOriginCountries } from './wineGeo'
 import { triedWines, wishlistWines } from './wishlist'
 import type { Wine } from '../types'
@@ -28,6 +29,8 @@ export interface BadgeProgress {
 export interface BadgeInput {
   wines: Wine[]
   friendCount: number
+  /** Permanent journey completions for Pathfinder badge */
+  completedJourneys?: ReadonlySet<string>
 }
 
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
@@ -66,6 +69,13 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     icon: '👥',
     thresholds: [1, 3, 5, 10],
   },
+  {
+    id: 'pathfinder',
+    title: 'Pathfinder',
+    description: 'Complete passport journeys',
+    icon: '🧭',
+    thresholds: [1, 3, 5, 5],
+  },
 ]
 
 const TIER_ORDER: BadgeTier[] = ['locked', 'bronze', 'silver', 'gold', 'diamond']
@@ -101,6 +111,8 @@ function badgeValue(id: string, input: BadgeInput): number {
       return countDrinkLocations(tried).length
     case 'social':
       return input.friendCount
+    case 'pathfinder':
+      return completedJourneyCount(input.completedJourneys ?? new Set())
     default:
       return 0
   }
