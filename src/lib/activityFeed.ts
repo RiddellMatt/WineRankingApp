@@ -1,4 +1,5 @@
 import { friendDisplayLabel, type FriendProfile } from './friendsDb'
+import type { EventReactions } from './activityReactions'
 import { wineFromRow } from './wineDb'
 import { getSupabase } from './supabase'
 import { fetchProfilesByIds } from './profileDb'
@@ -13,6 +14,7 @@ export interface ActivityEvent {
   at: number
   actor: FriendProfile
   wine: Wine
+  reactions?: EventReactions
 }
 
 export function activityEventType(wine: Pick<Wine, 'status'>): ActivityEventType {
