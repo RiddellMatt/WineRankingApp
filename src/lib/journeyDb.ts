@@ -46,6 +46,37 @@ export async function fetchCompletedJourneys(userId: string): Promise<Set<string
   return new Set((data ?? []).map((row) => (row as { journey_id: string }).journey_id))
 }
 
+/** Batch fetch journey completions for multiple users (friends). */
+export async function fetchCompletedJourneysForUsers(
+  userIds: string[],
+): Promise<Map<string, Set<string>>> {
+  const result = new Map<string, Set<string>>()
+  if (userIds.length === 0) return result
+
+  for (const userId of userIds) {
+    result.set(userId, new Set())
+  }
+
+  const { data, error } = await getSupabase()
+    .from('user_journey_completions')
+    .select('user_id, journey_id')
+    .in('user_id', userIds)
+
+  if (error) {
+    if (isMissingJourneyCompletionsTable(error)) return result
+    throw error
+  }
+
+  for (const row of data ?? []) {
+    const userId = (row as { user_id: string; journey_id: string }).user_id
+    const journeyId = (row as { user_id: string; journey_id: string }).journey_id
+    const set = result.get(userId) ?? new Set()
+    set.add(journeyId)
+    result.set(userId, set)
+  }
+  return result
+}
+
 export async function markJourneyComplete(userId: string, journeyId: string): Promise<void> {
   const { error } = await getSupabase()
     .from('user_journey_completions')

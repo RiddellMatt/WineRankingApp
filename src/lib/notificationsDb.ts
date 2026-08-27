@@ -1,28 +1,55 @@
 import type { PostgrestError } from '@supabase/supabase-js'
-import type { ActivityEventType } from './activityFeed'
+import type { WineActivityEventType } from './activityFeed'
+import type { BadgeTier } from './badges'
+import { tierLabel } from './badges'
 import { friendDisplayLabel, type FriendProfile } from './friendsDb'
 import { fetchProfilesByIds } from './profileDb'
 import type { ReactionType } from './activityReactions'
 import { getSupabase } from './supabase'
 
-export type NotificationType = 'reaction' | 'friend_request' | 'friend_accepted'
+export type NotificationType =
+  | 'reaction'
+  | 'friend_request'
+  | 'friend_accepted'
+  | 'friend_badge_unlock'
+  | 'friend_journey_complete'
 
 export interface ReactionNotificationPayload {
   reaction_type: ReactionType
   wine_id: string
   wine_name: string
-  event_type: ActivityEventType
+  event_type: WineActivityEventType
 }
 
 export interface FriendshipNotificationPayload {
   friendship_id: string
 }
 
+export interface FriendBadgeUnlockPayload {
+  badge_id: string
+  badge_title: string
+  badge_icon: string
+  tier: BadgeTier
+  previous_tier?: BadgeTier
+}
+
+export interface FriendJourneyCompletePayload {
+  journey_id: string
+  journey_title: string
+  journey_icon: string
+}
+
+export type NotificationPayload =
+  | ReactionNotificationPayload
+  | FriendshipNotificationPayload
+  | FriendBadgeUnlockPayload
+  | FriendJourneyCompletePayload
+
 export interface AppNotification {
   id: string
   type: NotificationType
   actor: FriendProfile | null
-  payload: ReactionNotificationPayload | FriendshipNotificationPayload
+  payload: NotificationPayload
   readAt: string | null
   createdAt: string
 }
@@ -32,7 +59,7 @@ interface NotificationRow {
   recipient_id: string
   actor_id: string | null
   type: NotificationType
-  payload: ReactionNotificationPayload | FriendshipNotificationPayload
+  payload: NotificationPayload
   read_at: string | null
   created_at: string
 }
@@ -65,13 +92,31 @@ export function notificationMessage(n: AppNotification): string {
       return `${name} sent you a friend request`
     case 'friend_accepted':
       return `${name} accepted your friend request`
+    case 'friend_badge_unlock': {
+      const p = n.payload as FriendBadgeUnlockPayload
+      const icon = p.badge_icon ?? '🏅'
+      return `${name} earned ${icon} ${p.badge_title} — ${tierLabel(p.tier)}`
+    }
+    case 'friend_journey_complete': {
+      const p = n.payload as FriendJourneyCompletePayload
+      const icon = p.journey_icon ?? '🧭'
+      return `${name} completed ${icon} ${p.journey_title}`
+    }
     default:
       return 'New notification'
   }
 }
 
-export function notificationFriendsTab(n: AppNotification): 'feed' | 'manage' {
-  return n.type === 'reaction' ? 'feed' : 'manage'
+export function notificationFriendsTab(n: AppNotification): 'feed' | 'manage' | 'passport' {
+  switch (n.type) {
+    case 'friend_request':
+    case 'friend_accepted':
+      return 'manage'
+    case 'friend_journey_complete':
+      return 'passport'
+    default:
+      return 'feed'
+  }
 }
 
 export async function fetchNotifications(limit = 40): Promise<AppNotification[]> {

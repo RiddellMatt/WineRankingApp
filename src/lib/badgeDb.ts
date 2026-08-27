@@ -60,6 +60,40 @@ export async function fetchEarnedBadgeTiers(userId: string): Promise<BadgeTierSn
   return snapshotFromRows((data ?? []) as BadgeTierRow[])
 }
 
+/** Batch fetch earned tiers for multiple users (friends). */
+export async function fetchEarnedBadgeTiersForUsers(
+  userIds: string[],
+): Promise<Map<string, BadgeTierSnapshot>> {
+  const result = new Map<string, BadgeTierSnapshot>()
+  if (userIds.length === 0) return result
+
+  for (const userId of userIds) {
+    result.set(userId, lockedBadgeSnapshot())
+  }
+
+  const { data, error } = await getSupabase()
+    .from('user_badge_tiers')
+    .select('user_id, badge_id, tier, updated_at')
+    .in('user_id', userIds)
+
+  if (error) {
+    if (isMissingBadgeTiersTable(error)) return result
+    throw error
+  }
+
+  const rowsByUser = new Map<string, BadgeTierRow[]>()
+  for (const row of (data ?? []) as BadgeTierRow[]) {
+    const list = rowsByUser.get(row.user_id) ?? []
+    list.push(row)
+    rowsByUser.set(row.user_id, list)
+  }
+
+  for (const [userId, rows] of rowsByUser) {
+    result.set(userId, snapshotFromRows(rows))
+  }
+  return result
+}
+
 /** Upsert earned tiers — only writes badges above locked. */
 export async function saveEarnedBadgeTiersCloud(
   userId: string,

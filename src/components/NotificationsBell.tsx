@@ -14,7 +14,7 @@ import {
 
 interface Props {
   enabled: boolean
-  onNavigateFriends: (tab: 'feed' | 'manage') => void
+  onNavigateFriends: (tab: 'feed' | 'manage' | 'passport') => void
 }
 
 export function NotificationsBell({ enabled, onNavigateFriends }: Props) {
