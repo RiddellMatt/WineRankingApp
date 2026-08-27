@@ -31,6 +31,8 @@ const REGION_HINTS: readonly (readonly [string, string])[] = [
   ['douro', 'Douro, Portugal'],
   ['mosel', 'Mosel, Germany'],
   ['stellenbosch', 'Stellenbosch, South Africa'],
+  ['eden valley', 'Barossa Valley, Australia'],
+  ['oakville', 'Napa Valley, USA'],
 ]
 
 const SORTED_HINTS = [...REGION_HINTS].sort((a, b) => b[0].length - a[0].length)
@@ -47,6 +49,7 @@ const VARIETAL_REGION: readonly (readonly [string, string])[] = [
   ['shiraz', 'Barossa Valley, Australia'],
   ['syrah', 'Rhône, France'],
   ['riesling', 'Mosel, Germany'],
+  ['port', 'Douro, Portugal'],
   ['albariño', 'Rías Baixas, Spain'],
   ['albarino', 'Rías Baixas, Spain'],
 ]

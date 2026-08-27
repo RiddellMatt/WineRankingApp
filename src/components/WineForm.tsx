@@ -3,6 +3,7 @@ import { LABEL_SCAN_CONFIG } from '../config'
 import { aiLabelToScanResult, LabelScanError, scanLabelWithAi } from '../lib/labelScanApi'
 import { applyCompositeRating, compositeScore } from '../lib/ranking'
 import { suggestRegions } from '../lib/regionSuggestions'
+import { journeyFormHints } from '../lib/journeys'
 import type { ScanResult } from '../scanner'
 import { hasTaste, lookupTaste } from '../tasteData'
 import { WINE_TYPES, type RankingPreference, type TasteProfile, type Wine, type WineType } from '../types'
@@ -12,6 +13,8 @@ import { TasteInput } from './TasteProfile'
 interface Props {
   initial: Wine | null
   formMode?: 'tried' | 'wishlist'
+  cellarWines?: Wine[]
+  completedJourneys?: Set<string>
   onSave: (wine: Wine) => void
   onClose: () => void
   rankingPreference: RankingPreference
@@ -23,6 +26,8 @@ interface Props {
 export function WineForm({
   initial,
   formMode = 'tried',
+  cellarWines = [],
+  completedJourneys = new Set(),
   onSave,
   onClose,
   rankingPreference,
@@ -85,6 +90,13 @@ export function WineForm({
       }),
     [name, winery, varietal, region],
   )
+
+  const journeyHints = useMemo(() => {
+    if (wishlistForm) return []
+    return journeyFormHints(region, cellarWines, completedJourneys, {
+      excludeWineId: initial?.id,
+    })
+  }, [wishlistForm, region, cellarWines, completedJourneys, initial?.id])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -413,6 +425,18 @@ export function WineForm({
                   </button>
                 ))}
               </div>
+            )}
+            {journeyHints.length > 0 && (
+              <ul className="journey-form-hints">
+                {journeyHints.map((hint) => (
+                  <li className="journey-form-hint" key={hint.id}>
+                    <span className="journey-form-hint-icon" aria-hidden="true">
+                      {hint.icon}
+                    </span>
+                    <span className="journey-form-hint-line">{hint.line}</span>
+                  </li>
+                ))}
+              </ul>
             )}
           </label>
           <label className="field">

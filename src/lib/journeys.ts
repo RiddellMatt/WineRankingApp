@@ -27,7 +27,16 @@ export interface JourneyProgress {
   /** Permanent completion from earned ledger */
   earnedComplete: boolean
   progressLabel: string
+  /** Short in-progress line for passport cards */
+  nudge: string | null
   matchingWines: Wine[]
+}
+
+export interface JourneyFormHint {
+  id: string
+  icon: string
+  title: string
+  line: string
 }
 
 export const JOURNEY_DEFINITIONS: JourneyDefinition[] = [
@@ -55,7 +64,7 @@ export const JOURNEY_DEFINITIONS: JourneyDefinition[] = [
     description: 'Log 3 tried wines from Rioja',
     icon: '🏰',
     regionLabel: 'Rioja',
-    keywords: ['rioja', 'ribera del duero', 'tempranillo rioja'],
+    keywords: ['rioja', 'ribera del duero'],
     requiredWines: 3,
   },
   {
@@ -73,10 +82,68 @@ export const JOURNEY_DEFINITIONS: JourneyDefinition[] = [
     description: 'Log 3 tried wines from Marlborough',
     icon: '🥝',
     regionLabel: 'Marlborough',
-    keywords: ['marlborough', 'sauvignon blanc marlborough'],
+    keywords: ['marlborough'],
+    requiredWines: 3,
+  },
+  {
+    id: 'napa',
+    title: 'Napa Cruise',
+    description: 'Log 3 tried wines from Napa Valley',
+    icon: '🚗',
+    regionLabel: 'Napa Valley',
+    keywords: ['napa valley', 'napa', 'oakville', 'rutherford', 'st. helena', 'st helena'],
+    requiredWines: 3,
+  },
+  {
+    id: 'champagne',
+    title: 'Champagne Chase',
+    description: 'Log 3 tried wines from Champagne',
+    icon: '🥂',
+    regionLabel: 'Champagne',
+    keywords: ['champagne', 'reims', 'épernay', 'epernay'],
+    requiredWines: 3,
+  },
+  {
+    id: 'douro',
+    title: 'Douro Drift',
+    description: 'Log 3 tried wines from the Douro',
+    icon: '🌊',
+    regionLabel: 'Douro',
+    keywords: ['douro', 'porto', 'vinho do porto', 'port wine'],
+    requiredWines: 3,
+  },
+  {
+    id: 'mosel',
+    title: 'Mosel March',
+    description: 'Log 3 tried wines from the Mosel',
+    icon: '🏞️',
+    regionLabel: 'Mosel',
+    keywords: ['mosel', 'mosel-saar-ruwer', 'mosel saar ruwer'],
+    requiredWines: 3,
+  },
+  {
+    id: 'barossa',
+    title: 'Barossa Beat',
+    description: 'Log 3 tried wines from Barossa',
+    icon: '🦘',
+    regionLabel: 'Barossa',
+    keywords: ['barossa', 'barossa valley', 'eden valley'],
     requiredWines: 3,
   },
 ]
+
+const JOURNEY_COMPLETE_LINES: Record<string, string> = {
+  tuscany: 'Tuscan Trail complete — three pours, one happy passport.',
+  burgundy: 'Burgundy Bound done. Pinot pilgrimage achieved.',
+  rioja: 'Rioja Ramble wrapped. Tempranillo territory conquered.',
+  piedmont: 'Piedmont Pass cleared. Nebbiolo nods approvingly.',
+  marlborough: 'Marlborough Miles done. Sauvignon squad assembled.',
+  napa: 'Napa Cruise parked. Cab country logged.',
+  champagne: 'Champagne Chase finished. Bubbles badge earned.',
+  douro: 'Douro Drift complete. Port path sealed.',
+  mosel: 'Mosel March done. Riesling route recorded.',
+  barossa: 'Barossa Beat complete. Shiraz stamp acquired.',
+}
 
 export function wineMatchesJourney(
   wine: Pick<Wine, 'region'>,
@@ -92,6 +159,76 @@ export function matchingJourneyWines(
   journey: JourneyDefinition,
 ): Wine[] {
   return triedWines(wines).filter((wine) => wineMatchesJourney(wine, journey))
+}
+
+function countTowardJourney(
+  wines: Wine[],
+  journey: JourneyDefinition,
+  options?: { excludeWineId?: string; extraRegion?: string },
+): number {
+  let count = matchingJourneyWines(wines, journey).length
+  if (options?.excludeWineId) {
+    const excluded = wines.find((w) => w.id === options.excludeWineId)
+    if (excluded && wineMatchesJourney(excluded, journey)) {
+      count = Math.max(0, count - 1)
+    }
+  }
+  if (options?.extraRegion && wineMatchesJourney({ region: options.extraRegion }, journey)) {
+    count += 1
+  }
+  return count
+}
+
+export function journeyPassportNudge(progress: Pick<
+  JourneyProgress,
+  'earnedComplete' | 'current' | 'requiredWines' | 'regionLabel' | 'title'
+>): string | null {
+  if (progress.earnedComplete) return null
+  const { current, requiredWines, regionLabel, title } = progress
+  if (current === 0) return `Add ${regionLabel} on 3 tried wines to finish`
+  const remaining = requiredWines - current
+  if (remaining <= 0) return null
+  if (remaining === 1) return `One more ${regionLabel} wine finishes ${title}`
+  return `${current}/${requiredWines} logged — ${remaining} to go`
+}
+
+export function journeyCompleteMessage(journey: JourneyDefinition): string {
+  return JOURNEY_COMPLETE_LINES[journey.id] ?? `${journey.title} complete!`
+}
+
+/** Hints while logging a tried wine — shows projected journey progress after save. */
+export function journeyFormHints(
+  region: string,
+  cellarWines: Wine[],
+  completedJourneys: ReadonlySet<string>,
+  options?: { excludeWineId?: string },
+): JourneyFormHint[] {
+  const trimmed = region.trim()
+  if (!trimmed) return []
+
+  const hints: JourneyFormHint[] = []
+  for (const def of JOURNEY_DEFINITIONS) {
+    if (completedJourneys.has(def.id)) continue
+    if (!wineMatchesJourney({ region: trimmed }, def)) continue
+
+    const afterSave = countTowardJourney(cellarWines, def, {
+      excludeWineId: options?.excludeWineId,
+      extraRegion: trimmed,
+    })
+    const display = Math.min(afterSave, def.requiredWines)
+
+    hints.push({
+      id: def.id,
+      icon: def.icon,
+      title: def.title,
+      line:
+        afterSave >= def.requiredWines
+          ? `Finishes ${def.title} when you save`
+          : `${def.title} · ${display}/${def.requiredWines} after save`,
+    })
+  }
+
+  return hints.sort((a, b) => a.title.localeCompare(b.title))
 }
 
 export function computeJourneyProgress(
@@ -110,7 +247,7 @@ export function computeJourneyProgress(
         ? 'Complete ✓'
         : `${Math.min(current, def.requiredWines)} / ${def.requiredWines}`
 
-    return {
+    const base = {
       id: def.id,
       title: def.title,
       description: def.description,
@@ -122,6 +259,11 @@ export function computeJourneyProgress(
       earnedComplete,
       progressLabel,
       matchingWines,
+    }
+
+    return {
+      ...base,
+      nudge: journeyPassportNudge(base),
     }
   })
 }

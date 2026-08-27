@@ -74,7 +74,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     title: 'Pathfinder',
     description: 'Complete passport journeys',
     icon: '🧭',
-    thresholds: [1, 3, 5, 5],
+    thresholds: [1, 3, 5, 10],
   },
 ]
 
