@@ -8,6 +8,7 @@ import {
   activityEventLabel,
   actorLabel,
   formatActivityTime,
+  milestoneHeadline,
   type ActivityEvent,
   wineActivitySubtitle,
   wineActivityTitle,
@@ -64,20 +65,61 @@ export function ActivityFeed({
     <ol className="activity-feed">
       {events.map((event) => {
         const name = actorLabel(event.actor, viewerId)
-        const title = wineActivityTitle(event.wine)
-        const subtitle = wineActivitySubtitle(event.wine)
-        const score = compositeScore(event.wine, rankingPreference)
         const isOwn = event.actor.id === viewerId
+        const isMilestone = event.type === 'badge_unlock' || event.type === 'journey_complete'
+
+        if (isMilestone) {
+          const headline = milestoneHeadline(event)
+          return (
+            <li className="activity-item activity-milestone" key={event.id}>
+              <Avatar
+                displayName={name}
+                email={event.actor.email}
+                avatarUrl={event.actor.avatarUrl}
+                seed={event.actor.id}
+                size="sm"
+              />
+              <div className="activity-body">
+                <p className="activity-line">
+                  <strong>{name}</strong> {activityEventLabel(event.type)}
+                </p>
+                {headline && <p className="activity-sub activity-milestone-headline">{headline}</p>}
+                <div className="activity-meta">
+                  <span>{formatActivityTime(event.at)}</span>
+                  {!isOwn && (
+                    <button
+                      type="button"
+                      className="link-btn"
+                      onClick={() =>
+                        onViewCellar(
+                          event.actor.id,
+                          actorLabel(event.actor, viewerId),
+                          event.actor.avatarUrl,
+                        )
+                      }
+                    >
+                      View cellar
+                    </button>
+                  )}
+                </div>
+              </div>
+            </li>
+          )
+        }
+
+        const wine = event.wine!
+        const title = wineActivityTitle(wine)
+        const subtitle = wineActivitySubtitle(wine)
+        const score = compositeScore(wine, rankingPreference)
         const canSave =
           !isOwn &&
           event.type === 'logged' &&
-          !isWishlist(event.wine) &&
+          !isWishlist(wine) &&
           Boolean(onSaveToWishlist)
-        const canShare =
-          event.type === 'logged' && !isWishlist(event.wine) && score > 0
+        const canShare = event.type === 'logged' && !isWishlist(wine) && score > 0
         const shareAttribution = isOwn ? undefined : `${name}'s pick`
-        const saved = canSave && (isWishlistSaved?.(event.wine) ?? false)
-        const saving = canSave && savingWishlistKey === wishlistIdentityKey(event.wine)
+        const saved = canSave && (isWishlistSaved?.(wine) ?? false)
+        const saving = canSave && savingWishlistKey === wishlistIdentityKey(wine)
         const canReact =
           reactionsEnabled && !isOwn && Boolean(onToggleReaction)
         const reactions = event.reactions
@@ -96,7 +138,7 @@ export function ActivityFeed({
               <p className="activity-line">
                 <strong>{name}</strong> {activityEventLabel(event.type)}{' '}
                 <span className="activity-wine">{title}</span>
-                {event.type === 'logged' && !isWishlist(event.wine) && score > 0 && (
+                {event.type === 'logged' && !isWishlist(wine) && score > 0 && (
                   <span className="activity-rating"> · {score.toFixed(1)}★</span>
                 )}
               </p>
@@ -120,7 +162,7 @@ export function ActivityFeed({
                 )}
                 {canShare && (
                   <ShareWineButton
-                    wine={event.wine}
+                    wine={wine}
                     score={score}
                     attribution={shareAttribution}
                     compact
@@ -131,7 +173,7 @@ export function ActivityFeed({
                     type="button"
                     className={`link-btn activity-save-btn ${saved ? 'saved' : ''}`}
                     disabled={saved || saving}
-                    onClick={() => onSaveToWishlist!(event.wine, name)}
+                    onClick={() => onSaveToWishlist!(wine, name)}
                   >
                     {saved ? 'Saved to try ✓' : saving ? 'Saving…' : '♡ Save to try'}
                   </button>

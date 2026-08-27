@@ -1,5 +1,5 @@
 import type { PostgrestError } from '@supabase/supabase-js'
-import type { ActivityEvent, ActivityEventType } from './activityFeed'
+import type { ActivityEvent, WineActivityEventType } from './activityFeed'
 import { getSupabase } from './supabase'
 
 export type ReactionType = 'cheers' | 'fire' | 'nice'
@@ -24,7 +24,7 @@ export interface ActivityReactionRow {
   reactor_id: string
   target_user_id: string
   target_wine_id: string
-  event_type: ActivityEventType
+  event_type: WineActivityEventType
   reaction_type: ReactionType
   created_at: string
 }
@@ -48,7 +48,7 @@ function isMissingReactionsTable(error: PostgrestError | null): boolean {
 export function reactionEventKey(
   targetUserId: string,
   wineId: string,
-  eventType: ActivityEventType,
+  eventType: WineActivityEventType,
 ): string {
   return `${targetUserId}-${wineId}-${eventType}`
 }
@@ -79,7 +79,10 @@ export async function attachReactionsToEvents(
 ): Promise<ActivityEvent[]> {
   if (events.length === 0) return events
 
-  const wineIds = [...new Set(events.map((e) => e.wine.id))]
+  const wineEvents = events.filter((event) => event.wine)
+  if (wineEvents.length === 0) return events
+
+  const wineIds = [...new Set(wineEvents.map((event) => event.wine!.id))]
   const { data, error } = await getSupabase()
     .from('activity_reactions')
     .select('*')
@@ -91,16 +94,19 @@ export async function attachReactionsToEvents(
   }
 
   const byEvent = aggregateReactions((data ?? []) as ActivityReactionRow[], viewerId)
-  return events.map((event) => ({
-    ...event,
-    reactions: byEvent.get(event.id) ?? emptyEventReactions(),
-  }))
+  return events.map((event) => {
+    if (!event.wine) return event
+    return {
+      ...event,
+      reactions: byEvent.get(event.id) ?? emptyEventReactions(),
+    }
+  })
 }
 
 export interface ToggleReactionInput {
   targetUserId: string
   wineId: string
-  eventType: ActivityEventType
+  eventType: WineActivityEventType
   reaction: ReactionType
   currentReaction: ReactionType | null
 }

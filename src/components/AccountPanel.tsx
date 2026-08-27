@@ -34,6 +34,7 @@ interface Props {
   pro: boolean
   wineCount: number
   wines: Wine[]
+  completedJourneys?: Set<string>
   rankingPreference: RankingPreference
   highlightSubscription?: boolean
   onProfileSaved: (profile: UserProfile) => void
@@ -52,6 +53,7 @@ export function AccountPanel({
   pro,
   wineCount,
   wines,
+  completedJourneys = new Set(),
   rankingPreference,
   highlightSubscription = false,
   onProfileSaved,
@@ -101,8 +103,8 @@ export function AccountPanel({
   }, [signedIn, profile?.id, offlineMode])
 
   const badges = useMemo(
-    () => computeDisplayedBadgeProgress({ wines, friendCount }),
-    [wines, friendCount],
+    () => computeDisplayedBadgeProgress({ wines, friendCount, completedJourneys }),
+    [wines, friendCount, completedJourneys],
   )
 
   const badgeTestingEnabled = isBadgeTestingEnabled()

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { LABEL_SCAN_CONFIG } from '../config'
 import { aiLabelToScanResult, LabelScanError, scanLabelWithAi } from '../lib/labelScanApi'
 import { applyCompositeRating, compositeScore } from '../lib/ranking'
+import { suggestRegions } from '../lib/regionSuggestions'
 import type { ScanResult } from '../scanner'
 import { hasTaste, lookupTaste } from '../tasteData'
 import { WINE_TYPES, type RankingPreference, type TasteProfile, type Wine, type WineType } from '../types'
@@ -72,6 +73,17 @@ export function WineForm({
         rankingPreference,
       ),
     [ratingEnjoyment, ratingValue, showValueRating, rankingPreference],
+  )
+
+  const regionSuggestions = useMemo(
+    () =>
+      suggestRegions({
+        name,
+        winery,
+        varietal,
+        region,
+      }),
+    [name, winery, varietal, region],
   )
 
   useEffect(() => {
@@ -388,6 +400,20 @@ export function WineForm({
               onChange={(e) => setRegion(e.target.value)}
               placeholder="e.g. Piedmont, Italy"
             />
+            {regionSuggestions.length > 0 && !region.trim() && (
+              <div className="region-suggestions">
+                {regionSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    className="region-suggestion-chip"
+                    onClick={() => setRegion(suggestion)}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
           </label>
           <label className="field">
             <span>Price ($)</span>
