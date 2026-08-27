@@ -240,6 +240,9 @@ export function WinePassport({ userId, wines, completedJourneys, onViewCellar }:
               <div className="journey-copy">
                 <h4 className="journey-title">{journey.title}</h4>
                 <p className="journey-desc">{journey.description}</p>
+                {journey.nudge && !journey.earnedComplete && (
+                  <p className="journey-nudge">{journey.nudge}</p>
+                )}
                 <div className="journey-progress-row">
                   <div className="journey-progress-track">
                     <div

@@ -1276,6 +1276,8 @@ export default function App() {
         <WineForm
           initial={editing}
           formMode={formMode}
+          cellarWines={wines}
+          completedJourneys={completedJourneys}
           onSave={handleSave}
           onClose={() => {
             setFormOpen(false)

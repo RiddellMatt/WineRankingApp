@@ -3080,6 +3080,13 @@ textarea {
   color: var(--text-muted);
 }
 
+.journey-nudge {
+  margin: 0 0 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gold);
+}
+
 .journey-progress-row {
   display: flex;
   align-items: center;
@@ -3127,6 +3134,32 @@ textarea {
 .region-suggestion-chip:hover {
   border-color: var(--gold);
   color: var(--gold);
+}
+
+.journey-form-hints {
+  list-style: none;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.journey-form-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.journey-form-hint-icon {
+  flex-shrink: 0;
+}
+
+.journey-form-hint-line {
+  color: var(--gold);
+  font-weight: 600;
 }
 
 .activity-milestone-headline {

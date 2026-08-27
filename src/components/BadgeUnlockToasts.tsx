@@ -5,6 +5,7 @@ import { tierLabel } from '../lib/badges'
 import type { BadgeUnlock } from '../lib/badgeUnlocks'
 import { unlockDetail, unlockHeadline } from '../lib/badgeUnlocks'
 import type { JourneyDefinition } from '../lib/journeys'
+import { journeyCompleteMessage } from '../lib/journeys'
 
 const TOAST_MS = 4500
 
@@ -52,7 +53,7 @@ export function createJourneyToastItems(journeys: JourneyDefinition[]): Mileston
     id: journey.id,
     title: journey.title,
     icon: journey.icon,
-    description: `${journey.regionLabel} journey complete — nice work, explorer!`,
+    description: journeyCompleteMessage(journey),
   }))
 }
 
