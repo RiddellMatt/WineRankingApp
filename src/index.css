@@ -3133,6 +3133,73 @@ textarea {
   font-weight: 600;
 }
 
+/* ── Friend milestones (passport) ─────────────────────── */
+
+.friend-milestones-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.friend-milestone-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.friend-milestone-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.friend-milestone-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.friend-milestone-summary {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.friend-milestone-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+}
+
+.friend-milestone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  padding: 0.12rem 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gold) 12%, var(--surface-3));
+  border: 1px solid color-mix(in srgb, var(--gold) 25%, var(--border));
+}
+
+.friend-milestone-badge-tier {
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.friend-milestone-view {
+  align-self: center;
+  flex-shrink: 0;
+}
+
 /* ── Theme picker ────────────────────────────────────── */
 
 .theme-picker {

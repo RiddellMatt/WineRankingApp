@@ -8,15 +8,18 @@ import {
   type FriendStandingRow,
 } from '../lib/explorerStats'
 import { fetchFriendships } from '../lib/friendsDb'
+import { fetchFriendMilestoneSummaries, type FriendMilestoneSummary } from '../lib/friendMilestones'
 import { computeJourneyProgress } from '../lib/journeys'
 import { fetchWines } from '../lib/wineDb'
 import type { CountEntry } from '../lib/wineGeo'
 import type { Wine } from '../types'
+import { tierLabel } from '../lib/badges'
 
 interface Props {
   userId: string
   wines: Wine[]
   completedJourneys: Set<string>
+  onViewCellar?: (friendId: string, friendName: string, avatarUrl?: string) => void
 }
 
 function PassportBars({ title, data, emptyHint }: { title: string; data: CountEntry[]; emptyHint: string }) {
@@ -72,8 +75,54 @@ function StandingRow({ row }: { row: FriendStandingRow }) {
   )
 }
 
-export function WinePassport({ userId, wines, completedJourneys }: Props) {
+function FriendMilestoneRow({
+  name,
+  avatarUrl,
+  friendId,
+  summary,
+  onViewCellar,
+}: {
+  name: string
+  avatarUrl?: string
+  friendId: string
+  summary: FriendMilestoneSummary
+  onViewCellar?: (friendId: string, friendName: string, avatarUrl?: string) => void
+}) {
+  return (
+    <li className="friend-milestone-row">
+      <Avatar displayName={name} avatarUrl={avatarUrl} seed={friendId} size="sm" />
+      <div className="friend-milestone-copy">
+        <span className="friend-milestone-name">{name}</span>
+        <span className="friend-milestone-summary">{summary.summaryLine}</span>
+        {summary.badgeHighlights.length > 0 && (
+          <div className="friend-milestone-badges">
+            {summary.badgeHighlights.map((badge) => (
+              <span className="friend-milestone-badge" key={badge.id} title={`${badge.title} — ${tierLabel(badge.tier)}`}>
+                <span aria-hidden="true">{badge.icon}</span>
+                <span className="friend-milestone-badge-tier">{tierLabel(badge.tier)}</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      {onViewCellar && (
+        <button
+          type="button"
+          className="link-btn friend-milestone-view"
+          onClick={() => onViewCellar(friendId, name, avatarUrl)}
+        >
+          Cellar
+        </button>
+      )}
+    </li>
+  )
+}
+
+export function WinePassport({ userId, wines, completedJourneys, onViewCellar }: Props) {
   const [friendSnapshots, setFriendSnapshots] = useState<FriendCellarSnapshot[]>([])
+  const [friendMilestones, setFriendMilestones] = useState<Map<string, FriendMilestoneSummary>>(
+    new Map(),
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -92,6 +141,7 @@ export function WinePassport({ userId, wines, completedJourneys }: Props) {
       const accepted = friendships.filter((f) => f.status === 'accepted')
       if (accepted.length === 0) {
         setFriendSnapshots([])
+        setFriendMilestones(new Map())
         return
       }
 
@@ -108,10 +158,14 @@ export function WinePassport({ userId, wines, completedJourneys }: Props) {
           return friendSnapshotFromWines(profile, friendWines)
         }),
       )
+      const friendIds = snapshots.map((snapshot) => snapshot.id)
+      const milestones = await fetchFriendMilestoneSummaries(friendIds)
       setFriendSnapshots(snapshots)
+      setFriendMilestones(milestones)
     } catch (e) {
       setError(String((e as Error).message ?? e))
       setFriendSnapshots([])
+      setFriendMilestones(new Map())
     } finally {
       setLoading(false)
     }
@@ -206,6 +260,38 @@ export function WinePassport({ userId, wines, completedJourneys }: Props) {
           ))}
         </ul>
       </section>
+
+      {friendSnapshots.length > 0 && (
+        <section className="passport-card friend-milestones-card">
+          <h3>Friends&apos; milestones</h3>
+          <p className="passport-journeys-intro">
+            Badges and journeys your friends have earned — synced from their accounts.
+          </p>
+          <ul className="friend-milestones-list">
+            {friendSnapshots.map((friend) => {
+              const summary =
+                friendMilestones.get(friend.id) ??
+                ({
+                  userId: friend.id,
+                  journeyCount: 0,
+                  earnedBadgeCount: 0,
+                  badgeHighlights: [],
+                  summaryLine: 'No milestones yet',
+                } satisfies FriendMilestoneSummary)
+              return (
+                <FriendMilestoneRow
+                  key={friend.id}
+                  friendId={friend.id}
+                  name={friend.name}
+                  avatarUrl={friend.avatarUrl}
+                  summary={summary}
+                  onViewCellar={onViewCellar}
+                />
+              )
+            })}
+          </ul>
+        </section>
+      )}
 
       <div className="passport-grid">
         <PassportBars

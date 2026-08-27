@@ -297,7 +297,12 @@ export function FriendsPanel({
           <p className="friends-hint">
             Where your wines come from, where you drank them, and how you compare with friends.
           </p>
-          <WinePassport userId={userId} wines={wines} completedJourneys={completedJourneys} />
+          <WinePassport
+            userId={userId}
+            wines={wines}
+            completedJourneys={completedJourneys}
+            onViewCellar={onViewCellar}
+          />
         </section>
       ) : (
         <>
