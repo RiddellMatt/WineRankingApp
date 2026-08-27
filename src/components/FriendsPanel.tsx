@@ -36,6 +36,8 @@ interface Props {
   isWishlistSaved?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
   savingWishlistKey?: string | null
   onFriendshipsChanged?: (friendCount: number) => void
+  requestedTab?: FriendsTab | null
+  onRequestedTabHandled?: () => void
 }
 
 type FriendsTab = 'feed' | 'passport' | 'manage'
@@ -84,6 +86,8 @@ export function FriendsPanel({
   isWishlistSaved,
   savingWishlistKey = null,
   onFriendshipsChanged,
+  requestedTab = null,
+  onRequestedTabHandled,
 }: Props) {
   const [tab, setTab] = useState<FriendsTab>('feed')
   const [friendships, setFriendships] = useState<Friendship[]>([])
@@ -105,6 +109,12 @@ export function FriendsPanel({
   useEffect(() => {
     reload().catch((e) => setError(String(e.message ?? e)))
   }, [reload])
+
+  useEffect(() => {
+    if (!requestedTab) return
+    setTab(requestedTab)
+    onRequestedTabHandled?.()
+  }, [requestedTab, onRequestedTabHandled])
 
   const friends = useMemo(
     () => friendships.filter((f) => f.status === 'accepted'),
