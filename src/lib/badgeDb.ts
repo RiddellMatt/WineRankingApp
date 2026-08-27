@@ -6,9 +6,11 @@ import {
 import {
   lockedBadgeSnapshot,
   maxTierSnapshot,
+  snapshotFromBadgeInput,
   type BadgeTierSnapshot,
 } from './badgeUnlocks'
 import { getSupabase } from './supabase'
+import type { BadgeInput } from './badges'
 
 interface BadgeTierRow {
   user_id: string
@@ -135,5 +137,23 @@ export async function syncEarnedBadgeTiers(
     }
   }
 
+  return merged
+}
+
+/** Merge cloud, local cache, and live cellar — upload so friends can see earned tiers. */
+export async function syncEarnedBadgeTiersWithCellar(
+  userId: string,
+  localSnapshot: BadgeTierSnapshot | null,
+  liveInput: BadgeInput,
+): Promise<BadgeTierSnapshot> {
+  const cloud = await fetchEarnedBadgeTiers(userId)
+  const merged = maxTierSnapshot(
+    cloud ?? lockedBadgeSnapshot(),
+    maxTierSnapshot(
+      localSnapshot ?? lockedBadgeSnapshot(),
+      snapshotFromBadgeInput(liveInput),
+    ),
+  )
+  await saveEarnedBadgeTiersCloud(userId, merged)
   return merged
 }
