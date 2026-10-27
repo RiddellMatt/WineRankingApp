@@ -32,7 +32,15 @@ for (const file of envFiles) {
   loadEnvFile(resolve(root, file))
 }
 
-const url = process.env.VITE_SUPABASE_URL?.trim() ?? ''
+function normalizeSupabaseProjectUrl(raw) {
+  if (!raw) return ''
+  let url = raw.trim()
+  url = url.replace(/\/rest\/v1\/?$/i, '')
+  url = url.replace(/\/+$/, '')
+  return url
+}
+
+const url = normalizeSupabaseProjectUrl(process.env.VITE_SUPABASE_URL ?? '')
 const key = process.env.VITE_SUPABASE_ANON_KEY?.trim() ?? ''
 
 function fail(message) {
@@ -54,6 +62,12 @@ if (url.includes('YOUR_PROJECT_REF') || key === 'your-anon-key-here') {
 
 if (!url.includes('.supabase.co')) {
   fail('VITE_SUPABASE_URL does not look like a Supabase project URL.')
+}
+
+if (/\/rest\/v1\/?$/i.test(process.env.VITE_SUPABASE_URL?.trim() ?? '')) {
+  console.warn(
+    '[env check] VITE_SUPABASE_URL includes /rest/v1 — use the project URL from Supabase → Settings → API (build will strip the suffix).',
+  )
 }
 
 if (!key.startsWith('eyJ')) {
