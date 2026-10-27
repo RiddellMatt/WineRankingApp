@@ -1,10 +1,21 @@
 const PLACEHOLDER_KEY = 'your-anon-key-here'
 const PLACEHOLDER_URL = 'YOUR_PROJECT_REF'
 
+/** Project URL only — not the PostgREST `/rest/v1` endpoint. */
+export function normalizeSupabaseProjectUrl(raw?: string): string | undefined {
+  if (!raw) return undefined
+  let url = raw.trim()
+  url = url.replace(/\/rest\/v1\/?$/i, '')
+  url = url.replace(/\/+$/, '')
+  return url || undefined
+}
+
 export function getSupabaseEnv(): { url?: string; anonKey?: string } {
+  const rawUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
+  const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim()
   return {
-    url: import.meta.env.VITE_SUPABASE_URL as string | undefined,
-    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined,
+    url: normalizeSupabaseProjectUrl(rawUrl),
+    anonKey: anonKey || undefined,
   }
 }
 
