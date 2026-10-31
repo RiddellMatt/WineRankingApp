@@ -62,7 +62,11 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
+        # Upload only: internal TestFlight does not require beta review submission.
+        # true triggers Beta App Review and fails with 422 until export compliance
+        # is set in App Store Connect (ITSAppUsesNonExemptEncryption in Info.plist
+        # pre-answers this on future builds).
+        submit_to_testflight: false
         # Internal TestFlight groups auto-receive processed builds; naming them
         # here fails with "Cannot add internal group to a build" (Apple API).
         # Add external group names only when you use External Testing.
