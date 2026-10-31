@@ -75,4 +75,5 @@ The App Store / TestFlight build uses `com.northline.decanti://login-callback`, 
 | Redirect error | Confirm Supabase redirect URLs match section 1 exactly |
 | Stuck on sign-in after Google | Hard refresh Safari; try private tab |
 | **Invalid API key** on Google sign-in | This is the **Supabase anon key**, not Google. Copy the anon public key from Supabase → Project Settings → API into `.env.local`, run `npm run cap:sync`, rebuild Android. For web, update GitHub repo secrets `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, then redeploy. |
-| **Invalid flow state** on Android | Update the app (OAuth must run in the WebView, not Chrome). Force-close the app, reopen, tap Google once. Confirm Supabase redirect URL includes `com.northline.decanti://login-callback`. |
+| **Invalid flow state** on Android | Force-close the app, reopen, tap Google once. Confirm Supabase redirect URL includes `com.northline.decanti://login-callback`. |
+| **Spinner after Google 2FA** (TestFlight iOS) | Install a build that includes the iOS `Browser.open` OAuth fix, or use email/password / Sign in with Apple. |
