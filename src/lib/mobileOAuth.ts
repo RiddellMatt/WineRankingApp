@@ -2,7 +2,7 @@ import { Browser } from '@capacitor/browser'
 import type { Provider } from '@supabase/supabase-js'
 import { authRedirectUrl } from './authRedirect'
 import { MOBILE_AUTH_REDIRECT } from './mobileDeepLinks'
-import { isNativeApp, nativePlatform } from './platform'
+import { isNativeApp } from './platform'
 import { getSupabase } from './supabase'
 import { friendlyAuthError } from './supabaseConfig'
 
@@ -30,11 +30,11 @@ let exchangeInFlight: Promise<boolean> | null = null
 let lastCompletedCode: string | null = null
 
 async function exchangeOAuthCallback(url: string): Promise<boolean> {
-  if (nativePlatform() === 'android') {
+  if (isNativeApp()) {
     try {
       await Browser.close()
     } catch {
-      // Tab may already be closed when the app opens from the deep link.
+      // Browser may already be closed when the app opens from the deep link.
     }
   }
 
@@ -84,10 +84,10 @@ export async function completeOAuthFromUrl(url: string): Promise<boolean> {
 }
 
 /**
- * Google blocks OAuth inside embedded WebViews (400 after 2FA). Android must use
- * Chrome Custom Tabs (Browser.open). PKCE state is stored via Capacitor Preferences
- * so exchangeCodeForSession still works when returning via deep link.
- * iOS uses in-app WebView navigation because SFSafariViewController cannot open custom schemes.
+ * Google blocks OAuth inside embedded WebViews (400 after 2FA). Native builds open
+ * the system browser (Chrome Custom Tabs / SFSafariViewController) via Browser.open
+ * so Supabase can redirect to com.northline.decanti://login-callback and resume the app.
+ * PKCE state is stored via Capacitor Preferences for exchangeCodeForSession on return.
  */
 export async function startNativeOAuth(provider: Provider): Promise<string | null> {
   const options: { redirectTo: string; skipBrowserRedirect: boolean; scopes?: string } = {
@@ -108,11 +108,21 @@ export async function startNativeOAuth(provider: Provider): Promise<string | nul
     return 'Native sign-in is only available in the mobile app.'
   }
 
-  if (nativePlatform() === 'android') {
-    await Browser.open({ url: data.url })
-    return null
-  }
-
-  window.location.assign(data.url)
+  await Browser.open({ url: data.url })
   return null
+}
+
+/** Clear OAuth spinner if the user closes the browser without finishing sign-in. */
+export function listenForOAuthBrowserDismiss(): void {
+  if (!isNativeApp()) return
+
+  void Browser.addListener('browserFinished', () => {
+    void getSupabase()
+      .auth.getSession()
+      .then(({ data }) => {
+        if (!data.session) {
+          emitOAuthError('Sign-in was cancelled. Tap Continue with Google to try again.')
+        }
+      })
+  })
 }
