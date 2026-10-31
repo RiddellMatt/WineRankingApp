@@ -21,7 +21,7 @@ Android Play Store builds are optional in the same `codemagic.yaml` (second work
 3. Enable **Sign in with Apple** on the App ID (required when offering Google sign-in).
 4. **App Store Connect → Apps → +** — create **Decanti** with bundle ID `com.northline.decanti`.
 5. Note the numeric **Apple ID** (General → App Information). Update `APP_STORE_APPLE_ID` in `codemagic.yaml`.
-6. **TestFlight → Internal Testing** — create a group named **Internal Testers** (matches `beta_groups` in `codemagic.yaml`).
+6. **TestFlight → Internal Testing** — create a group (e.g. **Internal Testers**) and add testers. Internal groups receive builds automatically; do not list them under `beta_groups` in `codemagic.yaml` (Apple rejects explicit assignment).
 
 ## 2. App Store Connect API key (for Codemagic)
 

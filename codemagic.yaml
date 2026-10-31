@@ -53,8 +53,9 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
-        beta_groups:
-          - Internal Testers
+        # Internal TestFlight groups auto-receive processed builds; naming them
+        # here fails with "Cannot add internal group to a build" (Apple API).
+        # Add external group names only when you use External Testing.
 
   android-play-internal:
     name: Android Play internal track
