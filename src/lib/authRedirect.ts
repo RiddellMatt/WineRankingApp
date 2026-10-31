@@ -42,6 +42,26 @@ export function isOAuthCallback(): boolean {
   return hash.includes('access_token') || hash.includes('error=')
 }
 
+/** Parse Supabase PKCE callback query params from a redirect URL (web or custom scheme). */
+export function parseOAuthCallbackParams(url: string): {
+  code: string | null
+  flowId: string | null
+  oauthError: string | null
+} {
+  try {
+    const parsed = new URL(url)
+    const oauthError =
+      parsed.searchParams.get('error_description') ?? parsed.searchParams.get('error')
+    return {
+      code: parsed.searchParams.get('code'),
+      flowId: parsed.searchParams.get('sb_flow_id'),
+      oauthError,
+    }
+  } catch {
+    return { code: null, flowId: null, oauthError: null }
+  }
+}
+
 /** Remove Supabase OAuth params from the address bar after sign-in. */
 export function cleanAuthParamsFromUrl(): void {
   if (isNativeApp()) return

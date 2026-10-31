@@ -1,5 +1,5 @@
 import { OAUTH_ERROR_EVENT } from './mobileOAuth'
-import { isOAuthCallback } from './authRedirect'
+import { isOAuthCallback, parseOAuthCallbackParams } from './authRedirect'
 import { isNativeApp } from './platform'
 import { getSupabase } from './supabase'
 import { friendlyAuthError } from './supabaseConfig'
@@ -18,24 +18,18 @@ export function isWebOAuthCallback(): boolean {
 
 /** Complete Google/Apple sign-in when Safari returns with ?code= on the web app URL. */
 export async function completeWebOAuthFromUrl(url: string): Promise<string | null> {
-  let parsed: URL
-  try {
-    parsed = new URL(url)
-  } catch {
-    return 'Invalid sign-in redirect.'
-  }
-
-  const oauthError =
-    parsed.searchParams.get('error_description') ?? parsed.searchParams.get('error')
-  if (oauthError) return oauthError
-
-  if (!parsed.searchParams.has('code')) return null
+  const { code, flowId, oauthError } = parseOAuthCallbackParams(url)
+  if (oauthError) return friendlyAuthError(oauthError)
+  if (!code) return null
 
   const supabase = getSupabase()
   const { data: existing } = await supabase.auth.getSession()
   if (existing.session) return null
 
-  const { error } = await supabase.auth.exchangeCodeForSession(url)
+  const { error } = await supabase.auth.exchangeCodeForSession(
+    code,
+    flowId ? { flowId } : undefined,
+  )
   return error ? friendlyAuthError(error.message) : null
 }
 

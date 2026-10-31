@@ -84,10 +84,10 @@ export function friendlyAuthError(message: string): string {
       'Invalid Supabase API key. Update VITE_SUPABASE_ANON_KEY and rebuild the app.'
     )
   }
-  if (/flow state/i.test(message)) {
+  if (/flow state|pkce code verifier|pkce_code_verifier/i.test(message)) {
     return (
       'Sign-in timed out or was interrupted. Force-close the app, reopen it, and tap Continue with Google once — ' +
-      'finish login in the Chrome tab that opens, then wait to return to Decanti automatically.'
+      'finish login in the browser tab that opens, then wait to return to Decanti automatically.'
     )
   }
   if (/400|malformed|disallowed_useragent/i.test(message)) {

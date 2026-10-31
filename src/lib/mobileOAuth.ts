@@ -1,6 +1,6 @@
 import { Browser } from '@capacitor/browser'
 import type { Provider } from '@supabase/supabase-js'
-import { authRedirectUrl } from './authRedirect'
+import { authRedirectUrl, parseOAuthCallbackParams } from './authRedirect'
 import { MOBILE_AUTH_REDIRECT } from './mobileDeepLinks'
 import { isNativeApp } from './platform'
 import { getSupabase } from './supabase'
@@ -17,19 +17,21 @@ function emitOAuthSuccess(): void {
   window.dispatchEvent(new CustomEvent(OAUTH_SUCCESS_EVENT))
 }
 
-function oauthCodeFromUrl(url: string): string | null {
-  try {
-    return new URL(url).searchParams.get('code')
-  } catch {
-    return null
-  }
-}
-
 /** Prevent double exchange when getLaunchUrl and appUrlOpen both fire on Android. */
 let exchangeInFlight: Promise<boolean> | null = null
 let lastCompletedCode: string | null = null
+/** Codes we already exchanged (success or failure) — avoids stale getLaunchUrl loops on iOS. */
+const attemptedOAuthCodes = new Set<string>()
+/** PKCE flow id from the in-flight signInWithOAuth call (fallback if not on callback URL). */
+let pendingOAuthFlowId: string | null = null
+/** True while the user may still be in the system browser for OAuth. */
+let waitingForOAuthBrowserReturn = false
+let browserDismissGeneration = 0
 
 async function exchangeOAuthCallback(url: string): Promise<boolean> {
+  waitingForOAuthBrowserReturn = false
+  browserDismissGeneration += 1
+
   if (isNativeApp()) {
     try {
       await Browser.close()
@@ -38,25 +40,36 @@ async function exchangeOAuthCallback(url: string): Promise<boolean> {
     }
   }
 
-  try {
-    const parsed = new URL(url)
-    const oauthError =
-      parsed.searchParams.get('error_description') ?? parsed.searchParams.get('error')
-    if (oauthError) {
-      emitOAuthError(friendlyAuthError(oauthError))
-      return true
-    }
-  } catch {
-    // exchangeCodeForSession accepts the raw callback URL.
+  const { code, flowId, oauthError } = parseOAuthCallbackParams(url)
+  if (oauthError) {
+    emitOAuthError(friendlyAuthError(oauthError))
+    return true
+  }
+  if (!code) {
+    emitOAuthError('Sign-in redirect was missing an authorization code. Try again.')
+    return true
   }
 
-  const { error } = await getSupabase().auth.exchangeCodeForSession(url)
+  if (attemptedOAuthCodes.has(code)) {
+    return true
+  }
+
+  const effectiveFlowId = flowId ?? pendingOAuthFlowId ?? undefined
+  pendingOAuthFlowId = null
+
+  const { error } = await getSupabase().auth.exchangeCodeForSession(
+    code,
+    effectiveFlowId ? { flowId: effectiveFlowId } : undefined,
+  )
+  attemptedOAuthCodes.add(code)
+
   if (error) {
     console.error('OAuth deep link failed:', error.message)
     emitOAuthError(friendlyAuthError(error.message))
     return true
   }
 
+  lastCompletedCode = code
   emitOAuthSuccess()
   return true
 }
@@ -65,16 +78,13 @@ async function exchangeOAuthCallback(url: string): Promise<boolean> {
 export async function completeOAuthFromUrl(url: string): Promise<boolean> {
   if (!url.startsWith(MOBILE_AUTH_REDIRECT)) return false
 
-  const code = oauthCodeFromUrl(url)
+  const { code } = parseOAuthCallbackParams(url)
   if (code && code === lastCompletedCode) return true
+  if (code && attemptedOAuthCodes.has(code)) return true
 
   if (exchangeInFlight) return exchangeInFlight
 
-  exchangeInFlight = (async () => {
-    const handled = await exchangeOAuthCallback(url)
-    if (handled && code) lastCompletedCode = code
-    return handled
-  })()
+  exchangeInFlight = (async () => exchangeOAuthCallback(url))()
 
   try {
     return await exchangeInFlight
@@ -102,12 +112,15 @@ export async function startNativeOAuth(provider: Provider): Promise<string | nul
   if (error) return error.message
   if (!data.url) return 'Could not start sign in.'
 
+  pendingOAuthFlowId = data.flowId ?? null
   lastCompletedCode = null
 
   if (!isNativeApp()) {
     return 'Native sign-in is only available in the mobile app.'
   }
 
+  waitingForOAuthBrowserReturn = true
+  browserDismissGeneration += 1
   await Browser.open({ url: data.url })
   return null
 }
@@ -117,12 +130,22 @@ export function listenForOAuthBrowserDismiss(): void {
   if (!isNativeApp()) return
 
   void Browser.addListener('browserFinished', () => {
-    void getSupabase()
-      .auth.getSession()
-      .then(({ data }) => {
-        if (!data.session) {
-          emitOAuthError('Sign-in was cancelled. Tap Continue with Google to try again.')
-        }
-      })
+    if (!waitingForOAuthBrowserReturn) return
+
+    const generation = browserDismissGeneration
+    window.setTimeout(() => {
+      if (!waitingForOAuthBrowserReturn || generation !== browserDismissGeneration) return
+      if (exchangeInFlight) return
+
+      void getSupabase()
+        .auth.getSession()
+        .then(({ data }) => {
+          if (!waitingForOAuthBrowserReturn || generation !== browserDismissGeneration) return
+          if (!data.session) {
+            waitingForOAuthBrowserReturn = false
+            emitOAuthError('Sign-in was cancelled. Tap Continue with Google to try again.')
+          }
+        })
+    }, 900)
   })
 }
