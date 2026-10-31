@@ -21,7 +21,7 @@ workflows:
         XCODE_SCHEME: App
         # App Store Connect → your app → General → App Information → Apple ID
         APP_STORE_APPLE_ID: 6829230183
-      node: v20
+      node: v22
       xcode: latest
     triggering:
       events:
@@ -68,7 +68,7 @@ workflows:
         - google_play
       vars:
         PACKAGE_NAME: com.northline.decanti
-      node: v20
+      node: v22
       java: 21
     triggering:
       events:
