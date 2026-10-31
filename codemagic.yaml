@@ -39,8 +39,18 @@ workflows:
       - name: Increment build number
         script: |
           cd ios/App
-          LATEST=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
-          agvtool new-version -all $(($LATEST + 1))
+          LATEST=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || true)
+          if ! [[ "$LATEST" =~ ^[0-9]+$ ]]; then
+            echo "Warning: could not read latest App Store build number (got: $LATEST), assuming 0"
+            LATEST=0
+          fi
+          NEW=$((LATEST + 1))
+          if [ -n "${BUILD_NUMBER:-}" ] && [ "$BUILD_NUMBER" -gt "$NEW" ]; then
+            NEW=$BUILD_NUMBER
+          fi
+          echo "Setting CFBundleVersion to $NEW (App Store latest: $LATEST)"
+          agvtool new-version -all "$NEW"
+          agvtool what-version -terse
       - name: Build IPA
         script: |
           xcode-project build-ipa \
