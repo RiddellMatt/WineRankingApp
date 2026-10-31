@@ -4,7 +4,7 @@ import { StatusBar, Style } from '@capacitor/status-bar'
 import { getSupabase } from '../lib/supabase'
 import { isNativeApp } from '../lib/platform'
 import { loadStoredTheme, THEME_META } from '../lib/themes'
-import { completeOAuthFromUrl } from '../lib/mobileOAuth'
+import { completeOAuthFromUrl, listenForOAuthBrowserDismiss } from '../lib/mobileOAuth'
 import { emitMobileDeepLinkEvent, parseMobileDeepLink } from '../lib/mobileDeepLinks'
 
 async function handleDeepLink(url: string): Promise<void> {
@@ -35,6 +35,8 @@ export async function initNativeShell(): Promise<void> {
   if (launch?.url) {
     await handleDeepLink(launch.url)
   }
+
+  listenForOAuthBrowserDismiss()
 
   await App.addListener('appUrlOpen', ({ url }) => {
     void handleDeepLink(url)
