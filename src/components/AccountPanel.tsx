@@ -3,12 +3,13 @@ import { FREE_WINE_LIMIT, PRO_CONFIG } from '../config'
 import { activatePro } from '../pro'
 import { createBillingPortal, createProCheckout } from '../lib/checkoutApi'
 import {
-  fetchDecantiProPriceLabel,
   isIosStoreKitConfigured,
+  loadDecantiProSubscriptionPreview,
   openAppleSubscriptionManagement,
   purchaseDecantiPro,
   restoreDecantiPro,
 } from '../lib/revenueCat'
+import { friendlyRevenueCatError } from '../lib/revenueCatErrors'
 import { openExternalUrl } from '../lib/openUrl'
 import { redeemProOnServer } from '../lib/proApi'
 import { RANKING_PREFERENCE_OPTIONS } from '../lib/ranking'
@@ -85,8 +86,15 @@ export function AccountPanel({
   const [billingBusy, setBillingBusy] = useState(false)
   const iosIap = isIosStoreKitConfigured()
   const [iapPriceLabel, setIapPriceLabel] = useState<string | null>(null)
-  const subscribePriceLabel =
-    iosIap && iapPriceLabel ? iapPriceLabel : PRO_CONFIG.priceLabel
+  const [iapSetupHint, setIapSetupHint] = useState<string | null>(null)
+  const [iapPreviewLoaded, setIapPreviewLoaded] = useState(false)
+
+  function subscribeButtonLabel(busy: boolean): string {
+    if (busy) return iosIap ? 'Processing…' : 'Starting checkout…'
+    if (iapPriceLabel) return `Subscribe — ${iapPriceLabel}`
+    if (iosIap && iapPreviewLoaded) return 'Subscribe to Pro'
+    return `Subscribe — ${PRO_CONFIG.priceLabel}`
+  }
   const [rankingBusy, setRankingBusy] = useState(false)
   const [friendCount, setFriendCount] = useState(0)
 
@@ -100,15 +108,24 @@ export function AccountPanel({
   }, [profile?.displayName, email])
 
   useEffect(() => {
-    if (!iosIap || pro) return
+    if (!iosIap || pro) {
+      setIapPriceLabel(null)
+      setIapSetupHint(null)
+      setIapPreviewLoaded(false)
+      return
+    }
     let cancelled = false
-    void fetchDecantiProPriceLabel().then((label) => {
-      if (!cancelled && label) setIapPriceLabel(label)
+    setIapPreviewLoaded(false)
+    void loadDecantiProSubscriptionPreview(profile?.id).then((preview) => {
+      if (cancelled) return
+      setIapPriceLabel(preview.priceLabel)
+      setIapSetupHint(preview.setupHint)
+      setIapPreviewLoaded(true)
     })
     return () => {
       cancelled = true
     }
-  }, [iosIap, pro])
+  }, [iosIap, pro, profile?.id])
 
   useEffect(() => {
     if (!highlightSubscription || !subscriptionRef.current) return
@@ -212,7 +229,7 @@ export function AccountPanel({
       const url = await createProCheckout()
       await openExternalUrl(url)
     } catch (err) {
-      setCodeError(String((err as Error).message ?? err))
+      setCodeError(iosIap ? friendlyRevenueCatError(err) : String((err as Error).message ?? err))
     } finally {
       setCheckoutBusy(false)
     }
@@ -481,6 +498,10 @@ export function AccountPanel({
               ))}
             </ul>
 
+            {canCheckout && iosIap && iapSetupHint && (
+              <p className="form-error">{iapSetupHint}</p>
+            )}
+
             {canCheckout && iosIap ? (
               <>
                 <button
@@ -489,7 +510,7 @@ export function AccountPanel({
                   disabled={checkoutBusy}
                   onClick={handleUpgrade}
                 >
-                  {checkoutBusy ? 'Processing…' : `Subscribe — ${subscribePriceLabel}`}
+                  {subscribeButtonLabel(checkoutBusy)}
                 </button>
                 <button
                   type="button"
@@ -507,7 +528,7 @@ export function AccountPanel({
                 disabled={checkoutBusy}
                 onClick={handleUpgrade}
               >
-                {checkoutBusy ? 'Starting checkout…' : `Subscribe — ${subscribePriceLabel}`}
+                {subscribeButtonLabel(checkoutBusy)}
               </button>
             ) : PRO_CONFIG.paymentUrl ? (
               <a
@@ -516,7 +537,7 @@ export function AccountPanel({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Subscribe — {subscribePriceLabel}
+                {subscribeButtonLabel(false)}
               </a>
             ) : (
               <p className="account-hint">

@@ -9,6 +9,7 @@ import {
 } from './iapConfig'
 import { openExternalUrl } from './openUrl'
 import { nativePlatform } from './platform'
+import { friendlyRevenueCatError } from './revenueCatErrors'
 
 let configured = false
 let configurePromise: Promise<void> | null = null
@@ -42,10 +43,19 @@ async function ensureConfigured(): Promise<void> {
   }
 }
 
+const ENTITLEMENT_ALIASES: Record<string, string[]> = {
+  pro: ['decanti_pro'],
+  decanti_pro: ['pro'],
+}
+
 function entitlementActive(info: CustomerInfo): boolean {
   const id = revenueCatEntitlementId()
-  const ent = info.entitlements.active[id]
-  return Boolean(ent?.isActive)
+  const active = info.entitlements.active
+  if (active[id]?.isActive) return true
+  for (const alias of ENTITLEMENT_ALIASES[id] ?? []) {
+    if (active[alias]?.isActive) return true
+  }
+  return false
 }
 
 async function pickMonthlyPackage(): Promise<PurchasesPackage> {
@@ -64,18 +74,42 @@ async function pickMonthlyPackage(): Promise<PurchasesPackage> {
   return monthly
 }
 
-/** Localized App Store price for the monthly Pro package (e.g. "$4.99/month"). */
-export async function fetchDecantiProPriceLabel(): Promise<string | null> {
-  if (!isIosStoreKitConfigured()) return null
+export type DecantiProSubscriptionPreview = {
+  priceLabel: string | null
+  setupHint: string | null
+}
+
+/** StoreKit price + setup hint when RevenueCat offerings are misconfigured. */
+export async function loadDecantiProSubscriptionPreview(
+  supabaseUserId?: string | null,
+): Promise<DecantiProSubscriptionPreview> {
+  if (!isIosStoreKitConfigured()) {
+    return { priceLabel: null, setupHint: null }
+  }
   try {
     await ensureConfigured()
+    if (supabaseUserId) {
+      await Purchases.logIn({ appUserID: supabaseUserId })
+    }
     const monthly = await pickMonthlyPackage()
     const price = monthly.product.priceString?.trim()
-    if (!price) return null
-    return `${price}/month`
-  } catch {
-    return null
+    if (!price) {
+      return {
+        priceLabel: null,
+        setupHint:
+          'Could not read App Store price. Confirm decanti_pro_monthly metadata is complete in App Store Connect and linked in RevenueCat.',
+      }
+    }
+    return { priceLabel: `${price}/month`, setupHint: null }
+  } catch (err) {
+    return { priceLabel: null, setupHint: friendlyRevenueCatError(err) }
   }
+}
+
+/** @deprecated Prefer loadDecantiProSubscriptionPreview */
+export async function fetchDecantiProPriceLabel(): Promise<string | null> {
+  const preview = await loadDecantiProSubscriptionPreview()
+  return preview.priceLabel
 }
 
 /** Call after Supabase sign-in so purchases attach to the same user id as webhooks. */
@@ -100,7 +134,7 @@ export async function purchaseDecantiPro(): Promise<void> {
     await syncRevenueCatEntitlement()
   } catch (err) {
     if (isUserCancelled(err)) return
-    throw err
+    throw new Error(friendlyRevenueCatError(err))
   }
 }
 
