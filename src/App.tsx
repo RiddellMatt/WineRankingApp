@@ -1251,7 +1251,8 @@ export default function App() {
             className={`tab ${view === 'friends' ? 'active' : ''}`}
             onClick={() => setView('friends')}
           >
-            Friends
+            <span className="tab-text-long">Friends</span>
+            <span className="tab-text-short">Social</span>
           </button>
         )}
         <button
@@ -1272,7 +1273,8 @@ export default function App() {
             setView('account')
           }}
         >
-          Account
+          <span className="tab-text-long">Account</span>
+          <span className="tab-text-short">Profile</span>
         </button>
       </nav>
 
