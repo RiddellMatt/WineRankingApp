@@ -296,10 +296,12 @@ Wait for upload to App Store Connect → **TestFlight** → install on device.
 
 ## Part 5 — Test on iPhone (Sandbox)
 
-1. **Settings → App Store → Sandbox Account** → sign in with Sandbox tester (Part 1E).
+Use a **free** Decanti account (not already Pro via Stripe) so **Subscribe** is visible.
+
+1. **Sandbox Apple ID:** On iOS 18+, often **Settings → Developer → Sandbox Apple Account** (requires Developer Mode). On older iOS, **Settings → App Store** (scroll down) — or sign in when you tap **Subscribe** in TestFlight.
 2. Install **Decanti** from TestFlight.
 3. Sign in to Decanti with a **real Supabase account** (email or Google after OAuth is production-ready).
-4. **Profile** tab → **Subscribe — $3.99/month**.
+4. **Profile** tab → **Subscribe** (label shows App Store price from RevenueCat/StoreKit, not a hardcoded amount).
 5. Apple payment sheet should say **[Environment: Sandbox]**.
 6. Complete purchase → app should show Pro; **Insights** unlocks.
 7. Supabase **profiles.is_pro** = true.
