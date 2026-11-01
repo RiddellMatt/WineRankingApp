@@ -12,6 +12,7 @@ export const FREE_WINE_LIMIT = 20
 export const FREE_WISHLIST_LIMIT = 5
 
 export const PRO_CONFIG = {
+  /** Fallback when StoreKit/RevenueCat price is unavailable (web Stripe checkout). */
   priceLabel: '$3.99/month',
   /**
    * Optional legacy Stripe Payment Link. Prefer signed-in checkout via

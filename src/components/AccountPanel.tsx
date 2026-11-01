@@ -3,6 +3,7 @@ import { FREE_WINE_LIMIT, PRO_CONFIG } from '../config'
 import { activatePro } from '../pro'
 import { createBillingPortal, createProCheckout } from '../lib/checkoutApi'
 import {
+  fetchDecantiProPriceLabel,
   isIosStoreKitConfigured,
   openAppleSubscriptionManagement,
   purchaseDecantiPro,
@@ -83,6 +84,9 @@ export function AccountPanel({
   const [restoreBusy, setRestoreBusy] = useState(false)
   const [billingBusy, setBillingBusy] = useState(false)
   const iosIap = isIosStoreKitConfigured()
+  const [iapPriceLabel, setIapPriceLabel] = useState<string | null>(null)
+  const subscribePriceLabel =
+    iosIap && iapPriceLabel ? iapPriceLabel : PRO_CONFIG.priceLabel
   const [rankingBusy, setRankingBusy] = useState(false)
   const [friendCount, setFriendCount] = useState(0)
 
@@ -94,6 +98,17 @@ export function AccountPanel({
   useEffect(() => {
     setDisplayName(profile?.displayName ?? email?.split('@')[0] ?? '')
   }, [profile?.displayName, email])
+
+  useEffect(() => {
+    if (!iosIap || pro) return
+    let cancelled = false
+    void fetchDecantiProPriceLabel().then((label) => {
+      if (!cancelled && label) setIapPriceLabel(label)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [iosIap, pro])
 
   useEffect(() => {
     if (!highlightSubscription || !subscriptionRef.current) return
@@ -474,7 +489,7 @@ export function AccountPanel({
                   disabled={checkoutBusy}
                   onClick={handleUpgrade}
                 >
-                  {checkoutBusy ? 'Processing…' : `Subscribe — ${PRO_CONFIG.priceLabel}`}
+                  {checkoutBusy ? 'Processing…' : `Subscribe — ${subscribePriceLabel}`}
                 </button>
                 <button
                   type="button"
@@ -492,7 +507,7 @@ export function AccountPanel({
                 disabled={checkoutBusy}
                 onClick={handleUpgrade}
               >
-                {checkoutBusy ? 'Starting checkout…' : `Subscribe — ${PRO_CONFIG.priceLabel}`}
+                {checkoutBusy ? 'Starting checkout…' : `Subscribe — ${subscribePriceLabel}`}
               </button>
             ) : PRO_CONFIG.paymentUrl ? (
               <a
@@ -501,7 +516,7 @@ export function AccountPanel({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Subscribe — {PRO_CONFIG.priceLabel}
+                Subscribe — {subscribePriceLabel}
               </a>
             ) : (
               <p className="account-hint">
