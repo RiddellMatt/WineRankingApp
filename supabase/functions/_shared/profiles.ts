@@ -22,6 +22,18 @@ export async function revokePro(admin: SupabaseClient, userId: string): Promise<
   if (error) throw error
 }
 
+/** Revoke Pro when IAP lapses but keep access for active Stripe subscriptions. */
+export async function revokeProIfIapOnly(admin: SupabaseClient, userId: string): Promise<void> {
+  const { data: profile, error: readError } = await admin
+    .from('profiles')
+    .select('stripe_subscription_id')
+    .eq('id', userId)
+    .maybeSingle()
+  if (readError) throw readError
+  if (profile?.stripe_subscription_id) return
+  await revokePro(admin, userId)
+}
+
 export async function grantProByEmail(
   admin: SupabaseClient,
   email: string,

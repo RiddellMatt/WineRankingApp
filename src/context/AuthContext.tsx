@@ -7,6 +7,7 @@ import {
 } from 'react'
 import type { Provider, Session, User } from '@supabase/supabase-js'
 import { authRedirectUrl, cleanAuthParamsFromUrl } from '../lib/authRedirect'
+import { syncRevenueCatUser } from '../lib/revenueCat'
 import { startNativeOAuth } from '../lib/mobileOAuth'
 import { isNativeApp } from '../lib/platform'
 import {
@@ -124,6 +125,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [configured])
 
+  useEffect(() => {
+    const userId = session?.user?.id ?? null
+    void syncRevenueCatUser(userId).catch((err) => {
+      console.warn('RevenueCat user sync failed:', err)
+    })
+  }, [session?.user?.id])
+
   async function signUp(
     email: string,
     password: string,
@@ -166,6 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signOut(): Promise<void> {
     await getSupabase().auth.signOut()
+    await syncRevenueCatUser(null).catch(() => {})
     setSession(null)
   }
 
