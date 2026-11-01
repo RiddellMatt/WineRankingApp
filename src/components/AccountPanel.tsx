@@ -2,6 +2,12 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { FREE_WINE_LIMIT, PRO_CONFIG } from '../config'
 import { activatePro } from '../pro'
 import { createBillingPortal, createProCheckout } from '../lib/checkoutApi'
+import {
+  isIosStoreKitConfigured,
+  openAppleSubscriptionManagement,
+  purchaseDecantiPro,
+  restoreDecantiPro,
+} from '../lib/revenueCat'
 import { openExternalUrl } from '../lib/openUrl'
 import { redeemProOnServer } from '../lib/proApi'
 import { RANKING_PREFERENCE_OPTIONS } from '../lib/ranking'
@@ -74,7 +80,9 @@ export function AccountPanel({
   const [codeError, setCodeError] = useState('')
   const [showCode, setShowCode] = useState(false)
   const [checkoutBusy, setCheckoutBusy] = useState(false)
+  const [restoreBusy, setRestoreBusy] = useState(false)
   const [billingBusy, setBillingBusy] = useState(false)
+  const iosIap = isIosStoreKitConfigured()
   const [rankingBusy, setRankingBusy] = useState(false)
   const [friendCount, setFriendCount] = useState(0)
 
@@ -180,6 +188,12 @@ export function AccountPanel({
     }
     setCheckoutBusy(true)
     try {
+      if (iosIap) {
+        await purchaseDecantiPro()
+        onProUnlocked()
+        setProfileInfo('Decanti Pro is active on your account.')
+        return
+      }
       const url = await createProCheckout()
       await openExternalUrl(url)
     } catch (err) {
@@ -189,10 +203,32 @@ export function AccountPanel({
     }
   }
 
+  async function handleRestorePurchases() {
+    setCodeError('')
+    setRestoreBusy(true)
+    try {
+      const restored = await restoreDecantiPro()
+      if (restored) {
+        onProUnlocked()
+        setProfileInfo('Purchases restored — Decanti Pro is active.')
+      } else {
+        setCodeError('No active Decanti Pro subscription found for this Apple ID.')
+      }
+    } catch (err) {
+      setCodeError(String((err as Error).message ?? err))
+    } finally {
+      setRestoreBusy(false)
+    }
+  }
+
   async function handleManageBilling() {
     setCodeError('')
     setBillingBusy(true)
     try {
+      if (iosIap) {
+        await openAppleSubscriptionManagement()
+        return
+      }
       const url = await createBillingPortal()
       await openExternalUrl(url)
     } catch (err) {
@@ -407,14 +443,18 @@ export function AccountPanel({
           )}
         </div>
 
-        {pro && profile?.hasBilling && canCheckout && (
+        {pro && canCheckout && (iosIap || profile?.hasBilling) && (
           <button
             type="button"
             className="btn ghost account-manage-billing"
             disabled={billingBusy}
             onClick={handleManageBilling}
           >
-            {billingBusy ? 'Opening…' : 'Manage subscription'}
+            {billingBusy
+              ? 'Opening…'
+              : iosIap
+                ? 'Manage in App Store'
+                : 'Manage subscription'}
           </button>
         )}
 
@@ -426,7 +466,26 @@ export function AccountPanel({
               ))}
             </ul>
 
-            {canCheckout ? (
+            {canCheckout && iosIap ? (
+              <>
+                <button
+                  type="button"
+                  className="btn primary account-upgrade"
+                  disabled={checkoutBusy}
+                  onClick={handleUpgrade}
+                >
+                  {checkoutBusy ? 'Processing…' : `Subscribe — ${PRO_CONFIG.priceLabel}`}
+                </button>
+                <button
+                  type="button"
+                  className="link-btn account-restore"
+                  disabled={restoreBusy}
+                  onClick={handleRestorePurchases}
+                >
+                  {restoreBusy ? 'Restoring…' : 'Restore purchases'}
+                </button>
+              </>
+            ) : canCheckout ? (
               <button
                 type="button"
                 className="btn primary account-upgrade"
