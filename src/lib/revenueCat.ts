@@ -64,6 +64,20 @@ async function pickMonthlyPackage(): Promise<PurchasesPackage> {
   return monthly
 }
 
+/** Localized App Store price for the monthly Pro package (e.g. "$4.99/month"). */
+export async function fetchDecantiProPriceLabel(): Promise<string | null> {
+  if (!isIosStoreKitConfigured()) return null
+  try {
+    await ensureConfigured()
+    const monthly = await pickMonthlyPackage()
+    const price = monthly.product.priceString?.trim()
+    if (!price) return null
+    return `${price}/month`
+  } catch {
+    return null
+  }
+}
+
 /** Call after Supabase sign-in so purchases attach to the same user id as webhooks. */
 export async function syncRevenueCatUser(userId: string | null): Promise<void> {
   if (!isIosStoreKitConfigured()) return
