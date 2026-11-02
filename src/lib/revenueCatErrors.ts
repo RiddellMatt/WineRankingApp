@@ -9,9 +9,10 @@ export function friendlyRevenueCatError(error: unknown): string {
     lower.includes('why-are-offerings-empty')
   ) {
     return (
-      'Subscription is not wired in RevenueCat yet. In RevenueCat → Offerings, open the Current offering ' +
-      '(usually default), add a Monthly package linked to your App Store product (e.g. decanti_pro_monthly — ' +
-      'App Store, not Test Store only). Then force-quit Decanti and try again.'
+      'RevenueCat offerings are not loading App Store products. Check: (1) Product catalog → decanti_pro_monthly is ' +
+      'App Store, not Test Store only. (2) Offerings → default is Current; Monthly uses that product; remove Yearly/Lifetime ' +
+      'packages if they have no App Store product. (3) Apps → iOS → valid In-App Purchase key. (4) Codemagic uses the appl_… ' +
+      'key for this iOS app. (5) App Store Connect subscription is Ready to Submit, not stuck Waiting for Review.'
     )
   }
 

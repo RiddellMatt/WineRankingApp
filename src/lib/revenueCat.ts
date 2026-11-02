@@ -1,8 +1,13 @@
 import { LOG_LEVEL, Purchases } from '@revenuecat/purchases-capacitor'
-import type { CustomerInfo, PurchasesPackage } from '@revenuecat/purchases-capacitor'
+import type {
+  CustomerInfo,
+  PurchasesPackage,
+  PurchasesStoreProduct,
+} from '@revenuecat/purchases-capacitor'
 import { syncRevenueCatEntitlement } from './iapApi'
 import {
   APPLE_SUBSCRIPTIONS_URL,
+  iosProProductId,
   isIosStoreKitConfigured,
   revenueCatEntitlementId,
   revenueCatIosApiKey,
@@ -74,6 +79,16 @@ async function pickMonthlyPackage(): Promise<PurchasesPackage> {
   return monthly
 }
 
+async function fetchStoreProductById(productId: string): Promise<PurchasesStoreProduct | null> {
+  const { products } = await Purchases.getProducts({ productIdentifiers: [productId] })
+  return products[0] ?? null
+}
+
+function priceLabelFromStoreProduct(product: PurchasesStoreProduct): string | null {
+  const price = product.priceString?.trim()
+  return price ? `${price}/month` : null
+}
+
 export type DecantiProSubscriptionPreview = {
   priceLabel: string | null
   setupHint: string | null
@@ -86,21 +101,34 @@ export async function loadDecantiProSubscriptionPreview(
   if (!isIosStoreKitConfigured()) {
     return { priceLabel: null, setupHint: null }
   }
+  const productId = iosProProductId()
   try {
     await ensureConfigured()
     if (supabaseUserId) {
       await Purchases.logIn({ appUserID: supabaseUserId })
     }
-    const monthly = await pickMonthlyPackage()
-    const price = monthly.product.priceString?.trim()
-    if (!price) {
+
+    try {
+      const monthly = await pickMonthlyPackage()
+      const fromOffering = priceLabelFromStoreProduct(monthly.product)
+      if (fromOffering) return { priceLabel: fromOffering, setupHint: null }
+    } catch {
+      // Offerings misconfigured — fall back to direct StoreKit product fetch.
+    }
+
+    const storeProduct = await fetchStoreProductById(productId)
+    const fromStore = storeProduct ? priceLabelFromStoreProduct(storeProduct) : null
+    if (fromStore) {
       return {
-        priceLabel: null,
-        setupHint:
-          'Could not read App Store price. Confirm decanti_pro_monthly metadata is complete in App Store Connect and linked in RevenueCat.',
+        priceLabel: fromStore,
+        setupHint: null,
       }
     }
-    return { priceLabel: `${price}/month`, setupHint: null }
+
+    return {
+      priceLabel: null,
+      setupHint: `Could not load ${productId} from the App Store. In RevenueCat, confirm the product is App Store (not Test Store only), In-App Purchase key is set under Apps → iOS, and remove empty Yearly/Lifetime packages from the default offering.`,
+    }
   } catch (err) {
     return { priceLabel: null, setupHint: friendlyRevenueCatError(err) }
   }
@@ -125,9 +153,19 @@ export async function syncRevenueCatUser(userId: string | null): Promise<void> {
 
 export async function purchaseDecantiPro(): Promise<void> {
   await ensureConfigured()
-  const pkg = await pickMonthlyPackage()
+  const productId = iosProProductId()
+
   try {
-    const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg })
+    let customerInfo: CustomerInfo
+    try {
+      const pkg = await pickMonthlyPackage()
+      ;({ customerInfo } = await Purchases.purchasePackage({ aPackage: pkg }))
+    } catch (packageErr) {
+      const storeProduct = await fetchStoreProductById(productId)
+      if (!storeProduct) throw packageErr
+      ;({ customerInfo } = await Purchases.purchaseStoreProduct({ product: storeProduct }))
+    }
+
     if (!entitlementActive(customerInfo)) {
       throw new Error('Purchase completed but Pro is not active yet. Try Restore purchases.')
     }
