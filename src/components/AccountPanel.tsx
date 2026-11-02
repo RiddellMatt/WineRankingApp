@@ -229,7 +229,8 @@ export function AccountPanel({
       const url = await createProCheckout()
       await openExternalUrl(url)
     } catch (err) {
-      setCodeError(iosIap ? friendlyRevenueCatError(err) : String((err as Error).message ?? err))
+      const message = iosIap ? friendlyRevenueCatError(err) : String((err as Error).message ?? err)
+      if (message !== iapSetupHint) setCodeError(message)
     } finally {
       setCheckoutBusy(false)
     }

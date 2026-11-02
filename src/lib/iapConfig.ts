@@ -15,5 +15,10 @@ export function isIosStoreKitConfigured(): boolean {
   return nativePlatform() === 'ios' && Boolean(revenueCatIosApiKey())
 }
 
+/** App Store Connect subscription product id (must match RevenueCat / ASC). */
+export function iosProProductId(): string {
+  return (import.meta.env.VITE_IOS_PRO_PRODUCT_ID as string | undefined)?.trim() || 'decanti_pro_monthly'
+}
+
 /** Apple subscription management (Settings deep link fallback). */
 export const APPLE_SUBSCRIPTIONS_URL = 'https://apps.apple.com/account/subscriptions'
