@@ -230,7 +230,7 @@ export function AccountPanel({
       await openExternalUrl(url)
     } catch (err) {
       const message = iosIap ? friendlyRevenueCatError(err) : String((err as Error).message ?? err)
-      if (message !== iapSetupHint) setCodeError(message)
+      if (!iapSetupHint || !message.includes(iapSetupHint.slice(0, 40))) setCodeError(message)
     } finally {
       setCheckoutBusy(false)
     }
