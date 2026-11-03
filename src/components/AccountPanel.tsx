@@ -221,9 +221,10 @@ export function AccountPanel({
     setCheckoutBusy(true)
     try {
       if (iosIap) {
-        await purchaseDecantiPro()
+        const syncNote = await purchaseDecantiPro()
+        activatePro()
         onProUnlocked()
-        setProfileInfo('Decanti Pro is active on your account.')
+        setProfileInfo(syncNote ?? 'Decanti Pro is active on your account.')
         return
       }
       const url = await createProCheckout()
@@ -242,6 +243,7 @@ export function AccountPanel({
     try {
       const restored = await restoreDecantiPro()
       if (restored) {
+        activatePro()
         onProUnlocked()
         setProfileInfo('Purchases restored — Decanti Pro is active.')
       } else {
