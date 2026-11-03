@@ -226,7 +226,8 @@ Add:
 
 | Secret name | Value |
 |-------------|--------|
-| `REVENUECAT_SECRET_API_KEY` | RevenueCat **secret** key `sk_…` |
+| `REVENUECAT_SECRET_API_KEY` | RevenueCat **secret** key `sk_…` (v2 keys need `REVENUECAT_PROJECT_ID`) |
+| `REVENUECAT_PROJECT_ID` | RevenueCat **Project settings → Project ID** (e.g. `proj…` or dashboard id) — **required** if secret key is API v2 |
 | `REVENUECAT_WEBHOOK_AUTHORIZATION` | **Exact** Authorization header from RevenueCat webhook (Part 2F) |
 | `REVENUECAT_ENTITLEMENT_ID` | `pro` (optional if you use default) |
 

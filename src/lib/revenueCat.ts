@@ -151,7 +151,7 @@ export async function syncRevenueCatUser(userId: string | null): Promise<void> {
   }
 }
 
-export async function purchaseDecantiPro(): Promise<void> {
+export async function purchaseDecantiPro(): Promise<string | undefined> {
   await ensureConfigured()
   const productId = iosProProductId()
 
@@ -169,9 +169,18 @@ export async function purchaseDecantiPro(): Promise<void> {
     if (!entitlementActive(customerInfo)) {
       throw new Error('Purchase completed but Pro is not active yet. Try Restore purchases.')
     }
-    await syncRevenueCatEntitlement()
+
+    try {
+      await syncRevenueCatEntitlement()
+    } catch {
+      return (
+        'Decanti Pro is active on this device. Account sync failed — tap Restore purchases in a minute. ' +
+        'If it persists, add REVENUECAT_PROJECT_ID in Supabase (RevenueCat API v2 secret keys).'
+      )
+    }
+    return undefined
   } catch (err) {
-    if (isUserCancelled(err)) return
+    if (isUserCancelled(err)) return undefined
     throw new Error(friendlyRevenueCatError(err))
   }
 }
