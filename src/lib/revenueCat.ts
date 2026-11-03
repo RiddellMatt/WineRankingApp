@@ -185,12 +185,33 @@ export async function purchaseDecantiPro(): Promise<string | undefined> {
   }
 }
 
-export async function restoreDecantiPro(): Promise<boolean> {
+export type RestoreDecantiProResult = {
+  restored: boolean
+  /** Pro is active in RevenueCat but Supabase sync failed. */
+  syncNote?: string
+}
+
+export async function restoreDecantiPro(
+  supabaseUserId?: string | null,
+): Promise<RestoreDecantiProResult> {
   await ensureConfigured()
+  if (supabaseUserId) {
+    await Purchases.logIn({ appUserID: supabaseUserId })
+  }
   const { customerInfo } = await Purchases.restorePurchases()
-  if (!entitlementActive(customerInfo)) return false
-  await syncRevenueCatEntitlement()
-  return true
+  if (!entitlementActive(customerInfo)) {
+    return { restored: false }
+  }
+  try {
+    await syncRevenueCatEntitlement()
+  } catch {
+    return {
+      restored: true,
+      syncNote:
+        'Pro restored on this device. Account sync failed — confirm REVENUECAT_PROJECT_ID is set in Supabase and sync-revenuecat-entitlement is redeployed, then try Restore again.',
+    }
+  }
+  return { restored: true }
 }
 
 export async function openAppleSubscriptionManagement(): Promise<void> {

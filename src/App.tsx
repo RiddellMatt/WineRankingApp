@@ -3,7 +3,7 @@ import { WINE_TYPES, type RankingPreference, type SortKey, type Wine, type WineT
 import { loadWines, saveWines, SAMPLE_WINES } from './storage'
 import { FREE_WINE_LIMIT, FREE_WISHLIST_LIMIT } from './config'
 import { syncProSubscription } from './lib/checkoutApi'
-import { loadProStatus, syncProFromServer } from './pro'
+import { activatePro, loadProStatus, syncProFromServer } from './pro'
 import { isCheckoutSuccessUrl } from './lib/authRedirect'
 import { ACCOUNT_EVENT, CHECKOUT_SUCCESS_EVENT } from './lib/mobileDeepLinks'
 import { isNativeApp } from './lib/platform'
@@ -901,8 +901,14 @@ export default function App() {
             highlightSubscription={accountHighlight}
             onProfileSaved={setProfile}
             onRankingPreferenceSaved={applyRankingPreference}
-            onProUnlocked={async () => {
+            onProUnlocked={async (opts) => {
               const p = await fetchMyProfile()
+              if (opts?.fromNativeIap) {
+                activatePro()
+                setProfile(p ? { ...p, isPro: true } : p)
+                setPro(true)
+                return
+              }
               setProfile(p)
               setPro(syncProFromServer(p?.isPro, true))
             }}

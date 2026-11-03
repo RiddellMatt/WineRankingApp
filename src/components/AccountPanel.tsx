@@ -47,7 +47,8 @@ interface Props {
   highlightSubscription?: boolean
   onProfileSaved: (profile: UserProfile) => void
   onRankingPreferenceSaved: (preference: RankingPreference) => Promise<void>
-  onProUnlocked: () => void
+  /** After StoreKit/RevenueCat unlock; keeps Pro in UI when Supabase sync is still catching up. */
+  onProUnlocked: (opts?: { fromNativeIap?: boolean }) => void
   onSignOut: () => void
   onSignIn: () => void
 }
@@ -223,7 +224,7 @@ export function AccountPanel({
       if (iosIap) {
         const syncNote = await purchaseDecantiPro()
         activatePro()
-        onProUnlocked()
+        onProUnlocked({ fromNativeIap: true })
         setProfileInfo(syncNote ?? 'Decanti Pro is active on your account.')
         return
       }
@@ -241,16 +242,21 @@ export function AccountPanel({
     setCodeError('')
     setRestoreBusy(true)
     try {
-      const restored = await restoreDecantiPro()
-      if (restored) {
+      const result = await restoreDecantiPro(profile?.id)
+      if (result.restored) {
         activatePro()
-        onProUnlocked()
-        setProfileInfo('Purchases restored — Decanti Pro is active.')
+        onProUnlocked({ fromNativeIap: true })
+        setProfileInfo(
+          result.syncNote ?? 'Purchases restored — Decanti Pro is active.',
+        )
       } else {
-        setCodeError('No active Decanti Pro subscription found for this Apple ID.')
+        setCodeError(
+          'No active Decanti Pro subscription found for this Apple ID on this account. ' +
+            'If Apple shows an active subscription, sign in with the same Decanti account you used when you subscribed, then tap Restore again.',
+        )
       }
     } catch (err) {
-      setCodeError(String((err as Error).message ?? err))
+      setCodeError(iosIap ? friendlyRevenueCatError(err) : String((err as Error).message ?? err))
     } finally {
       setRestoreBusy(false)
     }
