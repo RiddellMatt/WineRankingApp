@@ -10,8 +10,11 @@ export async function grantPro(
   if (opts.stripeSubscriptionId !== undefined) {
     patch.stripe_subscription_id = opts.stripeSubscriptionId
   }
-  const { error } = await admin.from('profiles').update(patch).eq('id', userId)
+  const { data, error } = await admin.from('profiles').update(patch).eq('id', userId).select('id')
   if (error) throw error
+  if (!data?.length) {
+    throw new Error(`No profile row for user ${userId}`)
+  }
 }
 
 export async function revokePro(admin: SupabaseClient, userId: string): Promise<void> {
