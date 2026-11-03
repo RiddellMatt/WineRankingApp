@@ -97,6 +97,8 @@ async function v2HasPro(
   const body = (await res.json()) as { items?: V2ActiveEntitlement[] }
   const items = body.items ?? []
   if (items.some((item) => v2ActiveItemIsPro(item, lookups, proIds))) return true
+  // Decanti ships one paid entitlement; any active RC entitlement counts as Pro.
+  if (items.some((item) => v2EntitlementActive(item.expires_at))) return true
 
   // Catalog list failed or IDs differ — try v2 customer (includes subscription entitlements).
   const customerUrl = `https://api.revenuecat.com/v2/projects/${projectId}/customers/${encodeURIComponent(userId)}`
@@ -126,23 +128,51 @@ export async function revenueCatUserHasPro(
     { headers: { Authorization: `Bearer ${secret}` } },
   )
 
-  if (v1Res.status === 404) return false
   if (v1Res.ok) {
     const body = (await v1Res.json()) as RcSubscriberResponse
     return v1HasPro(body, lookups)
   }
 
-  if (v1Res.status !== 401 && v1Res.status !== 403) {
+  const tryV2 =
+    projectId &&
+    (v1Res.status === 404 || v1Res.status === 401 || v1Res.status === 403)
+
+  if (!tryV2) {
+    if (v1Res.status === 404) return false
     const text = await v1Res.text()
     console.error('RevenueCat v1 subscriber fetch failed:', v1Res.status, text)
     throw new Error(`RevenueCat API error (${v1Res.status})`)
   }
 
-  if (!projectId) {
+  return v2HasProWithProjectCandidates(userId, secret, lookups)
+}
+
+async function v2HasProWithProjectCandidates(
+  userId: string,
+  secret: string,
+  lookups: string[],
+): Promise<boolean> {
+  const raw = Deno.env.get('REVENUECAT_PROJECT_ID')?.trim()
+  if (!raw) {
     throw new Error(
       'REVENUECAT_PROJECT_ID is required when using a RevenueCat secret API key v2. Set it in Supabase Edge Function secrets (Project settings → General in RevenueCat).',
     )
   }
-
-  return v2HasPro(projectId, userId, secret, lookups)
+  const candidates = Array.from(
+    new Set([raw, raw.startsWith('proj') ? raw : `proj${raw}`].filter(Boolean)),
+  )
+  let last404 = true
+  for (const projectId of candidates) {
+    const has = await v2HasPro(projectId, userId, secret, lookups)
+    if (has) return true
+    const probe = await fetch(
+      `https://api.revenuecat.com/v2/projects/${projectId}/customers/${encodeURIComponent(userId)}`,
+      { headers: { Authorization: `Bearer ${secret}` } },
+    )
+    if (probe.status !== 404) last404 = false
+  }
+  if (last404) {
+    console.warn(`RevenueCat: no customer for app_user_id ${userId} (check Purchases.logIn matches Supabase uuid)`)
+  }
+  return false
 }
