@@ -7,6 +7,8 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     scheme: 'Decanti',
+    // WKWebView underlay (overscroll / safe areas); classic theme --bg
+    backgroundColor: '#12080c',
   },
   android: {
     allowMixedContent: true,
