@@ -39,6 +39,8 @@ interface V2ActiveEntitlement {
 interface V2EntitlementRow {
   id: string
   lookup_key?: string | null
+  /** Some API responses use display identifier here. */
+  display_name?: string | null
 }
 
 function v2EntitlementActive(expiresAt: number | null): boolean {
@@ -60,8 +62,19 @@ async function fetchV2ProEntitlementIds(
   for (const row of body.items ?? []) {
     const key = row.lookup_key?.trim()
     if (key && lookups.includes(key)) ids.add(row.id)
+    if (lookups.includes(row.id)) ids.add(row.id)
   }
   return ids
+}
+
+function v2ActiveItemIsPro(
+  item: V2ActiveEntitlement,
+  lookups: string[],
+  proIds: Set<string>,
+): boolean {
+  if (!v2EntitlementActive(item.expires_at)) return false
+  if (lookups.includes(item.entitlement_id)) return true
+  return proIds.has(item.entitlement_id)
 }
 
 async function v2HasPro(
@@ -71,7 +84,6 @@ async function v2HasPro(
   lookups: string[],
 ): Promise<boolean> {
   const proIds = await fetchV2ProEntitlementIds(projectId, secret, lookups)
-  if (proIds.size === 0) return false
 
   const url = `https://api.revenuecat.com/v2/projects/${projectId}/customers/${encodeURIComponent(userId)}/active_entitlements`
   const res = await fetch(url, { headers: { Authorization: `Bearer ${secret}` } })
@@ -83,9 +95,21 @@ async function v2HasPro(
   }
 
   const body = (await res.json()) as { items?: V2ActiveEntitlement[] }
-  return (body.items ?? []).some(
-    (item) => proIds.has(item.entitlement_id) && v2EntitlementActive(item.expires_at),
-  )
+  const items = body.items ?? []
+  if (items.some((item) => v2ActiveItemIsPro(item, lookups, proIds))) return true
+
+  // Catalog list failed or IDs differ — try v2 customer (includes subscription entitlements).
+  const customerUrl = `https://api.revenuecat.com/v2/projects/${projectId}/customers/${encodeURIComponent(userId)}`
+  const customerRes = await fetch(customerUrl, { headers: { Authorization: `Bearer ${secret}` } })
+  if (customerRes.ok) {
+    const customer = (await customerRes.json()) as {
+      active_entitlements?: { items?: V2ActiveEntitlement[] }
+    }
+    const extra = customer.active_entitlements?.items ?? []
+    if (extra.some((item) => v2ActiveItemIsPro(item, lookups, proIds))) return true
+  }
+
+  return false
 }
 
 /** Returns whether the Supabase user has active Pro in RevenueCat. */

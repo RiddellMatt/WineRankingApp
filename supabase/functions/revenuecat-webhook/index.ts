@@ -5,6 +5,9 @@ import { grantPro, revokeProIfIapOnly } from '../_shared/profiles.ts'
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const ENTITLEMENT_ID = Deno.env.get('REVENUECAT_ENTITLEMENT_ID')?.trim() || 'pro'
+const PRO_ENTITLEMENT_IDS = new Set(
+  [ENTITLEMENT_ID, 'pro', 'decanti_pro'].filter(Boolean),
+)
 
 function webhookAuthOk(req: Request): boolean {
   const expected = Deno.env.get('REVENUECAT_WEBHOOK_AUTHORIZATION')?.trim()
@@ -55,7 +58,8 @@ Deno.serve(async (req) => {
     const userId = event.app_user_id
     const entitlements = event.entitlement_ids ?? []
     const affectsPro =
-      entitlements.length === 0 || entitlements.includes(ENTITLEMENT_ID)
+      entitlements.length === 0 ||
+      entitlements.some((id) => PRO_ENTITLEMENT_IDS.has(id))
 
     if (!affectsPro) {
       return jsonResponse({ ok: true, skipped: 'other entitlement' })
