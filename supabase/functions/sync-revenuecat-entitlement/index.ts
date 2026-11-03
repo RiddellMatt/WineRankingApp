@@ -1,6 +1,6 @@
 import { requireUser } from '../_shared/auth.ts'
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts'
-import { grantPro, revokeProIfIapOnly } from '../_shared/profiles.ts'
+import { grantPro } from '../_shared/profiles.ts'
 import { revenueCatUserHasPro } from '../_shared/revenuecat.ts'
 
 const ENTITLEMENT_ID = Deno.env.get('REVENUECAT_ENTITLEMENT_ID')?.trim() || 'pro'
@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ synced: true, isPro: true })
     }
 
-    await revokeProIfIapOnly(admin, user.id)
+    // Do not revoke when RevenueCat check returned false — may be API misconfig while Apple still shows Pro.
     return jsonResponse({ synced: true, isPro: false })
   } catch (err) {
     console.error(err)
