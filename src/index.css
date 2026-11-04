@@ -2297,6 +2297,28 @@ textarea {
   flex: 1;
 }
 
+.profile-public-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.profile-preview-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.profile-preview-hint {
+  margin: 0;
+  flex: 1;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
 .friend-cellar-header {
   display: flex;
   align-items: center;

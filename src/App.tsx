@@ -16,7 +16,8 @@ import { Insights } from './components/Insights'
 import { MenuScan } from './components/MenuScan'
 import { FriendsPanel } from './components/FriendsPanel'
 import { NotificationsBell } from './components/NotificationsBell'
-import { AccountPanel } from './components/AccountPanel'
+import { FriendCellarView } from './components/FriendCellarView'
+import { ProfileScreen, type ProfileScreenMode } from './components/ProfileScreen'
 import {
   BadgeUnlockToasts,
   createBadgeToastItems,
@@ -24,7 +25,6 @@ import {
   type MilestoneToastItem,
 } from './components/BadgeUnlockToasts'
 import { RankingPreferenceModal } from './components/RankingPreferenceModal'
-import { Avatar } from './components/Avatar'
 import { DecantiLogo, usesThemeWordmarkLogo } from './components/DecantiLogo'
 import { useAppTheme } from './lib/useAppTheme'
 import { APP_NAME, APP_NAME_PRO, APP_TAGLINE, STORAGE_PREFIX } from './brand'
@@ -126,6 +126,7 @@ export default function App() {
   const [pro, setPro] = useState<boolean>(loadProStatus)
   const [view, setView] = useState<View>('cellar')
   const [accountHighlight, setAccountHighlight] = useState(false)
+  const [profileMode, setProfileMode] = useState<ProfileScreenMode>('preview')
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<WineType | 'All'>('All')
   const [sortKey, setSortKey] = useState<SortKey>('rating')
@@ -311,6 +312,7 @@ export default function App() {
   function goToAccount(highlightSubscription = false) {
     setFriendView(null)
     setView('account')
+    setProfileMode(highlightSubscription ? 'edit' : 'preview')
     setAccountHighlight(highlightSubscription)
   }
 
@@ -584,12 +586,6 @@ export default function App() {
     const ordered = [...cellarTried].sort((a, b) => compareByRank(a, b, rankingPreference))
     return new Map(ordered.map((w, i) => [w.id, i + 1]))
   }, [cellarTried, rankingPreference])
-
-  const friendRankById = useMemo(() => {
-    const tried = triedWines(friendWines)
-    const ordered = [...tried].sort((a, b) => compareByRank(a, b, rankingPreference))
-    return new Map(ordered.map((w, i) => [w.id, i + 1]))
-  }, [friendWines, rankingPreference])
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -887,7 +883,9 @@ export default function App() {
         )}
 
         {view === 'account' ? (
-          <AccountPanel
+          <ProfileScreen
+            mode={profileMode}
+            onModeChange={setProfileMode}
             profile={profile}
             email={cloudUser?.email}
             signedIn={Boolean(cloudUser)}
@@ -917,45 +915,18 @@ export default function App() {
           />
         ) : view === 'friends' && cloudUser ? (
           friendView ? (
-            <>
-              <button className="btn ghost friend-back" onClick={() => setFriendView(null)}>
-                ← Back to friends
-              </button>
-              <div className="friend-cellar-header">
-                <Avatar
-                  displayName={friendView.name}
-                  avatarUrl={friendView.avatarUrl}
-                  seed={friendView.id}
-                  size="lg"
-                />
-                <h2 className="friend-cellar-title">{friendView.name}&apos;s cellar</h2>
-              </div>
-              {friendWines.length === 0 || triedWines(friendWines).length === 0 ? (
-                <section className="empty">
-                  <p>They haven&apos;t logged any wines yet.</p>
-                </section>
-              ) : (
-                <ol className="wine-list">
-                  {sortWines(triedWines(friendWines), 'rating', rankingPreference).map((wine) => (
-                    <WineCard
-                      key={wine.id}
-                      wine={wine}
-                      rank={friendRankById.get(wine.id) ?? 0}
-                      rankingPreference={rankingPreference}
-                      onEdit={() => {}}
-                      onDelete={() => {}}
-                      readOnly
-                      onSaveToWishlist={() =>
-                        handleSaveWishlistFromFriend(wine, friendView.name)
-                      }
-                      wishlistSaved={isWishlistDuplicate(wines, wine)}
-                      wishlistSaving={savingFriendWishlistKey === wishlistIdentityKey(wine)}
-                      shareAttribution={`From ${friendView.name}'s cellar`}
-                    />
-                  ))}
-                </ol>
-              )}
-            </>
+            <FriendCellarView
+              displayName={friendView.name}
+              avatarUrl={friendView.avatarUrl}
+              userId={friendView.id}
+              wines={friendWines}
+              rankingPreference={rankingPreference}
+              shareAttribution={`From ${friendView.name}'s cellar`}
+              backButton={{ label: '← Back to friends', onClick: () => setFriendView(null) }}
+              onSaveToWishlist={(wine) => handleSaveWishlistFromFriend(wine, friendView.name)}
+              isWishlistSaved={(wine) => isWishlistDuplicate(wines, wine)}
+              wishlistSavingKey={savingFriendWishlistKey}
+            />
           ) : (
             <FriendsPanel
               userId={cloudUser.id}
@@ -1276,6 +1247,7 @@ export default function App() {
           className={`tab ${view === 'account' ? 'active' : ''}`}
           onClick={() => {
             setFriendView(null)
+            setProfileMode('preview')
             setView('account')
           }}
         >
