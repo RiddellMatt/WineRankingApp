@@ -3,6 +3,7 @@ import { saveWineCardToPhotos } from '../lib/saveWineCardToPhotos'
 import { shareWineCard } from '../lib/shareWineCard'
 import { pickWineCardShareAction } from '../lib/wineCardShareActions'
 import type { Wine } from '../types'
+import { IconShare } from './icons/UiIcons'
 
 interface Props {
   wine: Wine
@@ -65,7 +66,7 @@ export function ShareWineButton({ wine, score, attribution, className = '', comp
       aria-label={`Share ${wine.name}`}
       title={busy ? 'Preparing share card…' : 'Share wine card'}
     >
-      {busy ? '…' : '↗'}
+      {busy ? '…' : <IconShare />}
     </button>
   )
 }
