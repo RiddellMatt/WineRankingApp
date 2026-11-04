@@ -21,9 +21,10 @@ final class DecantiBridgeViewController: CAPBridgeViewController {
         didApplyScrollChrome = true
 
         let scroll = webView.scrollView
-        // Stop at scroll edges (no rubber-band). Underlay matches app chrome if anything peeks through.
-        scroll.bounces = false
-        scroll.alwaysBounceVertical = false
+        // Rubber-band with matched underlay (classic --bg #12080c). Disabling bounce makes
+        // WKWebView fight scroll offset at y=0 and shake when pulling down/up past the top.
+        scroll.bounces = true
+        scroll.alwaysBounceVertical = true
         scroll.alwaysBounceHorizontal = false
         if #available(iOS 11.0, *) {
             // Safe areas come from CSS; avoid UIKit inset animation fighting layout on cold start.
@@ -34,11 +35,6 @@ final class DecantiBridgeViewController: CAPBridgeViewController {
         webView.isOpaque = true
         webView.backgroundColor = underlay
         scroll.backgroundColor = underlay
-
-        DispatchQueue.main.async {
-            var offset = scroll.contentOffset
-            if offset.y < 0 { offset.y = 0 }
-            scroll.setContentOffset(offset, animated: false)
-        }
+        view.backgroundColor = underlay
     }
 }
