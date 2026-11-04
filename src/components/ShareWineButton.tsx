@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { saveWineCardToPhotos } from '../lib/saveWineCardToPhotos'
-import { shareWineCard } from '../lib/shareWineCard'
-import { pickWineCardShareAction } from '../lib/wineCardShareActions'
+import type { ShareWineCardInput } from '../lib/shareWineCard'
 import type { Wine } from '../types'
+import { ShareWineCardSheet } from './ShareWineCardSheet'
 import { IconShare } from './icons/UiIcons'
 
 interface Props {
@@ -14,59 +13,43 @@ interface Props {
 }
 
 export function ShareWineButton({ wine, score, attribution, className = '', compact = false }: Props) {
-  const [busy, setBusy] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
-  async function handleShare() {
-    if (busy || score <= 0) return
-    setBusy(true)
-    try {
-      const action = await pickWineCardShareAction()
-      if (!action) return
-
-      if (action === 'save') {
-        await saveWineCardToPhotos({ wine, score, attribution })
-        window.alert('Saved to Photos.')
-        return
-      }
-
-      const result = await shareWineCard({ wine, score, attribution })
-      if (result === 'downloaded') {
-        window.alert('Share card saved to your downloads.')
-      }
-    } catch (e) {
-      if ((e as Error).name !== 'AbortError') {
-        window.alert((e as Error).message || 'Could not share this wine card.')
-      }
-    } finally {
-      setBusy(false)
-    }
-  }
+  const input: ShareWineCardInput = { wine, score, attribution }
 
   if (score <= 0) return null
 
   if (compact) {
     return (
-      <button
-        type="button"
-        className={`link-btn activity-share-btn ${className}`.trim()}
-        disabled={busy}
-        onClick={handleShare}
-      >
-        {busy ? 'Preparing…' : 'Share card'}
-      </button>
+      <>
+        <button
+          type="button"
+          className={`link-btn activity-share-btn ${className}`.trim()}
+          onClick={() => setSheetOpen(true)}
+        >
+          Share card
+        </button>
+        <ShareWineCardSheet
+          open={sheetOpen}
+          input={input}
+          onClose={() => setSheetOpen(false)}
+        />
+      </>
     )
   }
 
   return (
-    <button
-      type="button"
-      className={`icon-btn share-wine-btn ${className}`.trim()}
-      disabled={busy}
-      onClick={handleShare}
-      aria-label={`Share ${wine.name}`}
-      title={busy ? 'Preparing share card…' : 'Share wine card'}
-    >
-      {busy ? '…' : <IconShare />}
-    </button>
+    <>
+      <button
+        type="button"
+        className={`icon-btn share-wine-btn ${className}`.trim()}
+        onClick={() => setSheetOpen(true)}
+        aria-label={`Share ${wine.name}`}
+        title="Share wine card"
+      >
+        <IconShare />
+      </button>
+      <ShareWineCardSheet open={sheetOpen} input={input} onClose={() => setSheetOpen(false)} />
+    </>
   )
 }
