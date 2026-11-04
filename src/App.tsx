@@ -845,7 +845,7 @@ export default function App() {
               ) : (
                 <h1 className="brand-wordmark">
                   {APP_NAME}
-                  {pro && <span className="pro-badge inline"> PRO</span>}
+                  {pro && <span className="pro-badge inline">PRO</span>}
                 </h1>
               )}
               <p className="tagline">{APP_TAGLINE}</p>

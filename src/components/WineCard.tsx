@@ -6,6 +6,7 @@ import { hasTaste, lookupTaste } from '../tasteData'
 import { StarDisplay } from './StarRating'
 import { TasteDisplay } from './TasteProfile'
 import { ShareWineButton } from './ShareWineButton'
+import { IconExternalLink, IconHeart, IconMapPin, IconPencil, IconTrash } from './icons/UiIcons'
 
 interface Props {
   wine: Wine
@@ -82,7 +83,8 @@ export function WineCard({
         {meta && <p className="wine-meta">{meta}</p>}
         {wine.purchasedAt && (
           <p className="wine-purchased">
-            <span aria-hidden="true">🛍</span> {wine.purchasedAt}
+            <IconMapPin className="wine-purchased-icon" />
+            {wine.purchasedAt}
           </p>
         )}
         {wine.notes && <p className="wine-notes">“{wine.notes}”</p>}
@@ -128,7 +130,15 @@ export function WineCard({
                 onSaveToWishlist()
               }}
             >
-              {wishlistSaved ? 'Saved to try ✓' : wishlistSaving ? 'Saving…' : '♡ Save to try'}
+              {wishlistSaved ? (
+                'Saved to try ✓'
+              ) : wishlistSaving ? (
+                'Saving…'
+              ) : (
+                <>
+                  <IconHeart className="wine-wishlist-icon" /> Save to try
+                </>
+              )}
             </button>
           </div>
         ) : !readOnly ? (
@@ -142,10 +152,10 @@ export function WineCard({
             aria-label={`Shop for ${wine.name}`}
             title="Find this wine online"
           >
-            🛒
+            <IconExternalLink />
           </a>
           <button className="icon-btn" onClick={onEdit} aria-label={`Edit ${wine.name}`} title="Edit">
-            ✎
+            <IconPencil />
           </button>
           <button
             className="icon-btn danger"
@@ -153,7 +163,7 @@ export function WineCard({
             aria-label={`Delete ${wine.name}`}
             title="Delete"
           >
-            🗑
+            <IconTrash />
           </button>
         </div>
         ) : null}
