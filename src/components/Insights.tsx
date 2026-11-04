@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { compositeScore, wineEnjoyment, wineValueScore } from '../lib/ranking'
 import type { RankingPreference, Wine } from '../types'
 
@@ -7,33 +7,49 @@ interface Props {
   rankingPreference: RankingPreference
 }
 
+type GroupMetric = 'count' | 'avg'
+
 interface BarDatum {
   label: string
-  value: number
-  display: string
-  sub?: string
+  count: number
+  avg: number
 }
 
-function BarChart({ data, max }: { data: BarDatum[]; max: number }) {
+function BarChart({
+  data,
+  metric,
+  metricHint,
+}: {
+  data: BarDatum[]
+  metric: GroupMetric
+  metricHint: string
+}) {
+  const max =
+    metric === 'count'
+      ? Math.max(...data.map((d) => d.count), 1)
+      : Math.max(...data.map((d) => d.avg), 1)
+
   return (
     <div className="bar-chart">
-      {data.map((d) => (
-        <div className="bar-row" key={d.label}>
-          <span className="bar-label" title={d.label}>
-            {d.label}
-          </span>
-          <div className="bar-track">
-            <div
-              className="bar-fill"
-              style={{ width: `${max > 0 ? Math.max((d.value / max) * 100, 2) : 0}%` }}
-            />
+      <p className="bar-chart-metric-hint">{metricHint}</p>
+      {data.map((d) => {
+        const value = metric === 'count' ? d.count : d.avg
+        const display = metric === 'count' ? `${d.count}` : d.avg.toFixed(1)
+        return (
+          <div className="bar-row" key={d.label}>
+            <span className="bar-label" title={d.label}>
+              {d.label}
+            </span>
+            <div className="bar-track">
+              <div
+                className="bar-fill"
+                style={{ width: `${max > 0 ? Math.max((value / max) * 100, 2) : 0}%` }}
+              />
+            </div>
+            <span className="bar-value">{display}</span>
           </div>
-          <span className="bar-value">
-            {d.display}
-            {d.sub && <em> {d.sub}</em>}
-          </span>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -52,17 +68,16 @@ function groupBy(
   return [...groups.entries()]
     .map(([label, ws]) => ({
       label,
-      value: ws.length,
-      display: `${ws.length}`,
-      sub: `· avg ${(
-        ws.reduce((s, w) => s + compositeScore(w, rankingPreference), 0) / ws.length
-      ).toFixed(1)}★`,
+      count: ws.length,
+      avg: ws.reduce((s, w) => s + compositeScore(w, rankingPreference), 0) / ws.length,
     }))
-    .sort((a, b) => b.value - a.value)
+    .sort((a, b) => b.count - a.count)
     .slice(0, 6)
 }
 
 export function Insights({ wines, rankingPreference }: Props) {
+  const [groupMetric, setGroupMetric] = useState<GroupMetric>('count')
+
   const insights = useMemo(() => {
     const priced = wines.filter((w) => w.price != null && w.price > 0)
     const totalSpend = priced.reduce((s, w) => s + (w.price ?? 0), 0)
@@ -75,7 +90,7 @@ export function Insights({ wines, rankingPreference }: Props) {
     })[0]
     const splurge = [...priced].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))[0]
 
-    const histogram: BarDatum[] = []
+    const histogram: { label: string; value: number; display: string }[] = []
     for (let r = 5; r >= 0.5; r -= 0.5) {
       const count = wines.filter(
         (w) => compositeScore(w, rankingPreference) === r,
@@ -108,6 +123,8 @@ export function Insights({ wines, rankingPreference }: Props) {
   }
 
   const maxHist = Math.max(...insights.histogram.map((d) => d.value), 1)
+  const groupMetricHint =
+    groupMetric === 'count' ? 'Bar length = number of wines' : 'Bar length = average rating (★)'
 
   return (
     <div className="insights">
@@ -144,24 +161,51 @@ export function Insights({ wines, rankingPreference }: Props) {
 
       <section className="insight-card">
         <h3>Rating distribution</h3>
-        <BarChart data={insights.histogram} max={maxHist} />
+        <div className="bar-chart">
+          {insights.histogram.map((d) => (
+            <div className="bar-row bar-row-histogram" key={d.label}>
+              <span className="bar-label">{d.label}</span>
+              <div className="bar-track">
+                <div
+                  className="bar-fill"
+                  style={{ width: `${maxHist > 0 ? Math.max((d.value / maxHist) * 100, 2) : 0}%` }}
+                />
+              </div>
+              <span className="bar-value">{d.display}</span>
+            </div>
+          ))}
+        </div>
       </section>
+
+      <div className="insight-group-toolbar">
+        <span className="insight-group-toolbar-label">Breakdown bars show</span>
+        <div className="insight-metric-toggle" role="group" aria-label="Breakdown metric">
+          <button
+            type="button"
+            className={`chip ${groupMetric === 'count' ? 'active' : ''}`}
+            onClick={() => setGroupMetric('count')}
+          >
+            Count
+          </button>
+          <button
+            type="button"
+            className={`chip ${groupMetric === 'avg' ? 'active' : ''}`}
+            onClick={() => setGroupMetric('avg')}
+          >
+            Avg rating
+          </button>
+        </div>
+      </div>
 
       <div className="insight-grid">
         <section className="insight-card">
           <h3>By type</h3>
-          <BarChart
-            data={insights.byType}
-            max={Math.max(...insights.byType.map((d) => d.value), 1)}
-          />
+          <BarChart data={insights.byType} metric={groupMetric} metricHint={groupMetricHint} />
         </section>
         {insights.byRegion.length > 0 && (
           <section className="insight-card">
             <h3>Top regions</h3>
-            <BarChart
-              data={insights.byRegion}
-              max={Math.max(...insights.byRegion.map((d) => d.value), 1)}
-            />
+            <BarChart data={insights.byRegion} metric={groupMetric} metricHint={groupMetricHint} />
           </section>
         )}
         {insights.byVarietal.length > 0 && (
@@ -169,7 +213,8 @@ export function Insights({ wines, rankingPreference }: Props) {
             <h3>Top varietals</h3>
             <BarChart
               data={insights.byVarietal}
-              max={Math.max(...insights.byVarietal.map((d) => d.value), 1)}
+              metric={groupMetric}
+              metricHint={groupMetricHint}
             />
           </section>
         )}
