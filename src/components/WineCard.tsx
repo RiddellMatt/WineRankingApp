@@ -6,7 +6,7 @@ import { hasTaste, lookupTaste } from '../tasteData'
 import { StarDisplay } from './StarRating'
 import { TasteDisplay } from './TasteProfile'
 import { ShareWineButton } from './ShareWineButton'
-import { IconExternalLink, IconHeart, IconMapPin, IconPencil, IconTrash } from './icons/UiIcons'
+import { IconGlobe, IconHeart, IconMapPin, IconPencil, IconTrash } from './icons/UiIcons'
 
 interface Props {
   wine: Wine
@@ -144,16 +144,6 @@ export function WineCard({
         ) : !readOnly ? (
           <div className="wine-actions">
           <ShareWineButton wine={wine} score={score} />
-          <a
-            className="icon-btn"
-            href={shopUrl(wine)}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Shop for ${wine.name}`}
-            title="Find this wine online"
-          >
-            <IconExternalLink />
-          </a>
           <button className="icon-btn" onClick={onEdit} aria-label={`Edit ${wine.name}`} title="Edit">
             <IconPencil />
           </button>
@@ -165,6 +155,16 @@ export function WineCard({
           >
             <IconTrash />
           </button>
+          <a
+            className="icon-btn"
+            href={shopUrl(wine)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Shop for ${wine.name}`}
+            title="Find this wine online"
+          >
+            <IconGlobe />
+          </a>
         </div>
         ) : null}
       </div>
