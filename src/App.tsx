@@ -6,6 +6,7 @@ import { syncProSubscription } from './lib/checkoutApi'
 import { activatePro, loadProStatus, syncProFromServer } from './pro'
 import { isCheckoutSuccessUrl } from './lib/authRedirect'
 import { ACCOUNT_EVENT, CHECKOUT_SUCCESS_EVENT } from './lib/mobileDeepLinks'
+import { hideNativeSplashOnce } from './lib/nativeSplash'
 import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
@@ -183,6 +184,13 @@ export default function App() {
     },
     [buildBadgeInput],
   )
+
+  useEffect(() => {
+    if (!isNativeApp()) return
+    if (!configured || !authLoading) {
+      void hideNativeSplashOnce()
+    }
+  }, [configured, authLoading])
 
   useEffect(() => {
     winesRef.current = wines

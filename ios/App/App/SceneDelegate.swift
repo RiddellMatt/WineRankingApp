@@ -8,6 +8,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
 
         window = UIWindow(windowScene: windowScene)
+        // Match Capacitor ios.backgroundColor / classic theme so overscroll never flashes black.
+        window?.backgroundColor = UIColor(red: 18 / 255, green: 8 / 255, blue: 12 / 255, alpha: 1)
         window?.rootViewController = DecantiBridgeViewController()
         window?.makeKeyAndVisible()
 

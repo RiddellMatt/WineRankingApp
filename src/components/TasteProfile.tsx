@@ -1,3 +1,4 @@
+import type { PointerEvent } from 'react'
 import { TASTE_AXES, type TasteProfile, type WineType } from '../types'
 
 /** Read-only pill-on-track rows, shown on wine cards. */
@@ -28,6 +29,11 @@ interface InputProps {
   onChange: (taste: TasteProfile) => void
 }
 
+function stopScrollStealing(e: PointerEvent<HTMLInputElement>) {
+  // Keep vertical drags on the slider from scrolling the page / modal (especially iOS WKWebView).
+  e.stopPropagation()
+}
+
 /** Editable sliders for the wine form. Axes are optional; × clears one. */
 export function TasteInput({ taste, wineType, onChange }: InputProps) {
   const axes = TASTE_AXES.filter((a) => !a.sparklingOnly || wineType === 'Sparkling')
@@ -47,6 +53,11 @@ export function TasteInput({ taste, wineType, onChange }: InputProps) {
                 max="100"
                 value={value ?? 50}
                 aria-label={`${a.left} to ${a.right}`}
+                onPointerDown={stopScrollStealing}
+                onPointerMove={stopScrollStealing}
+                onInput={(e) =>
+                  onChange({ ...taste, [a.key]: Number(e.currentTarget.value) })
+                }
                 onChange={(e) => onChange({ ...taste, [a.key]: Number(e.target.value) })}
               />
               {!isSet && <span className="taste-unset-hint">drag to set</span>}
