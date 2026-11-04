@@ -11,6 +11,24 @@ export interface ShareCardFormat {
   filenameSuffix: string
 }
 
+export type ShareDestinationVariant = 'instagram' | 'tiktok' | 'messages' | 'more'
+
+export interface ShareDestination {
+  id: string
+  label: string
+  formatId: ShareCardFormatId
+  variant: ShareDestinationVariant
+}
+
+/** Beli-style row: each option renders the right size, then opens the OS app picker. */
+export const SHARE_DESTINATIONS: ShareDestination[] = [
+  { id: 'ig-post', label: 'IG Post', formatId: 'instagram-post', variant: 'instagram' },
+  { id: 'ig-story', label: 'IG Story', formatId: 'instagram-story', variant: 'instagram' },
+  { id: 'tiktok', label: 'TikTok', formatId: 'tiktok', variant: 'tiktok' },
+  { id: 'messages', label: 'Messages', formatId: 'instagram-post', variant: 'messages' },
+  { id: 'more', label: 'More', formatId: 'square', variant: 'more' },
+]
+
 export const SHARE_CARD_FORMATS: ShareCardFormat[] = [
   {
     id: 'instagram-post',

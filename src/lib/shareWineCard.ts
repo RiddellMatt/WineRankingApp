@@ -402,24 +402,6 @@ export async function shareWineCard(
   input: ShareWineCardInput,
   formatId: ShareCardFormatId = 'instagram-post',
 ): Promise<'shared' | 'downloaded'> {
-  const blob = await renderShareWineCard(input, formatId)
-  const file = new File([blob], shareWineCardFilename(input.wine, formatId), { type: 'image/png' })
-  const title = input.wine.vintage ? `${input.wine.name} ${input.wine.vintage}` : input.wine.name
-
-  if (navigator.share && navigator.canShare?.({ files: [file] })) {
-    await navigator.share({
-      files: [file],
-      title,
-      text: `${title} — ${input.score.toFixed(1)}★ on ${APP_NAME}`,
-    })
-    return 'shared'
-  }
-
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = file.name
-  a.click()
-  URL.revokeObjectURL(url)
-  return 'downloaded'
+  const { presentWineCardShareSheet } = await import('./shareWineCardPresent')
+  return presentWineCardShareSheet(input, formatId)
 }

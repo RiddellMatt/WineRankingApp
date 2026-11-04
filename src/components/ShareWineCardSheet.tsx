@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { saveWineCardToPhotos } from '../lib/saveWineCardToPhotos'
 import {
-  SHARE_CARD_FORMATS,
+  SHARE_DESTINATIONS,
+  shareCardFormatById,
   type ShareCardFormatId,
 } from '../lib/shareCardFormats'
-import { shareWineCard, type ShareWineCardInput } from '../lib/shareWineCard'
+import { presentWineCardShareSheet } from '../lib/shareWineCardPresent'
+import type { ShareWineCardInput } from '../lib/shareWineCard'
 
 interface Props {
   open: boolean
@@ -12,20 +14,56 @@ interface Props {
   onClose: () => void
 }
 
-export function ShareWineCardSheet({ open, input, onClose }: Props) {
-  const [formatId, setFormatId] = useState<ShareCardFormatId>('instagram-post')
-  const [busy, setBusy] = useState(false)
+function DestinationIcon({ destId, variant }: { destId: string; variant: string }) {
+  if (destId === 'ig-story') {
+    return (
+      <span className="share-destination-icon share-destination-icon-story" aria-hidden="true">
+        <span className="share-destination-ig-glyph">IG</span>
+        <span className="share-destination-story-plus">+</span>
+      </span>
+    )
+  }
+  if (variant === 'instagram') {
+    return (
+      <span className="share-destination-icon share-destination-icon-instagram" aria-hidden="true">
+        IG
+      </span>
+    )
+  }
+  if (variant === 'tiktok') {
+    return (
+      <span className="share-destination-icon share-destination-icon-tiktok" aria-hidden="true">
+        TT
+      </span>
+    )
+  }
+  if (variant === 'messages') {
+    return (
+      <span className="share-destination-icon share-destination-icon-messages" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 3c5.52 0 10 3.58 10 8s-4.48 8-10 8c-1.04 0-2.04-.14-2.98-.4L4 21l2.4-5.02A9.7 9.7 0 0 1 2 11c0-4.42 4.48-8 10-8z" />
+        </svg>
+      </span>
+    )
+  }
+  return (
+    <span className="share-destination-icon share-destination-icon-more" aria-hidden="true">
+      ···
+    </span>
+  )
+}
 
-  useEffect(() => {
-    if (open) setFormatId('instagram-post')
-  }, [open])
+export function ShareWineCardSheet({ open, input, onClose }: Props) {
+  const [busy, setBusy] = useState(false)
+  const [saveFormat, setSaveFormat] = useState<ShareCardFormatId>('instagram-post')
 
   if (!open || !input) return null
 
-  async function runShare() {
+  async function shareVia(formatId: ShareCardFormatId) {
     setBusy(true)
+    setSaveFormat(formatId)
     try {
-      const result = await shareWineCard(input!, formatId)
+      const result = await presentWineCardShareSheet(input!, formatId)
       if (result === 'downloaded') {
         window.alert('Share card saved to your downloads.')
       }
@@ -39,10 +77,10 @@ export function ShareWineCardSheet({ open, input, onClose }: Props) {
     }
   }
 
-  async function runSave() {
+  async function saveCurrentSize() {
     setBusy(true)
     try {
-      await saveWineCardToPhotos(input!, formatId)
+      await saveWineCardToPhotos(input!, saveFormat)
       window.alert('Saved to Photos.')
       onClose()
     } catch (e) {
@@ -52,9 +90,7 @@ export function ShareWineCardSheet({ open, input, onClose }: Props) {
     }
   }
 
-  const wineTitle = input.wine.vintage
-    ? `${input.wine.name} ${input.wine.vintage}`
-    : input.wine.name
+  const saveLabel = shareCardFormatById(saveFormat).label
 
   return (
     <div
@@ -72,39 +108,38 @@ export function ShareWineCardSheet({ open, input, onClose }: Props) {
       >
         <div className="share-sheet-grab" aria-hidden="true" />
         <h2 id="share-sheet-title" className="share-sheet-title">
-          Share this wine
+          Share this page
         </h2>
         <p className="share-sheet-lead">
-          Choose a size for {wineTitle}, then share or save — like Beli&apos;s IG Post vs Story options.
+          Tap a destination — we&apos;ll size the card, then you&apos;ll get Apple&apos;s share sheet
+          to pick Instagram, Messages, or another app.
         </p>
 
-        <div className="share-format-row" role="list">
-          {SHARE_CARD_FORMATS.map((format) => (
+        <div className="share-destination-row" role="list">
+          {SHARE_DESTINATIONS.map((dest) => (
             <button
-              key={format.id}
+              key={dest.id}
               type="button"
               role="listitem"
-              className={`share-format-chip ${formatId === format.id ? 'active' : ''}`}
+              className="share-destination-btn"
               disabled={busy}
-              onClick={() => setFormatId(format.id)}
+              title={`${dest.label} (${shareCardFormatById(dest.formatId).aspectLabel})`}
+              onClick={() => void shareVia(dest.formatId)}
             >
-              <span className="share-format-aspect">{format.aspectLabel}</span>
-              <span className="share-format-label">{format.label}</span>
+              <DestinationIcon destId={dest.id} variant={dest.variant} />
+              <span className="share-destination-label">{dest.label}</span>
             </button>
           ))}
         </div>
 
-        <p className="share-sheet-hint account-hint">
-          Selected: {SHARE_CARD_FORMATS.find((f) => f.id === formatId)?.label} (
-          {SHARE_CARD_FORMATS.find((f) => f.id === formatId)?.aspectLabel})
-        </p>
-
-        <div className="share-sheet-actions">
-          <button type="button" className="btn primary" disabled={busy} onClick={() => void runShare()}>
-            {busy ? 'Preparing…' : 'Share…'}
-          </button>
-          <button type="button" className="btn ghost" disabled={busy} onClick={() => void runSave()}>
-            Save to Photos
+        <div className="share-sheet-secondary">
+          <button
+            type="button"
+            className="link-btn share-sheet-save"
+            disabled={busy}
+            onClick={() => void saveCurrentSize()}
+          >
+            Save to Photos ({saveLabel})
           </button>
           <button type="button" className="link-btn share-sheet-cancel" disabled={busy} onClick={onClose}>
             Cancel
