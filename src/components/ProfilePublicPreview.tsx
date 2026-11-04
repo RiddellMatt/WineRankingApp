@@ -1,4 +1,10 @@
+import { useEffect, useState } from 'react'
 import { FriendCellarView } from './FriendCellarView'
+import { ProfileMilestoneHighlights } from './ProfileMilestoneHighlights'
+import {
+  fetchFriendMilestoneSummaries,
+  type FriendMilestoneSummary,
+} from '../lib/friendMilestones'
 import type { UserProfile } from '../lib/profileDb'
 import type { RankingPreference, Wine } from '../types'
 
@@ -18,6 +24,20 @@ export function ProfilePublicPreview({
   const displayName =
     profile.displayName?.trim() || profile.email?.split('@')[0] || 'Wine lover'
 
+  const [milestoneSummary, setMilestoneSummary] = useState<FriendMilestoneSummary | null>(
+    null,
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    void fetchFriendMilestoneSummaries([{ userId: profile.id, wines }]).then((map) => {
+      if (!cancelled) setMilestoneSummary(map.get(profile.id) ?? null)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [profile.id, wines])
+
   return (
     <div className="profile-public-preview">
       <div className="profile-preview-toolbar">
@@ -26,6 +46,7 @@ export function ProfilePublicPreview({
           Edit profile
         </button>
       </div>
+      {milestoneSummary && <ProfileMilestoneHighlights summary={milestoneSummary} />}
       <FriendCellarView
         displayName={displayName}
         avatarUrl={profile.avatarUrl}
