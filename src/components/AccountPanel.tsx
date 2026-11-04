@@ -51,6 +51,8 @@ interface Props {
   onProUnlocked: (opts?: { fromNativeIap?: boolean }) => void
   onSignOut: () => void
   onSignIn: () => void
+  /** Return to public profile preview (signed-in users). */
+  onBackToProfile?: () => void
 }
 
 export function AccountPanel({
@@ -70,6 +72,7 @@ export function AccountPanel({
   onProUnlocked,
   onSignOut,
   onSignIn,
+  onBackToProfile,
 }: Props) {
   const subscriptionRef = useRef<HTMLElement>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
@@ -313,6 +316,11 @@ export function AccountPanel({
 
   return (
     <div className="account-panel">
+      {onBackToProfile && (
+        <button type="button" className="btn ghost friend-back" onClick={onBackToProfile}>
+          ← Profile
+        </button>
+      )}
       {signedIn && (
         <section className="account-hero">
           <Avatar
