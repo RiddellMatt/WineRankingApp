@@ -1,11 +1,11 @@
 import { App } from '@capacitor/app'
-import { SplashScreen } from '@capacitor/splash-screen'
-import { StatusBar, Style } from '@capacitor/status-bar'
 import { getSupabase } from '../lib/supabase'
+import { hideNativeSplashOnce } from '../lib/nativeSplash'
 import { isNativeApp } from '../lib/platform'
 import { loadStoredTheme, THEME_META } from '../lib/themes'
 import { completeOAuthFromUrl, listenForOAuthBrowserDismiss } from '../lib/mobileOAuth'
 import { emitMobileDeepLinkEvent, parseMobileDeepLink } from '../lib/mobileDeepLinks'
+import { StatusBar, Style } from '@capacitor/status-bar'
 
 async function handleDeepLink(url: string): Promise<void> {
   if (await completeOAuthFromUrl(url)) return
@@ -46,5 +46,8 @@ export async function initNativeShell(): Promise<void> {
     if (isActive) void refreshSession()
   })
 
-  await SplashScreen.hide()
+  // Safety net if auth never resolves (App hides splash when loading finishes).
+  window.setTimeout(() => {
+    void hideNativeSplashOnce()
+  }, 5000)
 }

@@ -25,10 +25,20 @@ final class DecantiBridgeViewController: CAPBridgeViewController {
         scroll.bounces = false
         scroll.alwaysBounceVertical = false
         scroll.alwaysBounceHorizontal = false
+        if #available(iOS 11.0, *) {
+            // Safe areas come from CSS; avoid UIKit inset animation fighting layout on cold start.
+            scroll.contentInsetAdjustmentBehavior = .never
+        }
 
         let underlay = UIColor(red: 18 / 255, green: 8 / 255, blue: 12 / 255, alpha: 1)
         webView.isOpaque = true
         webView.backgroundColor = underlay
         scroll.backgroundColor = underlay
+
+        DispatchQueue.main.async {
+            var offset = scroll.contentOffset
+            if offset.y < 0 { offset.y = 0 }
+            scroll.setContentOffset(offset, animated: false)
+        }
     }
 }

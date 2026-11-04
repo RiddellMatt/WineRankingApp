@@ -15,15 +15,7 @@ interface BarDatum {
   avg: number
 }
 
-function BarChart({
-  data,
-  metric,
-  metricHint,
-}: {
-  data: BarDatum[]
-  metric: GroupMetric
-  metricHint: string
-}) {
+function BarChart({ data, metric }: { data: BarDatum[]; metric: GroupMetric }) {
   const max =
     metric === 'count'
       ? Math.max(...data.map((d) => d.count), 1)
@@ -31,7 +23,6 @@ function BarChart({
 
   return (
     <div className="bar-chart">
-      <p className="bar-chart-metric-hint">{metricHint}</p>
       {data.map((d) => {
         const value = metric === 'count' ? d.count : d.avg
         const display = metric === 'count' ? `${d.count}` : d.avg.toFixed(1)
@@ -123,8 +114,6 @@ export function Insights({ wines, rankingPreference }: Props) {
   }
 
   const maxHist = Math.max(...insights.histogram.map((d) => d.value), 1)
-  const groupMetricHint =
-    groupMetric === 'count' ? 'Bar length = number of wines' : 'Bar length = average rating (★)'
 
   return (
     <div className="insights">
@@ -200,22 +189,18 @@ export function Insights({ wines, rankingPreference }: Props) {
       <div className="insight-grid">
         <section className="insight-card">
           <h3>By type</h3>
-          <BarChart data={insights.byType} metric={groupMetric} metricHint={groupMetricHint} />
+          <BarChart data={insights.byType} metric={groupMetric} />
         </section>
         {insights.byRegion.length > 0 && (
           <section className="insight-card">
             <h3>Top regions</h3>
-            <BarChart data={insights.byRegion} metric={groupMetric} metricHint={groupMetricHint} />
+            <BarChart data={insights.byRegion} metric={groupMetric} />
           </section>
         )}
         {insights.byVarietal.length > 0 && (
           <section className="insight-card">
             <h3>Top varietals</h3>
-            <BarChart
-              data={insights.byVarietal}
-              metric={groupMetric}
-              metricHint={groupMetricHint}
-            />
+            <BarChart data={insights.byVarietal} metric={groupMetric} />
           </section>
         )}
       </div>
