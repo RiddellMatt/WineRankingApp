@@ -12,6 +12,13 @@ export default defineConfig(({ mode }) => {
     base: isMobile ? './' : isGhPages ? '/WineRankingApp/' : '/',
     plugins: [
       react(),
+      {
+        name: 'decanti-native-app-html-class',
+        transformIndexHtml(html) {
+          if (!isMobile) return html
+          return html.replace('<html lang="en">', '<html lang="en" class="native-app">')
+        },
+      },
       ...(isMobile
         ? []
         : [

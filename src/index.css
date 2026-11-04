@@ -2039,12 +2039,6 @@ textarea {
   grid-template-columns: 3.25rem minmax(2.25rem, 1fr) auto;
 }
 
-.bar-chart-metric-hint {
-  margin: 0 0 0.35rem;
-  font-size: 0.75rem;
-  color: var(--text-faint);
-}
-
 .insight-group-toolbar {
   display: flex;
   flex-wrap: wrap;

@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Decanti',
   webDir: 'dist',
   ios: {
-    contentInset: 'automatic',
+    // CSS env(safe-area-inset-*) handles insets; automatic double-applies and jumps on launch.
+    contentInset: 'never',
     scheme: 'Decanti',
     // WKWebView underlay (overscroll / safe areas); classic theme --bg
     backgroundColor: '#12080c',

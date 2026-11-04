@@ -23,6 +23,13 @@
         }
       } catch (e) {}
     </script>
+    <script>
+      try {
+        if (/^(capacitor|ionic):/.test(window.location.protocol)) {
+          document.documentElement.classList.add('native-app');
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
