@@ -1,27 +1,35 @@
 import UIKit
 import Capacitor
 
-/// Disables WKWebView rubber-banding that exposes a black underlay on overscroll (TestFlight feedback).
+/// Keeps WKWebView underlay on-brand during rubber-banding (TestFlight overscroll feedback).
 final class DecantiBridgeViewController: CAPBridgeViewController {
+    private var didApplyScrollChrome = false
+
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
-        applyScrollChrome()
+        applyScrollChromeIfNeeded()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        applyScrollChrome()
+        // WebView is nil until after first layout; apply once (re-applying every layout caused top-edge flicker).
+        applyScrollChromeIfNeeded()
     }
 
-    private func applyScrollChrome() {
-        guard let webView = webView else { return }
+    private func applyScrollChromeIfNeeded() {
+        guard !didApplyScrollChrome, let webView = webView else { return }
+        didApplyScrollChrome = true
+
         let scroll = webView.scrollView
-        scroll.bounces = false
-        scroll.alwaysBounceVertical = false
+        // Allow rubber-band; matched underlay color replaces the old black flash. Disabling bounce
+        // made WKWebView fight the scroll offset at y=0 and flicker when pulling past the top.
+        scroll.bounces = true
+        scroll.alwaysBounceVertical = true
         scroll.alwaysBounceHorizontal = false
-        // Match classic theme --bg (#12080c) when any edge is visible.
+
+        let underlay = UIColor(red: 18 / 255, green: 8 / 255, blue: 12 / 255, alpha: 1)
         webView.isOpaque = true
-        webView.backgroundColor = UIColor(red: 18 / 255, green: 8 / 255, blue: 12 / 255, alpha: 1)
-        scroll.backgroundColor = webView.backgroundColor
+        webView.backgroundColor = underlay
+        scroll.backgroundColor = underlay
     }
 }
