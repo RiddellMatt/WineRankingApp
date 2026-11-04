@@ -1,5 +1,6 @@
 import { APP_NAME } from '../brand'
 import { nativePlatform } from './platform'
+import type { ShareCardFormatId } from './shareCardFormats'
 import { renderShareWineCard, shareWineCardFilename, type ShareWineCardInput } from './shareWineCard'
 
 function blobToDataUrl(blob: Blob): Promise<string> {
@@ -28,12 +29,15 @@ async function androidDecantiAlbumId(): Promise<string> {
 }
 
 /** Saves the rendered wine card PNG to the device photo library (iOS / Android). */
-export async function saveWineCardToPhotos(input: ShareWineCardInput): Promise<void> {
-  const blob = await renderShareWineCard(input)
+export async function saveWineCardToPhotos(
+  input: ShareWineCardInput,
+  formatId: ShareCardFormatId = 'instagram-post',
+): Promise<void> {
+  const blob = await renderShareWineCard(input, formatId)
   const path = await blobToDataUrl(blob)
   const { Media } = await import('@capacitor-community/media')
 
-  const baseName = shareWineCardFilename(input.wine).replace(/\.png$/i, '')
+  const baseName = shareWineCardFilename(input.wine, formatId).replace(/\.png$/i, '')
 
   if (nativePlatform() === 'android') {
     const albumIdentifier = await androidDecantiAlbumId()
