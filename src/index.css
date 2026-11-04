@@ -3529,7 +3529,6 @@ html.native-app {
   overflow-x: clip;
   max-width: 100%;
   overscroll-behavior: none;
-  height: 100%;
 }
 
 html.native-app body {
@@ -3539,17 +3538,13 @@ html.native-app body {
   padding-right: 0;
   overscroll-behavior: none;
   min-height: 100dvh;
+  /* fixed backgrounds repaint badly in WKWebView when pulling past scroll top */
+  background-attachment: scroll;
 }
 
 html.native-app #root {
   overscroll-behavior: none;
   min-height: 100dvh;
-}
-
-html.native-app .app {
-  background: var(--bg);
-  background-image: var(--body-gradient);
-  background-attachment: fixed;
 }
 
 html.native-app .header,
