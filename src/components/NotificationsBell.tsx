@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { IconBell } from './icons/UiIcons'
 import { Avatar } from './Avatar'
 import { friendDisplayLabel } from '../lib/friendsDb'
 import {
@@ -118,9 +119,7 @@ export function NotificationsBell({ enabled, onNavigateFriends }: Props) {
         aria-haspopup="true"
         onClick={handleOpen}
       >
-        <span className="notifications-trigger-icon" aria-hidden="true">
-          🔔
-        </span>
+        <IconBell className="notifications-trigger-icon" size={20} />
         {unread > 0 && (
           <span className="notifications-badge">{unread > 9 ? '9+' : unread}</span>
         )}

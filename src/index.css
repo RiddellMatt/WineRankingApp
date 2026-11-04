@@ -368,8 +368,7 @@ textarea::placeholder {
 }
 
 .notifications-trigger-icon {
-  font-size: 1.15rem;
-  line-height: 1;
+  color: var(--text);
 }
 
 .notifications-badge {
@@ -542,6 +541,13 @@ textarea::placeholder {
   display: inline-block;
 }
 
+/* Gradient wordmark sets -webkit-text-fill-color: transparent on the whole h1. */
+.brand-wordmark .pro-badge {
+  -webkit-text-fill-color: #3a2a05;
+  color: #3a2a05;
+  margin-left: 0.4rem;
+}
+
 /* ── Buttons ────────────────────────────────────────── */
 
 .btn {
@@ -586,6 +592,14 @@ textarea::placeholder {
   padding: 0.3rem 0.45rem;
   border-radius: 8px;
   transition: background 0.15s, color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ui-icon {
+  display: block;
+  flex-shrink: 0;
 }
 
 .icon-btn:hover {
@@ -838,7 +852,7 @@ a.icon-btn {
   opacity: 0.75;
 }
 
-.wine-save-wishlist-btn {
+.wine-readonly-actions .wine-save-wishlist-btn {
   margin-top: 0.5rem;
   width: 100%;
 }
@@ -976,9 +990,28 @@ a.icon-btn {
 }
 
 .wine-purchased {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
   margin: 0.15rem 0 0;
   color: var(--text-faint);
   font-size: 0.83rem;
+}
+
+.wine-purchased-icon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.wine-save-wishlist-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.wine-wishlist-icon {
+  flex-shrink: 0;
 }
 
 .wine-notes {
@@ -1391,7 +1424,6 @@ a.icon-btn {
 
 .share-wine-btn {
   font-size: 1rem;
-  font-weight: 700;
 }
 
 .activity-share-btn {
@@ -2665,8 +2697,7 @@ textarea {
     padding: 0.08rem 0.32rem;
     margin-top: 0.05rem;
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .stats,

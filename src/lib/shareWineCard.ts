@@ -9,8 +9,9 @@ export interface ShareWineCardInput {
   attribution?: string
 }
 
+/** Instagram portrait feed ratio (4:5). */
 const CARD_WIDTH = 1080
-const CARD_HEIGHT = 1420
+const CARD_HEIGHT = 1350
 const MAX_TASTE_ROWS = 4
 const MAX_NOTE_LINES_WITH_TASTE = 2
 
@@ -271,9 +272,9 @@ export async function renderShareWineCard(input: ShareWineCardInput): Promise<Bl
   ctx.fill()
 
   const panelX = 72
-  const panelY = 200
+  const panelY = 150
   const panelW = CARD_WIDTH - panelX * 2
-  const panelH = 980
+  const panelH = 920
   const radius = 28
 
   ctx.fillStyle = COLORS.surface
