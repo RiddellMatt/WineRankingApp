@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { saveWineCardToPhotos } from '../lib/saveWineCardToPhotos'
 import { shareWineCard } from '../lib/shareWineCard'
+import { pickWineCardShareAction } from '../lib/wineCardShareActions'
 import type { Wine } from '../types'
 
 interface Props {
@@ -17,13 +19,22 @@ export function ShareWineButton({ wine, score, attribution, className = '', comp
     if (busy || score <= 0) return
     setBusy(true)
     try {
+      const action = await pickWineCardShareAction()
+      if (!action) return
+
+      if (action === 'save') {
+        await saveWineCardToPhotos({ wine, score, attribution })
+        window.alert('Saved to Photos.')
+        return
+      }
+
       const result = await shareWineCard({ wine, score, attribution })
       if (result === 'downloaded') {
         window.alert('Share card saved to your downloads.')
       }
     } catch (e) {
       if ((e as Error).name !== 'AbortError') {
-        window.alert(`Could not share: ${(e as Error).message}`)
+        window.alert((e as Error).message || 'Could not share this wine card.')
       }
     } finally {
       setBusy(false)
