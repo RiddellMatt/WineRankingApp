@@ -5,7 +5,7 @@ interface IconProps {
 
 const defaultSize = 18
 
-/** SF Symbol–style square.and.arrow.up */
+/** SF Symbol–style square.and.arrow.up (open tray, arrow up through gap). */
 export function IconShare({ className = 'ui-icon', size = defaultSize }: IconProps) {
   return (
     <svg
@@ -20,10 +20,9 @@ export function IconShare({ className = 'ui-icon', size = defaultSize }: IconPro
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M12 5v9" />
-      <path d="m8 9 4-4 4 4" />
-      <path d="M6 15h12" />
-      <path d="M6 15v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3" />
+      <path d="M12 3v8.25" />
+      <path d="M9.25 6.25 12 3.5 14.75 6.25" />
+      <path d="M8.25 11.75H6.5a2 2 0 0 0-2 2V18a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-4.25a2 2 0 0 0-2-2H15.75" />
     </svg>
   )
 }
@@ -69,7 +68,30 @@ export function IconMapPin({ className = 'ui-icon', size = 16 }: IconProps) {
   )
 }
 
-/** Find wine online */
+/** Open in browser / find on the web (Safari-style globe). */
+export function IconGlobe({ className = 'ui-icon', size = defaultSize }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3c2.5 2.9 4 6.4 4 9s-1.5 6.1-4 9" />
+      <path d="M12 3c-2.5 2.9-4 6.4-4 9s1.5 6.1 4 9" />
+    </svg>
+  )
+}
+
+/** External link (box with corner arrow). */
 export function IconExternalLink({ className = 'ui-icon', size = defaultSize }: IconProps) {
   return (
     <svg
