@@ -21,10 +21,9 @@ final class DecantiBridgeViewController: CAPBridgeViewController {
         didApplyScrollChrome = true
 
         let scroll = webView.scrollView
-        // Allow rubber-band; matched underlay color replaces the old black flash. Disabling bounce
-        // made WKWebView fight the scroll offset at y=0 and flicker when pulling past the top.
-        scroll.bounces = true
-        scroll.alwaysBounceVertical = true
+        // Stop at scroll edges (no rubber-band). Underlay matches app chrome if anything peeks through.
+        scroll.bounces = false
+        scroll.alwaysBounceVertical = false
         scroll.alwaysBounceHorizontal = false
 
         let underlay = UIColor(red: 18 / 255, green: 8 / 255, blue: 12 / 255, alpha: 1)

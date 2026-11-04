@@ -2029,10 +2029,39 @@ textarea {
 
 .bar-row {
   display: grid;
-  grid-template-columns: 5.5rem 1fr auto;
+  grid-template-columns: minmax(0, 1fr) minmax(2.25rem, 4.25rem) auto;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.5rem 0.65rem;
   font-size: 0.84rem;
+}
+
+.bar-row-histogram {
+  grid-template-columns: 3.25rem minmax(2.25rem, 1fr) auto;
+}
+
+.bar-chart-metric-hint {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.insight-group-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0.25rem 0 0.85rem;
+}
+
+.insight-group-toolbar-label {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.insight-metric-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 
 .bar-label {
@@ -2045,7 +2074,7 @@ textarea {
 .bar-track {
   background: var(--bg-soft);
   border-radius: 99px;
-  height: 0.65rem;
+  height: 0.42rem;
   overflow: hidden;
 }
 
@@ -2944,9 +2973,13 @@ textarea {
   }
 
   .bar-row {
-    grid-template-columns: 4.5rem 1fr auto;
-    gap: 0.45rem;
+    grid-template-columns: minmax(0, 1fr) minmax(2rem, 3.5rem) auto;
+    gap: 0.4rem 0.5rem;
     font-size: 0.78rem;
+  }
+
+  .bar-row-histogram {
+    grid-template-columns: 3rem minmax(2rem, 1fr) auto;
   }
 
   .modal-backdrop {
@@ -3747,6 +3780,12 @@ html.native-app body {
 html.native-app #root {
   overscroll-behavior: none;
   min-height: 100dvh;
+  background: var(--bg);
+}
+
+html.native-app .app {
+  min-height: 100dvh;
+  background: var(--bg);
 }
 
 html.native-app .header,
