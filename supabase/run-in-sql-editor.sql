@@ -211,6 +211,12 @@ create policy ai_scan_uploads_delete_own on storage.objects
   );
 
 
+-- ── 3b-iii) Tasting tags on wines ────────────────────────────────────────
+
+alter table public.wines
+  add column if not exists tasting_tags text[] not null default '{}';
+
+
 -- ── 3c) Multi-dimensional ratings + ranking preference ───────────────────
 
 alter table public.wines

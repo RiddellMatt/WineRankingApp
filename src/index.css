@@ -1209,6 +1209,92 @@ a.icon-btn {
   font-style: italic;
 }
 
+.tasting-tags-field {
+  margin: 0.85rem 0 0.5rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.tasting-tags-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.55rem;
+}
+
+.tasting-tags-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tasting-tags-hint {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+
+.tasting-tags-chips,
+.tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tag-filters {
+  margin-top: 0.35rem;
+}
+
+.tasting-tag-chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: #f6c9d4;
+}
+
+.tasting-tags-pro-note {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+
+.tasting-tags-custom {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+  align-items: center;
+}
+
+.tasting-tags-custom input {
+  flex: 1;
+  min-width: 0;
+}
+
+.tasting-tags-selected {
+  margin: 0.45rem 0 0;
+  font-size: 0.76rem;
+  color: var(--text-dim);
+}
+
+.tasting-tags-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.45rem;
+}
+
+.tasting-tag-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.14rem 0.55rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
 .taste-caption {
   margin: -0.35rem 0 0.7rem;
   font-size: 0.8rem;

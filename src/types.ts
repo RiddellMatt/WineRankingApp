@@ -57,6 +57,8 @@ export interface Wine {
   /** Composite score cached at save time; use compositeScore() for display with current preference. */
   rating: number
   notes: string
+  /** Quick tasting descriptors (filterable on tried wines). */
+  tastingTags?: string[]
   purchasedAt: string
   taste: TasteProfile
   /** Whether taste came from the reference dataset or was tuned by the user. */
