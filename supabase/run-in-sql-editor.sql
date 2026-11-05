@@ -173,6 +173,44 @@ create policy label_scan_usage_select on public.label_scan_usage
   using (auth.uid() = user_id);
 
 
+-- ── 3b-ii) AI scan photo uploads (Storage → Edge Function) ───────────────
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'ai-scan-uploads',
+  'ai-scan-uploads',
+  false,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
+)
+on conflict (id) do update set
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists ai_scan_uploads_insert on storage.objects;
+create policy ai_scan_uploads_insert on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'ai-scan-uploads'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists ai_scan_uploads_select_own on storage.objects;
+create policy ai_scan_uploads_select_own on storage.objects
+  for select to authenticated
+  using (
+    bucket_id = 'ai-scan-uploads'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists ai_scan_uploads_delete_own on storage.objects;
+create policy ai_scan_uploads_delete_own on storage.objects
+  using (
+    bucket_id = 'ai-scan-uploads'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+
 -- ── 3c) Multi-dimensional ratings + ranking preference ───────────────────
 
 alter table public.wines
