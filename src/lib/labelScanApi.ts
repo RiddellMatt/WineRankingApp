@@ -1,9 +1,9 @@
 import type { ScanResult } from '../scanner'
 import type { WineType } from '../types'
 import { WINE_TYPES } from '../types'
+import { buildAiScanInvokeBody } from './aiScanRequest'
 import { readFunctionError } from './functionError'
-import { getSupabase } from './supabase'
-import { resizeImageForUpload } from './imageResize'
+import { invokeEdgeFunction } from './invokeEdgeFunction'
 
 export class LabelScanError extends Error {
   code?: string
@@ -62,10 +62,8 @@ export function aiLabelToScanResult(label: AiLabelScan): ScanResult {
 }
 
 export async function scanLabelWithAi(file: File): Promise<LabelScanResult> {
-  const { base64, mimeType } = await resizeImageForUpload(file)
-  const { data, error } = await getSupabase().functions.invoke('scan-label', {
-    body: { imageBase64: base64, mimeType },
-  })
+  const body = await buildAiScanInvokeBody(file)
+  const { data, error } = await invokeEdgeFunction<ScanLabelPayload>('scan-label', body)
 
   if (error) {
     const { message, code } = await readFunctionError(error, data)

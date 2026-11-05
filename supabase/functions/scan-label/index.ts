@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts'
+import { deleteScanUpload, resolveScanImageFromBody } from '../_shared/scanImage.ts'
 
 const MONTHLY_LIMIT = 30
 const MAX_IMAGE_CHARS = 6_000_000
@@ -251,13 +252,24 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json()
-    const imageBase64 = String(body.imageBase64 ?? '')
-    const mimeType = String(body.mimeType ?? 'image/jpeg')
+    let imageBase64: string
+    let mimeType: string
+    let cleanupPath: string | undefined
+    try {
+      const resolved = await resolveScanImageFromBody(admin, user.id, body)
+      imageBase64 = resolved.imageBase64
+      mimeType = resolved.mimeType
+      cleanupPath = resolved.cleanupPath
+    } catch (e) {
+      return jsonResponse({ error: String(e) }, 400)
+    }
 
     if (!imageBase64 || imageBase64.length > MAX_IMAGE_CHARS) {
+      await deleteScanUpload(admin, cleanupPath)
       return jsonResponse({ error: 'Image is missing or too large.' }, 400)
     }
     if (!mimeType.startsWith('image/')) {
+      await deleteScanUpload(admin, cleanupPath)
       return jsonResponse({ error: 'File must be an image.' }, 400)
     }
 
@@ -266,6 +278,8 @@ Deno.serve(async (req) => {
       textPart = await callGeminiVision(geminiKey, mimeType, imageBase64)
     } catch (e) {
       return jsonResponse({ error: String(e) }, 502)
+    } finally {
+      await deleteScanUpload(admin, cleanupPath)
     }
 
     let parsed: { label?: AiLabel } & AiLabel

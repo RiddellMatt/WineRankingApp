@@ -1,7 +1,7 @@
 import type { ParsedMenuWine } from '../menuMatch'
+import { buildAiScanInvokeBody } from './aiScanRequest'
 import { readFunctionError } from './functionError'
-import { getSupabase } from './supabase'
-import { resizeImageForUpload } from './imageResize'
+import { invokeEdgeFunction } from './invokeEdgeFunction'
 
 export class MenuScanError extends Error {
   code?: string
@@ -31,10 +31,8 @@ function parsePayload(data: unknown): ScanMenuPayload {
 }
 
 export async function scanMenuWithAi(file: File): Promise<MenuScanResult> {
-  const { base64, mimeType } = await resizeImageForUpload(file)
-  const { data, error } = await getSupabase().functions.invoke('scan-menu', {
-    body: { imageBase64: base64, mimeType },
-  })
+  const body = await buildAiScanInvokeBody(file)
+  const { data, error } = await invokeEdgeFunction<ScanMenuPayload>('scan-menu', body)
 
   if (error) {
     const { message, code } = await readFunctionError(error, data)
