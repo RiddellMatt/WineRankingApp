@@ -10,6 +10,7 @@ import { hideNativeSplashOnce } from './lib/nativeSplash'
 import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
+import { CellarSortMenu } from './components/CellarSortMenu'
 import { WineCard } from './components/WineCard'
 import { WishlistCard } from './components/WishlistCard'
 import { WineForm } from './components/WineForm'
@@ -623,6 +624,14 @@ export default function App() {
     [cellarTried, pro],
   )
 
+  const cellarSortOptions = useMemo(
+    () =>
+      cellarSegment === 'wishlist'
+        ? SORT_OPTIONS.filter((o) => o.key !== 'rating')
+        : SORT_OPTIONS,
+    [cellarSegment],
+  )
+
   const stats = useMemo(() => {
     if (cellarTried.length === 0) return null
     const avg =
@@ -1015,6 +1024,7 @@ export default function App() {
                 onClick={() => {
                   setCellarSegment('wishlist')
                   setTagFilter(null)
+                  setSortKey((k) => (k === 'rating' ? 'addedAt' : k))
                 }}
               >
                 Want to try ({cellarWishlist.length})
@@ -1066,61 +1076,65 @@ export default function App() {
             )}
 
             {(cellarSegment === 'tried' ? cellarTried : cellarWishlist).length > 0 && (
-              <section className="toolbar">
-                <input
-                  className="search"
-                  type="search"
-                  placeholder="Search name, winery, region, notes…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                <div className="type-filters">
-                  {(['All', ...WINE_TYPES] as const).map((t) => (
-                    <button
-                      key={t}
-                      className={`chip ${typeFilter === t ? 'active' : ''}`}
-                      onClick={() => setTypeFilter(t)}
-                    >
-                      {t}
-                    </button>
-                  ))}
+              <section className="toolbar cellar-toolbar">
+                <div className="toolbar-row toolbar-row-search">
+                  <input
+                    className="search"
+                    type="search"
+                    placeholder="Search…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                  <CellarSortMenu
+                    value={sortKey}
+                    options={cellarSortOptions}
+                    onChange={setSortKey}
+                  />
                 </div>
-                {cellarSegment === 'tried' && (
-                  <div className="tag-filters-block">
-                    <span className="tag-filters-label">Flavor tags</span>
-                    {cellarTagFilters.length > 0 ? (
-                      <div className="tag-filters" aria-label="Filter by tasting tag">
+                <div className="toolbar-row type-filters-scroll">
+                  <div className="type-filters">
+                    {(['All', ...WINE_TYPES] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        className={`chip chip-compact ${typeFilter === t ? 'active' : ''}`}
+                        onClick={() => setTypeFilter(t)}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {cellarSegment === 'tried' && cellarTagFilters.length > 0 && (
+                  <div className="toolbar-row type-filters-scroll">
+                    <div className="tag-filters" aria-label="Filter by tasting tag">
+                      <span className="filter-row-label">Tags</span>
+                      <button
+                        type="button"
+                        className={`chip chip-compact ${tagFilter === null ? 'active' : ''}`}
+                        onClick={() => setTagFilter(null)}
+                      >
+                        All
+                      </button>
+                      {cellarTagFilters.map((tag) => (
                         <button
+                          key={tag.id}
                           type="button"
-                          className={`chip ${tagFilter === null ? 'active' : ''}`}
-                          onClick={() => setTagFilter(null)}
+                          className={`chip chip-compact tasting-tag-chip ${tagFilter === tag.id ? 'active' : ''}`}
+                          onClick={() => setTagFilter(tagFilter === tag.id ? null : tag.id)}
                         >
-                          All
+                          {tag.label}
                         </button>
-                        {cellarTagFilters.map((tag) => (
-                          <button
-                            key={tag.id}
-                            type="button"
-                            className={`chip tasting-tag-chip ${tagFilter === tag.id ? 'active' : ''}`}
-                            onClick={() => setTagFilter(tagFilter === tag.id ? null : tag.id)}
-                          >
-                            {tag.label}
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="tag-filters-empty">
-                        Add flavor tags on a wine to filter your cellar by taste.
-                      </p>
-                    )}
+                      ))}
+                    </div>
                   </div>
                 )}
-                <div className="toolbar-bottom">
+                <div className="toolbar-row toolbar-row-meta">
                   <div className="data-actions">
-                    <button className="link-btn" onClick={handleExport}>
+                    <button type="button" className="link-btn" onClick={handleExport}>
                       Export{!pro && ' 🔒'}
                     </button>
-                    <button className="link-btn" onClick={handleImportClick}>
+                    <button type="button" className="link-btn" onClick={handleImportClick}>
                       Import{!pro && ' 🔒'}
                     </button>
                     <input
@@ -1135,19 +1149,6 @@ export default function App() {
                       }}
                     />
                   </div>
-                  <label className="sort-control">
-                    Sort by
-                    <select
-                      value={sortKey}
-                      onChange={(e) => setSortKey(e.target.value as SortKey)}
-                    >
-                      {SORT_OPTIONS.map((o) => (
-                        <option key={o.key} value={o.key}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
                 </div>
               </section>
             )}
