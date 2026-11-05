@@ -1085,25 +1085,34 @@ export default function App() {
                     </button>
                   ))}
                 </div>
-                {cellarSegment === 'tried' && cellarTagFilters.length > 0 && (
-                  <div className="tag-filters" aria-label="Filter by tasting tag">
-                    <button
-                      type="button"
-                      className={`chip ${tagFilter === null ? 'active' : ''}`}
-                      onClick={() => setTagFilter(null)}
-                    >
-                      All tags
-                    </button>
-                    {cellarTagFilters.map((tag) => (
-                      <button
-                        key={tag.id}
-                        type="button"
-                        className={`chip tasting-tag-chip ${tagFilter === tag.id ? 'active' : ''}`}
-                        onClick={() => setTagFilter(tagFilter === tag.id ? null : tag.id)}
-                      >
-                        {tag.label}
-                      </button>
-                    ))}
+                {cellarSegment === 'tried' && (
+                  <div className="tag-filters-block">
+                    <span className="tag-filters-label">Flavor tags</span>
+                    {cellarTagFilters.length > 0 ? (
+                      <div className="tag-filters" aria-label="Filter by tasting tag">
+                        <button
+                          type="button"
+                          className={`chip ${tagFilter === null ? 'active' : ''}`}
+                          onClick={() => setTagFilter(null)}
+                        >
+                          All
+                        </button>
+                        {cellarTagFilters.map((tag) => (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            className={`chip tasting-tag-chip ${tagFilter === tag.id ? 'active' : ''}`}
+                            onClick={() => setTagFilter(tagFilter === tag.id ? null : tag.id)}
+                          >
+                            {tag.label}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="tag-filters-empty">
+                        Add flavor tags on a wine to filter your cellar by taste.
+                      </p>
+                    )}
                   </div>
                 )}
                 <div className="toolbar-bottom">
@@ -1201,7 +1210,32 @@ export default function App() {
             ) : visible.length === 0 ? (
               <section className="empty">
                 <h2>No matches</h2>
-                <p>No wines match your search or filter.</p>
+                <p>
+                  {tagFilter
+                    ? `No tried wines tagged “${tastingTagLabel(tagFilter)}”.`
+                    : 'No wines match your search or filters.'}
+                </p>
+                {(tagFilter || search.trim() || typeFilter !== 'All') && (
+                  <div className="empty-actions">
+                    {tagFilter && (
+                      <button type="button" className="btn ghost" onClick={() => setTagFilter(null)}>
+                        Clear tag filter
+                      </button>
+                    )}
+                    {(search.trim() || typeFilter !== 'All') && (
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        onClick={() => {
+                          setSearch('')
+                          setTypeFilter('All')
+                        }}
+                      >
+                        Clear search &amp; type
+                      </button>
+                    )}
+                  </div>
+                )}
               </section>
             ) : cellarSegment === 'wishlist' ? (
               <ol className="wishlist-list">
@@ -1235,6 +1269,8 @@ export default function App() {
                     wine={wine}
                     rank={rankById.get(wine.id) ?? 0}
                     rankingPreference={rankingPreference}
+                    activeTagFilter={tagFilter}
+                    onTagFilter={(id) => setTagFilter(tagFilter === id ? null : id)}
                     onEdit={() => {
                       setFormMode('tried')
                       setEditing(wine)

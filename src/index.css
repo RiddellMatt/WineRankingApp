@@ -1244,8 +1244,29 @@ a.icon-btn {
   gap: 0.35rem;
 }
 
+.tag-filters-block {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tag-filters-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+}
+
+.tag-filters-empty {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+
 .tag-filters {
-  margin-top: 0.35rem;
+  margin-top: 0;
 }
 
 .tasting-tag-chip.active {
@@ -1293,6 +1314,22 @@ a.icon-btn {
   background: var(--bg-soft);
   border: 1px solid var(--border);
   color: var(--text-dim);
+}
+
+button.tasting-tag-pill-btn {
+  font: inherit;
+  cursor: pointer;
+}
+
+button.tasting-tag-pill-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+button.tasting-tag-pill-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: #f6c9d4;
 }
 
 .taste-caption {
