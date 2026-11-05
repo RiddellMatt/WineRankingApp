@@ -26,6 +26,8 @@ final class DecantiBridgeViewController: CAPBridgeViewController {
         scroll.bounces = true
         scroll.alwaysBounceVertical = true
         scroll.alwaysBounceHorizontal = false
+        scroll.isDirectionalLockEnabled = true
+        scroll.showsHorizontalScrollIndicator = false
         if #available(iOS 11.0, *) {
             // Safe areas come from CSS; avoid UIKit inset animation fighting layout on cold start.
             scroll.contentInsetAdjustmentBehavior = .never

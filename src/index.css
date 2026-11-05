@@ -106,6 +106,9 @@
 
 html {
   background: var(--bg);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 html[data-theme='classic'] {
@@ -143,6 +146,7 @@ body {
   line-height: 1.5;
   min-height: 100vh;
   min-height: 100dvh;
+  width: 100%;
   max-width: 100%;
   overflow-x: clip;
 }
@@ -391,7 +395,7 @@ textarea::placeholder {
   position: absolute;
   top: calc(100% + 0.45rem);
   right: 0;
-  width: min(22rem, calc(100vw - 1.5rem));
+  width: min(22rem, calc(100% - 1.5rem));
   max-height: min(24rem, 60vh);
   overflow: hidden;
   display: flex;
@@ -710,6 +714,8 @@ a.icon-btn {
   flex-direction: column;
   gap: 0.8rem;
   margin-bottom: 1.5rem;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .toolbar-bottom {
@@ -884,6 +890,9 @@ a.icon-btn {
   border-radius: var(--radius);
   padding: 1.1rem 1.2rem;
   transition: background 0.15s, border-color 0.15s;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 .wine-card:hover {
@@ -944,6 +953,7 @@ a.icon-btn {
   align-items: baseline;
   gap: 0.6rem;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .wine-name {
@@ -951,6 +961,8 @@ a.icon-btn {
   font-size: 1.2rem;
   font-weight: 700;
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .wine-vintage {
@@ -3713,7 +3725,7 @@ textarea {
   bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 0.85rem);
   left: 50%;
   transform: translateX(-50%);
-  width: min(22rem, calc(100vw - 1.5rem));
+  width: min(22rem, calc(100% - 1.5rem));
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
@@ -3802,8 +3814,24 @@ html.native-app #root {
 }
 
 html.native-app .app {
+  width: 100%;
+  max-width: none;
+  padding: 0;
   min-height: 100dvh;
   background: var(--bg);
+  overflow-x: clip;
+}
+
+html.native-app #root {
+  overflow-x: clip;
+  width: 100%;
+  max-width: 100%;
+}
+
+html.native-app body {
+  overflow-x: clip;
+  width: 100%;
+  max-width: 100%;
 }
 
 html.native-app .header,
@@ -3811,9 +3839,95 @@ html.native-app .content,
 html.native-app .app-footer-note {
   padding-left: max(0.85rem, var(--safe-left));
   padding-right: max(0.85rem, var(--safe-right));
+  max-width: 100%;
+  min-width: 0;
+}
+
+html.native-app .content {
+  order: 2;
+  flex: 1 1 auto;
+  padding-bottom: 1rem;
+  overflow-x: clip;
+}
+
+html.native-app .header {
+  padding-top: 1.15rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  border-bottom: none;
+}
+
+html.native-app .header-inner {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+html.native-app .wine-list {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Phone-style bottom tabs on all native sizes (iPad was using overflow-x: auto top tabs). */
+html.native-app .tabs {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  order: 4;
+  flex-shrink: 0;
+  margin-top: auto;
+  margin-bottom: 0;
+  gap: 0;
+  width: 100%;
+  max-width: 100%;
+  min-height: calc(var(--tab-bar-height) + var(--safe-bottom));
+  padding:
+    0.45rem max(0.25rem, var(--safe-left))
+    max(0.55rem, var(--safe-bottom))
+    max(0.25rem, var(--safe-right));
+  background: var(--bg-soft);
+  border-top: 1px solid var(--border);
+  justify-content: space-between;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+}
+
+html.native-app .tab {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.1rem;
+  min-height: 2.75rem;
+  border-bottom: none;
+  border-top: 2px solid transparent;
+  flex-direction: column;
+  gap: 0.15rem;
+  line-height: 1.15;
+  text-align: center;
+  touch-action: manipulation;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+html.native-app .tab.active {
+  border-bottom-color: transparent;
+  border-top-color: var(--accent);
+}
+
+html.native-app .tab-text-long {
+  display: none;
+}
+
+html.native-app .tab-text-short {
+  display: inline;
 }
 
 html.native-app .auth-screen {
   padding-left: max(1.25rem, var(--safe-left));
   padding-right: max(1.25rem, var(--safe-right));
+  max-width: 100%;
+  overflow-x: clip;
 }
