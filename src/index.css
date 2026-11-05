@@ -718,6 +718,42 @@ a.icon-btn {
   min-width: 0;
 }
 
+.cellar-toolbar {
+  gap: 0.45rem;
+}
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.toolbar-row-search {
+  align-items: stretch;
+}
+
+.toolbar-row-search .search {
+  flex: 1;
+  min-width: 0;
+}
+
+.toolbar-row-meta {
+  justify-content: flex-start;
+}
+
+.type-filters-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 -0.15rem;
+  padding: 0 0.15rem;
+}
+
+.type-filters-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .toolbar-bottom {
   display: flex;
   align-items: center;
@@ -760,6 +796,110 @@ a.icon-btn {
   background: var(--accent-soft);
   border-color: var(--accent);
   color: #f6c9d4;
+}
+
+.chip-compact {
+  padding: 0.26rem 0.65rem;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.filter-row-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  padding-right: 0.15rem;
+}
+
+.cellar-sort-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.cellar-sort-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.05rem;
+  min-height: 2.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  font-size: 0.78rem;
+  line-height: 1.15;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.cellar-sort-trigger:hover,
+.cellar-sort-trigger.open {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.cellar-sort-trigger-label {
+  color: var(--text-faint);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cellar-sort-trigger-value {
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  max-width: 6.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cellar-sort-trigger.open .cellar-sort-trigger-value {
+  color: #f6c9d4;
+}
+
+.cellar-sort-popover {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 30;
+  min-width: 10.5rem;
+  padding: 0.35rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated, var(--bg-soft));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.cellar-sort-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.55rem;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.cellar-sort-option:hover {
+  background: var(--bg-soft);
+  color: var(--text);
+}
+
+.cellar-sort-option.active {
+  background: var(--accent-soft);
+  color: #f6c9d4;
+  font-weight: 600;
 }
 
 .sort-control {
@@ -1237,15 +1377,17 @@ a.icon-btn {
   color: var(--text-faint);
 }
 
-.tasting-tags-chips,
-.tag-filters {
+.tasting-tags-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
 }
 
 .tag-filters {
-  margin-top: 0.35rem;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .tasting-tag-chip.active {
@@ -1293,6 +1435,22 @@ a.icon-btn {
   background: var(--bg-soft);
   border: 1px solid var(--border);
   color: var(--text-dim);
+}
+
+button.tasting-tag-pill-btn {
+  font: inherit;
+  cursor: pointer;
+}
+
+button.tasting-tag-pill-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+button.tasting-tag-pill-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: #f6c9d4;
 }
 
 .taste-caption {
@@ -3056,16 +3214,6 @@ textarea {
   .toolbar-bottom {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .sort-control {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .sort-control select {
-    flex: 1;
-    max-width: 12rem;
   }
 
   .limit-banner {

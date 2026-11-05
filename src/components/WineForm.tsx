@@ -73,18 +73,17 @@ export function WineForm({
   const aiAvailable = pro && signedIn && cloudConfigured
   const triedCellar = useMemo(() => triedWines(cellarWines), [cellarWines])
   const parsedPrice = price ? Number(price) : null
-  const showValueRating = parsedPrice != null && parsedPrice > 0
 
   const previewRank = useMemo(
     () =>
       compositeScore(
         {
           ratingEnjoyment,
-          ratingValue: showValueRating && ratingValue > 0 ? ratingValue : null,
+          ratingValue: ratingValue > 0 ? ratingValue : null,
         },
         rankingPreference,
       ),
-    [ratingEnjoyment, ratingValue, showValueRating, rankingPreference],
+    [ratingEnjoyment, ratingValue, rankingPreference],
   )
 
   const regionSuggestions = useMemo(
@@ -233,7 +232,7 @@ export function WineForm({
         region: region.trim(),
         price: parsedPrice,
         ratingEnjoyment: wishlistForm ? 0 : ratingEnjoyment,
-        ratingValue: !wishlistForm && showValueRating && ratingValue > 0 ? ratingValue : null,
+        ratingValue: !wishlistForm && ratingValue > 0 ? ratingValue : null,
         ratingBuyAgain: !wishlistForm && ratingBuyAgain > 0 ? ratingBuyAgain : null,
         rating: 0,
         notes: notes.trim(),
@@ -329,13 +328,13 @@ export function WineForm({
             <p className="form-rating-hint">How much did you like drinking this?</p>
             <StarInput value={ratingEnjoyment} onChange={setRatingEnjoyment} />
           </div>
-          {showValueRating && (
-            <div className="form-rating">
-              <label>Value</label>
-              <p className="form-rating-hint">Worth what you paid? (optional)</p>
-              <StarInput value={ratingValue} onChange={setRatingValue} />
-            </div>
-          )}
+          <div className="form-rating">
+            <label>Value</label>
+            <p className="form-rating-hint">
+              Worth it for what you paid? Optional — you can add price later.
+            </p>
+            <StarInput value={ratingValue} onChange={setRatingValue} />
+          </div>
           <div className="form-rating">
             <label>Buy again?</label>
             <p className="form-rating-hint">Optional — does not change your rank.</p>
@@ -363,7 +362,7 @@ export function WineForm({
           {ratingEnjoyment > 0 && (
             <p className="rank-preview">
               Your rank: <strong>{previewRank.toFixed(1)}</strong>
-              {showValueRating && ratingValue > 0 && (
+              {ratingValue > 0 && (
                 <span className="rank-preview-detail">
                   {' '}
                   (enjoyment {ratingEnjoyment.toFixed(1)} · value {ratingValue.toFixed(1)})

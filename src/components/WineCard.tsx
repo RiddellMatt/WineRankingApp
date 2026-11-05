@@ -20,6 +20,8 @@ interface Props {
   wishlistSaved?: boolean
   wishlistSaving?: boolean
   shareAttribution?: string
+  activeTagFilter?: string | null
+  onTagFilter?: (tagId: string) => void
 }
 
 const TYPE_CLASS: Record<string, string> = {
@@ -43,6 +45,8 @@ export function WineCard({
   wishlistSaved = false,
   wishlistSaving = false,
   shareAttribution,
+  activeTagFilter = null,
+  onTagFilter,
 }: Props) {
   const medal = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : ''
   const meta = [wine.varietal, wine.region].filter(Boolean).join(' · ')
@@ -90,12 +94,26 @@ export function WineCard({
         )}
         {wine.notes && <p className="wine-notes">“{wine.notes}”</p>}
         {(wine.tastingTags?.length ?? 0) > 0 && (
-          <div className="tasting-tags-display">
-            {wine.tastingTags!.map((id) => (
-              <span className="tasting-tag-pill" key={id}>
-                {tastingTagLabel(id)}
-              </span>
-            ))}
+          <div
+            className="tasting-tags-display"
+            onClick={onTagFilter ? (e) => e.stopPropagation() : undefined}
+          >
+            {wine.tastingTags!.map((id) =>
+              onTagFilter ? (
+                <button
+                  type="button"
+                  key={id}
+                  className={`tasting-tag-pill tasting-tag-pill-btn ${activeTagFilter === id ? 'active' : ''}`}
+                  onClick={() => onTagFilter(id)}
+                >
+                  {tastingTagLabel(id)}
+                </button>
+              ) : (
+                <span className="tasting-tag-pill" key={id}>
+                  {tastingTagLabel(id)}
+                </span>
+              ),
+            )}
           </div>
         )}
         <TasteDisplay taste={taste} />

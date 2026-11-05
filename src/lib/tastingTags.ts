@@ -6,40 +6,33 @@ export interface TastingTagDef {
   label: string
 }
 
-/** Free plan: quick, high-level descriptors. */
+/**
+ * Free plan: flavor/aroma tags only — not body, tannin, sweetness, or acidity
+ * (those use the taste sliders: Light/Bold, Smooth/Tannic, Dry/Sweet, Soft/Acidic).
+ */
 export const FREE_TASTING_TAGS: TastingTagDef[] = [
   { id: 'fruity', label: 'Fruity' },
-  { id: 'dry', label: 'Dry' },
-  { id: 'sweet', label: 'Sweet' },
   { id: 'oaky', label: 'Oaky' },
   { id: 'earthy', label: 'Earthy' },
   { id: 'floral', label: 'Floral' },
   { id: 'spicy', label: 'Spicy' },
-  { id: 'crisp', label: 'Crisp' },
-  { id: 'smooth', label: 'Smooth' },
-  { id: 'bold', label: 'Bold' },
-  { id: 'tannic', label: 'Tannic' },
   { id: 'mineral', label: 'Mineral' },
+  { id: 'nutty', label: 'Nutty' },
+  { id: 'citrus', label: 'Citrus' },
 ]
 
-/** Pro: more specific tasting vocabulary. */
+/** Pro: extra fruit and winemaking notes — still no slider overlap. */
 export const PRO_TASTING_TAGS: TastingTagDef[] = [
   { id: 'cherry', label: 'Cherry' },
   { id: 'berry', label: 'Berry' },
-  { id: 'citrus', label: 'Citrus' },
   { id: 'tropical', label: 'Tropical' },
   { id: 'stone-fruit', label: 'Stone fruit' },
   { id: 'vanilla', label: 'Vanilla' },
-  { id: 'butter', label: 'Butter' },
   { id: 'honey', label: 'Honey' },
   { id: 'herbal', label: 'Herbal' },
   { id: 'smoky', label: 'Smoky' },
-  { id: 'leather', label: 'Leather' },
-  { id: 'graphite', label: 'Graphite' },
-  { id: 'barnyard', label: 'Barnyard' },
-  { id: 'jammy', label: 'Jammy' },
   { id: 'peppery', label: 'Peppery' },
-  { id: 'saline', label: 'Saline' },
+  { id: 'chocolate', label: 'Chocolate' },
 ]
 
 const CUSTOM_TAGS_KEY = `${STORAGE_PREFIX}.custom-tasting-tags`
