@@ -6,6 +6,7 @@ import { hasTaste, lookupTaste } from '../tasteData'
 import { StarDisplay } from './StarRating'
 import { TasteDisplay } from './TasteProfile'
 import { ShareWineButton } from './ShareWineButton'
+import { tastingTagLabel } from '../lib/tastingTags'
 import { IconGlobe, IconHeart, IconMapPin, IconPencil, IconTrash } from './icons/UiIcons'
 
 interface Props {
@@ -88,6 +89,15 @@ export function WineCard({
           </p>
         )}
         {wine.notes && <p className="wine-notes">“{wine.notes}”</p>}
+        {(wine.tastingTags?.length ?? 0) > 0 && (
+          <div className="tasting-tags-display">
+            {wine.tastingTags!.map((id) => (
+              <span className="tasting-tag-pill" key={id}>
+                {tastingTagLabel(id)}
+              </span>
+            ))}
+          </div>
+        )}
         <TasteDisplay taste={taste} />
         {isTypical && (
           <p className="taste-source-caption">Typical {reference.basedOn} profile</p>

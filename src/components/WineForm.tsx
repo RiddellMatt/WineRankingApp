@@ -7,8 +7,11 @@ import { journeyFormHints } from '../lib/journeys'
 import type { ScanResult } from '../scanner'
 import { hasTaste, lookupTaste } from '../tasteData'
 import { WINE_TYPES, type RankingPreference, type TasteProfile, type Wine, type WineType } from '../types'
+import { catalogTags } from '../lib/tastingTags'
+import { triedWines } from '../lib/wishlist'
 import { StarInput } from './StarRating'
 import { TasteInput } from './TasteProfile'
+import { TastingTagsInput } from './TastingTagsInput'
 
 interface Props {
   initial: Wine | null
@@ -21,6 +24,7 @@ interface Props {
   pro?: boolean
   signedIn?: boolean
   cloudConfigured?: boolean
+  onUpgrade?: () => void
 }
 
 export function WineForm({
@@ -34,6 +38,7 @@ export function WineForm({
   pro = false,
   signedIn = false,
   cloudConfigured = false,
+  onUpgrade,
 }: Props) {
   const wishlistForm = formMode === 'wishlist'
   const promoteFromWishlist = initial?.status === 'wishlist' && !wishlistForm
@@ -58,6 +63,7 @@ export function WineForm({
   )
   const [tasteBasedOn, setTasteBasedOn] = useState('')
   const [notes, setNotes] = useState(initial?.notes ?? '')
+  const [tastingTags, setTastingTags] = useState<string[]>(initial?.tastingTags ?? [])
   const [error, setError] = useState('')
   const [scanState, setScanState] = useState<'idle' | 'scanning' | 'done' | 'failed'>('idle')
   const [scanMode, setScanMode] = useState<'ai' | 'basic'>('basic')
@@ -65,6 +71,7 @@ export function WineForm({
   const [scanSummary, setScanSummary] = useState('')
   const scanInputRef = useRef<HTMLInputElement>(null)
   const aiAvailable = pro && signedIn && cloudConfigured
+  const triedCellar = useMemo(() => triedWines(cellarWines), [cellarWines])
   const parsedPrice = price ? Number(price) : null
   const showValueRating = parsedPrice != null && parsedPrice > 0
 
@@ -230,6 +237,11 @@ export function WineForm({
         ratingBuyAgain: !wishlistForm && ratingBuyAgain > 0 ? ratingBuyAgain : null,
         rating: 0,
         notes: notes.trim(),
+        tastingTags: wishlistForm
+          ? []
+          : pro
+            ? tastingTags
+            : tastingTags.filter((id) => catalogTags(false).some((t) => t.id === id)),
         purchasedAt: purchasedAt.trim(),
         taste: wishlistForm ? {} : taste,
         tasteSource: wishlistForm ? undefined : tasteTouched ? 'custom' : 'typical',
@@ -271,7 +283,7 @@ export function WineForm({
           </button>
         </div>
 
-        {!initial && !wishlistForm && (
+        {!initial && (
           <div className="scan-box">
             <button
               type="button"
@@ -284,8 +296,12 @@ export function WineForm({
                   ? 'AI is reading your label…'
                   : `Reading label… ${scanPct}%`
                 : aiAvailable
-                  ? '📷 Scan wine label (AI)'
-                  : '📷 Scan wine label'}
+                  ? wishlistForm
+                    ? '📷 Scan label (AI)'
+                    : '📷 Scan wine label (AI)'
+                  : wishlistForm
+                    ? '📷 Scan label'
+                    : '📷 Scan wine label'}
             </button>
             <input
               ref={scanInputRef}
@@ -486,14 +502,28 @@ export function WineForm({
           </div>
         )}
 
+        {!wishlistForm && (
+          <TastingTagsInput
+            selected={tastingTags}
+            onChange={setTastingTags}
+            pro={pro}
+            cellarWines={triedCellar}
+            onUpgrade={onUpgrade}
+          />
+        )}
+
         <div className="form-grid">
           <label className="field span-2">
-            <span>Tasting notes</span>
+            <span>{wishlistForm ? 'Notes' : 'Tasting notes'}</span>
             <textarea
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="What did it taste like? Would you buy it again?"
+              placeholder={
+                wishlistForm
+                  ? 'Why do you want to try it? Where did you hear about it?'
+                  : 'Anything else about this pour — story, food pairing, occasion…'
+              }
             />
           </label>
         </div>

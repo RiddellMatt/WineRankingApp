@@ -65,6 +65,11 @@ import {
   saveLocalRankingPreference,
 } from './lib/ranking'
 import {
+  filterTagsForCellar,
+  tastingTagLabel,
+  wineMatchesTagFilter,
+} from './lib/tastingTags'
+import {
   friendWineToWishlist,
   isWishlistDuplicate,
   triedCount,
@@ -130,6 +135,7 @@ export default function App() {
   const [profileMode, setProfileMode] = useState<ProfileScreenMode>('preview')
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<WineType | 'All'>('All')
+  const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [sortKey, setSortKey] = useState<SortKey>('rating')
   const [cellarSegment, setCellarSegment] = useState<CellarSegment>('tried')
   const [formMode, setFormMode] = useState<'tried' | 'wishlist'>('tried')
@@ -600,15 +606,22 @@ export default function App() {
     const base = cellarSegment === 'wishlist' ? cellarWishlist : cellarTried
     let list = base.filter((w) => {
       if (typeFilter !== 'All' && w.type !== typeFilter) return false
+      if (cellarSegment === 'tried' && !wineMatchesTagFilter(w, tagFilter)) return false
       if (!q) return true
-      return [w.name, w.winery, w.varietal, w.region, w.notes, w.purchasedAt]
+      const tagText = (w.tastingTags ?? []).map(tastingTagLabel).join(' ')
+      return [w.name, w.winery, w.varietal, w.region, w.notes, w.purchasedAt, tagText]
         .join(' ')
         .toLowerCase()
         .includes(q)
     })
     const effectiveSort = cellarSegment === 'wishlist' && sortKey === 'rating' ? 'addedAt' : sortKey
     return sortWines(list, effectiveSort, rankingPreference)
-  }, [cellarSegment, cellarTried, cellarWishlist, search, typeFilter, sortKey, rankingPreference])
+  }, [cellarSegment, cellarTried, cellarWishlist, search, typeFilter, tagFilter, sortKey, rankingPreference])
+
+  const cellarTagFilters = useMemo(
+    () => filterTagsForCellar(cellarTried, pro),
+    [cellarTried, pro],
+  )
 
   const stats = useMemo(() => {
     if (cellarTried.length === 0) return null
@@ -990,14 +1003,19 @@ export default function App() {
               <button
                 type="button"
                 className={`cellar-segment-btn ${cellarSegment === 'tried' ? 'active' : ''}`}
-                onClick={() => setCellarSegment('tried')}
+                onClick={() => {
+                  setCellarSegment('tried')
+                }}
               >
                 Tried ({cellarTried.length})
               </button>
               <button
                 type="button"
                 className={`cellar-segment-btn ${cellarSegment === 'wishlist' ? 'active' : ''}`}
-                onClick={() => setCellarSegment('wishlist')}
+                onClick={() => {
+                  setCellarSegment('wishlist')
+                  setTagFilter(null)
+                }}
               >
                 Want to try ({cellarWishlist.length})
               </button>
@@ -1067,6 +1085,27 @@ export default function App() {
                     </button>
                   ))}
                 </div>
+                {cellarSegment === 'tried' && cellarTagFilters.length > 0 && (
+                  <div className="tag-filters" aria-label="Filter by tasting tag">
+                    <button
+                      type="button"
+                      className={`chip ${tagFilter === null ? 'active' : ''}`}
+                      onClick={() => setTagFilter(null)}
+                    >
+                      All tags
+                    </button>
+                    {cellarTagFilters.map((tag) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        className={`chip tasting-tag-chip ${tagFilter === tag.id ? 'active' : ''}`}
+                        onClick={() => setTagFilter(tagFilter === tag.id ? null : tag.id)}
+                      >
+                        {tag.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="toolbar-bottom">
                   <div className="data-actions">
                     <button className="link-btn" onClick={handleExport}>
@@ -1279,6 +1318,7 @@ export default function App() {
           pro={pro}
           signedIn={Boolean(cloudUser)}
           cloudConfigured={isSupabaseConfigured}
+          onUpgrade={() => goToAccount(true)}
         />
       )}
 
