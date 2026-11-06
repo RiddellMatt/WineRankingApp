@@ -1,1 +1,0 @@
-import{a as e}from"./index-swOtSA6z.js";var t=class extends e{async show(e){}async hide(e){}};export{t as SplashScreenWeb};
