@@ -156,6 +156,114 @@ export function IconTrash({ className = 'ui-icon', size = defaultSize }: IconPro
   )
 }
 
+/** Tab: cellar / bottle. */
+export function IconBottle({ className = 'ui-icon', size = defaultSize }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M9.5 2h5L15 8.5c1.2.6 2 1.85 2 3.25v8.25a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2V11.75c0-1.4.8-2.65 2-3.25Z" />
+      <path d="M8 8h8" />
+    </svg>
+  )
+}
+
+/** Tab: scan / camera. */
+export function IconCamera({ className = 'ui-icon', size = defaultSize }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M14.5 4h-5L7 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2Z" />
+      <circle cx="12" cy="13" r="3.25" />
+    </svg>
+  )
+}
+
+/** Tab: friends / social. */
+export function IconUsers({ className = 'ui-icon', size = defaultSize }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  )
+}
+
+/** Tab: stats / insights. */
+export function IconBarChart({ className = 'ui-icon', size = defaultSize }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 20V10" />
+      <path d="M18 20V4" />
+      <path d="M6 20v-4" />
+    </svg>
+  )
+}
+
+/** Tab: profile / account. */
+export function IconUser({ className = 'ui-icon', size = defaultSize }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M20 21a8 8 0 0 0-16 0" />
+    </svg>
+  )
+}
+
 export function IconHeart({ className = 'ui-icon', size = 16 }: IconProps) {
   return (
     <svg

@@ -528,6 +528,64 @@ textarea::placeholder {
   border-bottom-color: var(--accent);
 }
 
+.tab.tab-icon {
+  justify-content: center;
+  position: relative;
+}
+
+.tab-icon-svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.tab-pro-badge {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.05rem;
+  font-size: 0.5rem;
+  padding: 0.1rem 0.25rem;
+}
+
+.scan-hub-add {
+  margin-bottom: 1.75rem;
+  padding: 1.1rem 1.15rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+
+.scan-hub-add-lead {
+  margin: 0.35rem 0 1rem;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+}
+
+.scan-hub-add-btn {
+  width: 100%;
+}
+
+.menu-scan-section-title {
+  font-family: var(--font-display);
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.menu-scan-section-lead {
+  margin: 0.35rem 0 0.75rem;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+}
+
+.cellar-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.cellar-empty-text {
+  margin: 0 0 1rem;
+  color: var(--text-dim);
+}
+
 .pro-badge {
   font-size: 0.62rem;
   font-weight: 700;
@@ -4403,7 +4461,16 @@ html.native-app .tab-text-long {
 }
 
 html.native-app .tab-text-short {
-  display: inline;
+  display: none;
+}
+
+html.native-app .tab.tab-icon {
+  padding: 0.45rem 0.1rem;
+}
+
+html.native-app .tab-icon-svg {
+  width: 1.45rem;
+  height: 1.45rem;
 }
 
 html.native-app .auth-screen {

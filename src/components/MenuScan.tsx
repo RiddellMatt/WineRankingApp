@@ -163,10 +163,8 @@ export function MenuScan({
   return (
     <div className="menu-scan">
       <section className="menu-scan-hero">
-        <span className="empty-icon" aria-hidden="true">
-          📖
-        </span>
-        <h2>Point me at the wine list</h2>
+        <h2 className="menu-scan-section-title">Scan a menu</h2>
+        <p className="menu-scan-section-lead">Point your camera at the wine list</p>
         {aiAvailable ? (
           <p>
             Pro AI reads the menu photo directly — even two-column lists — then ranks every wine
