@@ -41,10 +41,8 @@
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --tab-bar-height: 4.25rem;
-  /* Match fixed .tabs: top FAB pad + bar + bottom safe inset + scroll buffer */
-  --tab-bar-offset: calc(
-    0.85rem + var(--tab-bar-height) + max(0.55rem, var(--safe-bottom)) + 1.5rem
-  );
+  /* Extra scroll room at end of lists (tab bar is a flex row, not overlapping). */
+  --content-scroll-pad: 1.25rem;
   --modal-sheet-top-gap: 15dvh;
   --keyboard-inset: 0px;
 }
@@ -565,7 +563,7 @@ textarea::placeholder {
   justify-content: center;
   width: 3.35rem;
   height: 3.35rem;
-  margin-top: -1.1rem;
+  margin-top: -0.85rem;
   border-radius: 999px;
   background: var(--accent);
   color: #fff;
@@ -3590,7 +3588,7 @@ textarea {
   }
 
   body {
-    padding-bottom: 0;
+    padding: 0;
   }
 
   html,
@@ -3600,7 +3598,7 @@ textarea {
   }
 
   #root {
-    height: 100%;
+    height: 100dvh;
     overflow: hidden;
   }
 
@@ -3626,7 +3624,7 @@ textarea {
   }
 
   .header {
-    padding-top: 1.15rem;
+    padding-top: max(1.15rem, var(--safe-top));
     padding-bottom: 0.75rem;
     margin-bottom: 1rem;
     border-bottom: none;
@@ -3639,8 +3637,8 @@ textarea {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: var(--tab-bar-offset);
-    scroll-padding-bottom: var(--tab-bar-offset);
+    padding-bottom: var(--content-scroll-pad);
+    scroll-padding-bottom: var(--content-scroll-pad);
   }
 
   .app-footer-note {
@@ -3702,10 +3700,7 @@ textarea {
   }
 
   .tabs {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    position: relative;
     z-index: 100;
     order: 4;
     flex-shrink: 0;
@@ -3714,10 +3709,10 @@ textarea {
     gap: 0;
     width: 100%;
     max-width: 100%;
-    min-height: calc(var(--tab-bar-height) + var(--safe-bottom) + 0.85rem);
+    min-height: calc(var(--tab-bar-height) + var(--safe-bottom));
     padding:
-      0.85rem max(0.25rem, var(--safe-left))
-      max(0.55rem, var(--safe-bottom))
+      0.65rem max(0.25rem, var(--safe-left))
+      max(0.75rem, calc(var(--safe-bottom) + 0.35rem))
       max(0.25rem, var(--safe-right));
     background: var(--bg-soft);
     border-top: 1px solid var(--border);
@@ -4656,7 +4651,7 @@ html.native-app #root {
   overflow: hidden;
   width: 100%;
   max-width: 100%;
-  height: 100%;
+  height: 100dvh;
 }
 
 html.native-app body {
@@ -4664,6 +4659,7 @@ html.native-app body {
   width: 100%;
   max-width: 100%;
   height: 100dvh;
+  padding: 0;
 }
 
 html.native-app .header,
@@ -4683,15 +4679,15 @@ html.native-app .content {
   order: 2;
   flex: 1 1 auto;
   min-height: 0;
-  padding-bottom: var(--tab-bar-offset);
-  scroll-padding-bottom: var(--tab-bar-offset);
+  padding-bottom: var(--content-scroll-pad);
+  scroll-padding-bottom: var(--content-scroll-pad);
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
 html.native-app .header {
-  padding-top: 1.15rem;
+  padding-top: max(1.15rem, var(--safe-top));
   padding-bottom: 0.75rem;
   margin-bottom: 1rem;
   border-bottom: none;
@@ -4709,10 +4705,7 @@ html.native-app .wine-list {
 
 /* Phone-style bottom tabs on all native sizes (iPad was using overflow-x: auto top tabs). */
 html.native-app .tabs {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
   z-index: 100;
   order: 4;
   flex-shrink: 0;
@@ -4721,10 +4714,10 @@ html.native-app .tabs {
   gap: 0;
   width: 100%;
   max-width: 100%;
-  min-height: calc(var(--tab-bar-height) + var(--safe-bottom) + 0.85rem);
+  min-height: calc(var(--tab-bar-height) + var(--safe-bottom));
   padding:
-    0.85rem max(0.25rem, var(--safe-left))
-    max(0.55rem, var(--safe-bottom))
+    0.65rem max(0.25rem, var(--safe-left))
+    max(0.75rem, calc(var(--safe-bottom) + 0.35rem))
     max(0.25rem, var(--safe-right));
   background: var(--bg-soft);
   border-top: 1px solid var(--border);
