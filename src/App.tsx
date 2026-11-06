@@ -24,10 +24,10 @@ import { Insights } from './components/Insights'
 import { ScanHub } from './components/ScanHub'
 import {
   IconBarChart,
-  IconBottle,
-  IconCamera,
+  IconChatBubble,
+  IconGrapes,
+  IconPlus,
   IconUser,
-  IconUsers,
 } from './components/icons/UiIcons'
 import { FriendsPanel } from './components/FriendsPanel'
 import { NotificationsBell } from './components/NotificationsBell'
@@ -679,7 +679,7 @@ export default function App() {
     setAddWineChooserOpen(true)
   }
 
-  function goToScanTab() {
+  function goToAddTab() {
     setFriendView(null)
     setView('scan')
   }
@@ -1149,15 +1149,15 @@ export default function App() {
             {cellarSegment === 'tried' && cellarTried.length === 0 ? (
               <section className="empty cellar-empty">
                 <p className="cellar-empty-text">No wines in your cellar yet.</p>
-                <button type="button" className="btn ghost" onClick={goToScanTab}>
-                  Add bottles in Scan
+                <button type="button" className="btn ghost" onClick={goToAddTab}>
+                  Add bottles
                 </button>
               </section>
             ) : cellarSegment === 'wishlist' && cellarWishlist.length === 0 ? (
               <section className="empty cellar-empty">
                 <p className="cellar-empty-text">Nothing on your wishlist yet.</p>
-                <button type="button" className="btn ghost" onClick={goToScanTab}>
-                  Add bottles in Scan
+                <button type="button" className="btn ghost" onClick={goToAddTab}>
+                  Add bottles
                 </button>
               </section>
             ) : visible.length === 0 ? (
@@ -1247,19 +1247,7 @@ export default function App() {
             setView('cellar')
           }}
         >
-          <IconBottle className="tab-icon-svg" size={22} />
-        </button>
-        <button
-          type="button"
-          className={`tab tab-icon ${view === 'scan' ? 'active' : ''}`}
-          aria-label="Scan"
-          aria-current={view === 'scan' ? 'page' : undefined}
-          onClick={() => {
-            setFriendView(null)
-            setView('scan')
-          }}
-        >
-          <IconCamera className="tab-icon-svg" size={22} />
+          <IconGrapes className="tab-icon-svg" size={22} />
         </button>
         {cloudUser && (
           <button
@@ -1267,11 +1255,28 @@ export default function App() {
             className={`tab tab-icon ${view === 'friends' ? 'active' : ''}`}
             aria-label="Social"
             aria-current={view === 'friends' ? 'page' : undefined}
-            onClick={() => setView('friends')}
+            onClick={() => {
+              setFriendView(null)
+              setView('friends')
+            }}
           >
-            <IconUsers className="tab-icon-svg" size={22} />
+            <IconChatBubble className="tab-icon-svg" size={22} />
           </button>
         )}
+        <button
+          type="button"
+          className={`tab tab-icon tab-fab ${view === 'scan' ? 'active' : ''}`}
+          aria-label="Add"
+          aria-current={view === 'scan' ? 'page' : undefined}
+          onClick={() => {
+            setFriendView(null)
+            setView('scan')
+          }}
+        >
+          <span className="tab-fab-bubble" aria-hidden="true">
+            <IconPlus className="tab-fab-icon" size={28} />
+          </span>
+        </button>
         <button
           type="button"
           className={`tab tab-icon ${view === 'insights' ? 'active' : ''}`}

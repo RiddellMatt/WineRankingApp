@@ -546,6 +546,48 @@ textarea::placeholder {
   padding: 0.1rem 0.25rem;
 }
 
+.tab-fab {
+  flex: 1.15 1 0;
+  align-self: flex-end;
+  padding-bottom: 0.15rem;
+}
+
+.tab-fab-bubble {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.35rem;
+  height: 3.35rem;
+  margin-top: -1.1rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  box-shadow:
+    0 4px 14px rgba(196, 30, 58, 0.45),
+    0 0 0 3px var(--bg-soft);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.tab-fab:hover .tab-fab-bubble,
+.tab-fab.active .tab-fab-bubble {
+  background: #e02545;
+  transform: scale(1.04);
+}
+
+.tab-fab-icon {
+  stroke: currentColor;
+}
+
+.tab-fab.active {
+  border-top-color: transparent;
+  color: inherit;
+}
+
+.add-wine-chooser-back {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
 .scan-hub-add {
   margin-bottom: 1.75rem;
   padding: 1.1rem 1.15rem;
@@ -4544,6 +4586,17 @@ html.native-app .tab.tab-icon {
 html.native-app .tab-icon-svg {
   width: 1.45rem;
   height: 1.45rem;
+}
+
+html.native-app .tab-fab-bubble {
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-top: -1.25rem;
+}
+
+html.native-app .tab-fab .tab-fab-icon {
+  width: 1.65rem;
+  height: 1.65rem;
 }
 
 html.native-app .auth-screen {

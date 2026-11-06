@@ -156,8 +156,8 @@ export function IconTrash({ className = 'ui-icon', size = defaultSize }: IconPro
   )
 }
 
-/** Tab: cellar / bottle. */
-export function IconBottle({ className = 'ui-icon', size = defaultSize }: IconProps) {
+/** Tab: cellar / grapes. */
+export function IconGrapes({ className = 'ui-icon', size = defaultSize }: IconProps) {
   return (
     <svg
       className={className}
@@ -171,14 +171,16 @@ export function IconBottle({ className = 'ui-icon', size = defaultSize }: IconPr
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M9.5 2h5L15 8.5c1.2.6 2 1.85 2 3.25v8.25a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2V11.75c0-1.4.8-2.65 2-3.25Z" />
-      <path d="M8 8h8" />
+      <path d="M8 22v-4" />
+      <path d="M16 22v-4" />
+      <path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+      <path d="M12 11c-2.5 0-4.5 1.5-5.5 3.5S7 19 12 19s5.5-1.5 5.5-4.5S14.5 11 12 11Z" />
     </svg>
   )
 }
 
-/** Tab: scan / camera. */
-export function IconCamera({ className = 'ui-icon', size = defaultSize }: IconProps) {
+/** Tab: add (center FAB). */
+export function IconPlus({ className = 'ui-icon', size = defaultSize }: IconProps) {
   return (
     <svg
       className={className}
@@ -187,19 +189,18 @@ export function IconCamera({ className = 'ui-icon', size = defaultSize }: IconPr
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.75"
+      strokeWidth="2.5"
       strokeLinecap="round"
-      strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M14.5 4h-5L7 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2Z" />
-      <circle cx="12" cy="13" r="3.25" />
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
     </svg>
   )
 }
 
-/** Tab: friends / social. */
-export function IconUsers({ className = 'ui-icon', size = defaultSize }: IconProps) {
+/** Tab: friends / social chat. */
+export function IconChatBubble({ className = 'ui-icon', size = defaultSize }: IconProps) {
   return (
     <svg
       className={className}
@@ -213,10 +214,7 @@ export function IconUsers({ className = 'ui-icon', size = defaultSize }: IconPro
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z" />
     </svg>
   )
 }
