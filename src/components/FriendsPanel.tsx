@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityFeed } from './ActivityFeed'
 import { Avatar } from './Avatar'
-import { WinePassport } from './WinePassport'
 import {
   applyReactionToggle,
   attachReactionsToEvents,
@@ -38,10 +37,9 @@ interface Props {
   onFriendshipsChanged?: (friendCount: number) => void
   requestedTab?: FriendsTab | null
   onRequestedTabHandled?: () => void
-  completedJourneys?: Set<string>
 }
 
-type FriendsTab = 'feed' | 'passport' | 'manage'
+type FriendsTab = 'feed' | 'manage'
 
 function FriendIdentity({
   friendship,
@@ -89,7 +87,6 @@ export function FriendsPanel({
   onFriendshipsChanged,
   requestedTab = null,
   onRequestedTabHandled,
-  completedJourneys = new Set(),
 }: Props) {
   const [tab, setTab] = useState<FriendsTab>('feed')
   const [friendships, setFriendships] = useState<Friendship[]>([])
@@ -252,13 +249,6 @@ export function FriendsPanel({
         </button>
         <button
           type="button"
-          className={`friends-tab ${tab === 'passport' ? 'active' : ''}`}
-          onClick={() => setTab('passport')}
-        >
-          Passport
-        </button>
-        <button
-          type="button"
           className={`friends-tab ${tab === 'manage' ? 'active' : ''}`}
           onClick={() => setTab('manage')}
         >
@@ -289,19 +279,6 @@ export function FriendsPanel({
             savingWishlistKey={savingWishlistKey}
             onToggleReaction={handleToggleReaction}
             togglingReactionKey={togglingReactionKey}
-          />
-        </section>
-      ) : tab === 'passport' ? (
-        <section className="friends-section">
-          <h2>Wine passport</h2>
-          <p className="friends-hint">
-            Where your wines come from, where you drank them, and how you compare with friends.
-          </p>
-          <WinePassport
-            userId={userId}
-            wines={wines}
-            completedJourneys={completedJourneys}
-            onViewCellar={onViewCellar}
           />
         </section>
       ) : (

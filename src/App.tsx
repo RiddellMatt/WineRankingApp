@@ -165,9 +165,7 @@ export default function App() {
   const [savingFriendWishlistKey, setSavingFriendWishlistKey] = useState<string | null>(null)
   const [friendCount, setFriendCount] = useState(0)
   const [friendCountLoaded, setFriendCountLoaded] = useState(false)
-  const [friendsRequestedTab, setFriendsRequestedTab] = useState<'feed' | 'manage' | 'passport' | null>(
-    null,
-  )
+  const [friendsRequestedTab, setFriendsRequestedTab] = useState<'feed' | 'manage' | null>(null)
   const [badgeToastItems, setBadgeToastItems] = useState<MilestoneToastItem[]>([])
   const [completedJourneys, setCompletedJourneys] = useState<Set<string>>(() =>
     loadCompletedJourneysLocal(),
@@ -922,7 +920,7 @@ export default function App() {
             </div>
           </div>
           <div className="header-actions">
-            {cloudUser && (
+            {cloudUser && view === 'friends' && !friendView && (
               <NotificationsBell
                 enabled
                 onNavigateFriends={(tab) => {
@@ -971,6 +969,9 @@ export default function App() {
             }}
             onSignOut={() => signOut()}
             onSignIn={() => exitOffline()}
+            onViewFriendCellar={(id, name, avatarUrl) => {
+              void viewFriendCellar(id, name, avatarUrl)
+            }}
           />
         ) : view === 'friends' && cloudUser ? (
           friendView ? (
@@ -1001,7 +1002,6 @@ export default function App() {
               onFriendshipsChanged={handleFriendshipsChanged}
               requestedTab={friendsRequestedTab}
               onRequestedTabHandled={() => setFriendsRequestedTab(null)}
-              completedJourneys={completedJourneys}
             />
           )
         ) : view === 'scan' ? (

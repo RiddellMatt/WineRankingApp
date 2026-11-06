@@ -107,13 +107,11 @@ export function notificationMessage(n: AppNotification): string {
   }
 }
 
-export function notificationFriendsTab(n: AppNotification): 'feed' | 'manage' | 'passport' {
+export function notificationFriendsTab(n: AppNotification): 'feed' | 'manage' {
   switch (n.type) {
     case 'friend_request':
     case 'friend_accepted':
       return 'manage'
-    case 'friend_journey_complete':
-      return 'passport'
     default:
       return 'feed'
   }

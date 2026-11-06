@@ -1,0 +1,167 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Avatar } from './Avatar'
+import { BadgeGrid } from './BadgeGrid'
+import { OwnActivityFeed } from './OwnActivityFeed'
+import { WinePassport } from './WinePassport'
+import { ownRecentActivity } from '../lib/activityFeed'
+import {
+  computeDisplayedBadgeProgress,
+  isBadgeTestingEnabled,
+  resetEarnedBadgeProgressForTesting,
+} from '../lib/badgeUnlocks'
+import { fetchFriendships } from '../lib/friendsDb'
+import type { UserProfile } from '../lib/profileDb'
+import type { RankingPreference, Wine } from '../types'
+
+type ProfileTab = 'activity' | 'badges' | 'passport'
+
+interface Props {
+  profile: UserProfile
+  email?: string
+  wines: Wine[]
+  completedJourneys: Set<string>
+  rankingPreference: RankingPreference
+  onEditProfile: () => void
+  onViewFriendCellar: (friendId: string, friendName: string, avatarUrl?: string) => void
+}
+
+export function ProfilePanel({
+  profile,
+  email,
+  wines,
+  completedJourneys,
+  rankingPreference,
+  onEditProfile,
+  onViewFriendCellar,
+}: Props) {
+  const [tab, setTab] = useState<ProfileTab>('activity')
+  const [friendCount, setFriendCount] = useState(0)
+
+  const displayName =
+    profile.displayName?.trim() || profile.email?.split('@')[0] || email?.split('@')[0] || 'Wine lover'
+
+  useEffect(() => {
+    fetchFriendships(profile.id)
+      .then((rows) => setFriendCount(rows.filter((f) => f.status === 'accepted').length))
+      .catch(() => setFriendCount(0))
+  }, [profile.id])
+
+  const badges = useMemo(
+    () => computeDisplayedBadgeProgress({ wines, friendCount, completedJourneys }),
+    [wines, friendCount, completedJourneys],
+  )
+
+  const activity = useMemo(
+    () =>
+      ownRecentActivity(
+        profile.id,
+        displayName,
+        profile.email ?? email ?? '',
+        profile.avatarUrl,
+        wines,
+        40,
+      ),
+    [profile.id, displayName, profile.email, profile.avatarUrl, email, wines],
+  )
+
+  const badgeTestingEnabled = isBadgeTestingEnabled()
+
+  function handleResetBadgeProgress() {
+    if (
+      !window.confirm(
+        'Reset all earned badge tiers? The page will reload and unlock toasts may appear again for tiers you already qualify for.',
+      )
+    ) {
+      return
+    }
+    resetEarnedBadgeProgressForTesting()
+    window.location.reload()
+  }
+
+  return (
+    <div className="profile-panel">
+      <header className="profile-panel-header">
+        <Avatar
+          displayName={displayName}
+          email={profile.email ?? email}
+          avatarUrl={profile.avatarUrl}
+          seed={profile.id}
+          size="md"
+        />
+        <div className="profile-panel-identity">
+          <h2 className="profile-panel-name">{displayName}</h2>
+          {(profile.email ?? email) && (
+            <p className="profile-panel-email">{profile.email ?? email}</p>
+          )}
+        </div>
+        <button type="button" className="btn primary small profile-panel-edit" onClick={onEditProfile}>
+          Edit
+        </button>
+      </header>
+
+      <section className="profile-tabs friends-tabs" aria-label="Profile views">
+        <button
+          type="button"
+          className={`friends-tab ${tab === 'activity' ? 'active' : ''}`}
+          onClick={() => setTab('activity')}
+        >
+          Activity
+        </button>
+        <button
+          type="button"
+          className={`friends-tab ${tab === 'badges' ? 'active' : ''}`}
+          onClick={() => setTab('badges')}
+        >
+          Badges
+        </button>
+        <button
+          type="button"
+          className={`friends-tab ${tab === 'passport' ? 'active' : ''}`}
+          onClick={() => setTab('passport')}
+        >
+          Passport
+        </button>
+      </section>
+
+      {tab === 'activity' && (
+        <section className="profile-tab-panel">
+          <p className="friends-hint">Your recent ratings, saves, and milestones.</p>
+          <OwnActivityFeed
+            events={activity}
+            rankingPreference={rankingPreference}
+            emptyHint="Rate or save wines in Scan — they'll show up here."
+          />
+        </section>
+      )}
+
+      {tab === 'badges' && (
+        <section className="profile-tab-panel">
+          <p className="friends-hint">
+            Earn metallic tiers as you log wines, explore origins, and connect with friends.
+          </p>
+          <BadgeGrid badges={badges} />
+          {badgeTestingEnabled && (
+            <button
+              type="button"
+              className="btn ghost small account-badge-reset"
+              onClick={handleResetBadgeProgress}
+            >
+              Reset badge progress (testing)
+            </button>
+          )}
+        </section>
+      )}
+
+      {tab === 'passport' && (
+        <section className="profile-tab-panel">
+          <WinePassport
+            userId={profile.id}
+            wines={wines}
+            completedJourneys={completedJourneys}
+            onViewCellar={onViewFriendCellar}
+          />
+        </section>
+      )}
+    </div>
+  )
+}
