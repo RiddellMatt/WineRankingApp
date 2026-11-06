@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type RankingPreference, type SortKey, type Wine, type WineType } from './types'
-import { loadWines, saveWines, SAMPLE_WINES } from './storage'
+import { loadWines, saveWines } from './storage'
 import { FREE_WINE_LIMIT, FREE_WISHLIST_LIMIT } from './config'
 import { syncProSubscription } from './lib/checkoutApi'
 import { activatePro, loadProStatus, syncProFromServer } from './pro'
@@ -21,7 +21,14 @@ import { WineCard } from './components/WineCard'
 import { WishlistCard } from './components/WishlistCard'
 import { WineForm } from './components/WineForm'
 import { Insights } from './components/Insights'
-import { MenuScan } from './components/MenuScan'
+import { ScanHub } from './components/ScanHub'
+import {
+  IconBarChart,
+  IconBottle,
+  IconCamera,
+  IconUser,
+  IconUsers,
+} from './components/icons/UiIcons'
 import { FriendsPanel } from './components/FriendsPanel'
 import { NotificationsBell } from './components/NotificationsBell'
 import { FriendCellarView } from './components/FriendCellarView'
@@ -94,7 +101,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'addedAt', label: 'Recently added' },
 ]
 
-type View = 'cellar' | 'sommelier' | 'insights' | 'friends' | 'account'
+type View = 'cellar' | 'scan' | 'insights' | 'friends' | 'account'
 type CellarSegment = 'tried' | 'wishlist'
 
 function sortWines(list: Wine[], sortKey: SortKey, rankingPreference: RankingPreference): Wine[] {
@@ -674,6 +681,11 @@ export default function App() {
     setAddWineChooserOpen(true)
   }
 
+  function goToScanTab() {
+    setFriendView(null)
+    setView('scan')
+  }
+
   function startAddWine(destination: AddWineDestination, openScan: boolean) {
     if (destination === 'tried' && atFreeLimit) {
       setAddWineChooserOpen(false)
@@ -920,11 +932,6 @@ export default function App() {
                 }}
               />
             )}
-            {!friendView && view === 'cellar' && (
-              <button type="button" className="btn primary" onClick={openAddWineChooser}>
-                + Add wine
-              </button>
-            )}
           </div>
         </div>
       </header>
@@ -997,8 +1004,8 @@ export default function App() {
               completedJourneys={completedJourneys}
             />
           )
-        ) : view === 'sommelier' ? (
-          <MenuScan
+        ) : view === 'scan' ? (
+          <ScanHub
             wines={cellarTried}
             wishlist={cellarWishlist}
             rankingPreference={rankingPreference}
@@ -1007,6 +1014,7 @@ export default function App() {
             cloudConfigured={configured}
             onUpgrade={() => goToAccount(true)}
             onSaveWishlist={handleSaveWishlistFromMenu}
+            onAddWine={openAddWineChooser}
           />
         ) : view === 'insights' ? (
           pro ? (
@@ -1139,59 +1147,18 @@ export default function App() {
             )}
 
             {cellarSegment === 'tried' && cellarTried.length === 0 ? (
-              <section className="empty">
-                <span className="empty-icon" aria-hidden="true">
-                  🍇
-                </span>
-                <h2>Your cellar is empty</h2>
-                <p>Add the wines you&apos;ve tried and rate them to build your personal ranking.</p>
-                <div className="empty-actions">
-                  <button type="button" className="btn primary" onClick={openAddWineChooser}>
-                    Add your first wine
-                  </button>
-                  <button
-                    className="btn ghost"
-                    onClick={async () => {
-                      setWines(SAMPLE_WINES)
-                      winesRef.current = SAMPLE_WINES
-                      if (cloudUser) {
-                        try {
-                          const synced = await bulkUpsertWines(cloudUser.id, SAMPLE_WINES)
-                          setWines(synced)
-                          winesRef.current = synced
-                        } catch (e) {
-                          window.alert(`Loaded samples but cloud sync failed: ${(e as Error).message}`)
-                        }
-                      }
-                    }}
-                  >
-                    Load sample wines
-                  </button>
-                </div>
+              <section className="empty cellar-empty">
+                <p className="cellar-empty-text">No wines in your cellar yet.</p>
+                <button type="button" className="btn ghost" onClick={goToScanTab}>
+                  Add bottles in Scan
+                </button>
               </section>
             ) : cellarSegment === 'wishlist' && cellarWishlist.length === 0 ? (
-              <section className="empty">
-                <span className="empty-icon" aria-hidden="true">
-                  ♡
-                </span>
-                <h2>Nothing on your radar yet</h2>
-                <p>
-                  Save wines from the menu sommelier (Pro) or add bottles you want to try later.
-                </p>
-                <div className="empty-actions">
-                  <button type="button" className="btn primary" onClick={openAddWineChooser}>
-                    Add wine
-                  </button>
-                  <button
-                    className="btn ghost"
-                    onClick={() => {
-                      setFriendView(null)
-                      setView('sommelier')
-                    }}
-                  >
-                    Scan a menu
-                  </button>
-                </div>
+              <section className="empty cellar-empty">
+                <p className="cellar-empty-text">Nothing on your wishlist yet.</p>
+                <button type="button" className="btn ghost" onClick={goToScanTab}>
+                  Add bottles in Scan
+                </button>
               </section>
             ) : visible.length === 0 ? (
               <section className="empty">
@@ -1271,55 +1238,65 @@ export default function App() {
 
       <nav className="tabs" aria-label="Main">
         <button
-          className={`tab ${view === 'cellar' ? 'active' : ''}`}
+          type="button"
+          className={`tab tab-icon ${view === 'cellar' ? 'active' : ''}`}
+          aria-label="Cellar"
+          aria-current={view === 'cellar' ? 'page' : undefined}
           onClick={() => {
             setFriendView(null)
             setView('cellar')
           }}
         >
-          <span className="tab-text-long">My cellar</span>
-          <span className="tab-text-short">Cellar</span>
+          <IconBottle className="tab-icon-svg" size={22} />
         </button>
         <button
-          className={`tab ${view === 'sommelier' ? 'active' : ''}`}
+          type="button"
+          className={`tab tab-icon ${view === 'scan' ? 'active' : ''}`}
+          aria-label="Scan"
+          aria-current={view === 'scan' ? 'page' : undefined}
           onClick={() => {
             setFriendView(null)
-            setView('sommelier')
+            setView('scan')
           }}
         >
-          <span className="tab-text-long">Sommelier</span>
-          <span className="tab-text-short">Scan</span>
+          <IconCamera className="tab-icon-svg" size={22} />
         </button>
         {cloudUser && (
           <button
-            className={`tab ${view === 'friends' ? 'active' : ''}`}
+            type="button"
+            className={`tab tab-icon ${view === 'friends' ? 'active' : ''}`}
+            aria-label="Social"
+            aria-current={view === 'friends' ? 'page' : undefined}
             onClick={() => setView('friends')}
           >
-            <span className="tab-text-long">Friends</span>
-            <span className="tab-text-short">Social</span>
+            <IconUsers className="tab-icon-svg" size={22} />
           </button>
         )}
         <button
-          className={`tab ${view === 'insights' ? 'active' : ''}`}
+          type="button"
+          className={`tab tab-icon ${view === 'insights' ? 'active' : ''}`}
+          aria-label="Stats"
+          aria-current={view === 'insights' ? 'page' : undefined}
           onClick={() => {
             setFriendView(null)
             setView('insights')
           }}
         >
-          <span className="tab-text-long">Insights</span>
-          <span className="tab-text-short">Stats</span>
-          {!pro && <span className="pro-badge">PRO</span>}
+          <IconBarChart className="tab-icon-svg" size={22} />
+          {!pro && <span className="pro-badge tab-pro-badge">PRO</span>}
         </button>
         <button
-          className={`tab ${view === 'account' ? 'active' : ''}`}
+          type="button"
+          className={`tab tab-icon ${view === 'account' ? 'active' : ''}`}
+          aria-label="Profile"
+          aria-current={view === 'account' ? 'page' : undefined}
           onClick={() => {
             setFriendView(null)
             setProfileMode('preview')
             setView('account')
           }}
         >
-          <span className="tab-text-long">Account</span>
-          <span className="tab-text-short">Profile</span>
+          <IconUser className="tab-icon-svg" size={22} />
         </button>
       </nav>
 
