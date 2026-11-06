@@ -2158,6 +2158,85 @@ button.tasting-tag-pill-btn.active {
   font-size: 1.4rem;
 }
 
+.modal-header-titles {
+  min-width: 0;
+}
+
+.modal-destination-hint {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+}
+
+.add-wine-chooser-lead {
+  margin: -0.35rem 0 1rem;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+}
+
+.add-wine-chooser-section {
+  margin-bottom: 1.15rem;
+}
+
+.add-wine-chooser-section-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  margin-bottom: 0.45rem;
+}
+
+.add-wine-chooser-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.add-wine-chooser-list-scan {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.add-wine-chooser-card {
+  text-align: left;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.add-wine-chooser-card:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.add-wine-chooser-card:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.add-wine-chooser-card-title {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.add-wine-chooser-card-desc {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.add-wine-chooser-scan {
+  flex: 1 1 calc(50% - 0.35rem);
+  min-width: 8rem;
+}
+
 .form-rating {
   background: var(--bg-soft);
   border: 1px solid var(--border);

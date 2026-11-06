@@ -25,6 +25,8 @@ interface Props {
   signedIn?: boolean
   cloudConfigured?: boolean
   onUpgrade?: () => void
+  /** Open the label scan file picker once when adding a new wine. */
+  autoOpenScan?: boolean
 }
 
 export function WineForm({
@@ -39,6 +41,7 @@ export function WineForm({
   signedIn = false,
   cloudConfigured = false,
   onUpgrade,
+  autoOpenScan = false,
 }: Props) {
   const wishlistForm = formMode === 'wishlist'
   const promoteFromWishlist = initial?.status === 'wishlist' && !wishlistForm
@@ -72,6 +75,12 @@ export function WineForm({
   const scanInputRef = useRef<HTMLInputElement>(null)
   const aiAvailable = pro && signedIn && cloudConfigured
   const triedCellar = useMemo(() => triedWines(cellarWines), [cellarWines])
+
+  useEffect(() => {
+    if (!autoOpenScan || initial) return
+    const t = window.setTimeout(() => scanInputRef.current?.click(), 120)
+    return () => window.clearTimeout(t)
+  }, [autoOpenScan, initial])
   const parsedPrice = price ? Number(price) : null
 
   const previewRank = useMemo(
@@ -254,29 +263,36 @@ export function WineForm({
 
   const modalTitle = promoteFromWishlist
     ? 'Mark as tried'
-    : wishlistForm
-      ? initial
+    : initial
+      ? wishlistForm
         ? 'Edit wishlist item'
-        : 'Add to wishlist'
-      : initial
-        ? 'Edit wine'
-        : 'Add a wine'
+        : 'Edit wine'
+      : 'Add wine'
+
+  const destinationHint = !initial
+    ? wishlistForm
+      ? 'To your wishlist'
+      : 'To your cellar'
+    : null
 
   const submitLabel = promoteFromWishlist
     ? 'Save to cellar'
-    : wishlistForm
-      ? initial
-        ? 'Save changes'
-        : 'Add to wishlist'
-      : initial
-        ? 'Save changes'
-        : 'Add wine'
+    : initial
+      ? 'Save changes'
+      : wishlistForm
+        ? 'Add to wishlist'
+        : 'Add to cellar'
 
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <form className="modal" onSubmit={handleSubmit}>
         <div className="modal-header">
-          <h2>{modalTitle}</h2>
+          <div className="modal-header-titles">
+            <h2>{modalTitle}</h2>
+            {destinationHint && (
+              <p className="modal-destination-hint">{destinationHint}</p>
+            )}
+          </div>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
             ✕
           </button>
@@ -295,12 +311,8 @@ export function WineForm({
                   ? 'AI is reading your label…'
                   : `Reading label… ${scanPct}%`
                 : aiAvailable
-                  ? wishlistForm
-                    ? '📷 Scan label (AI)'
-                    : '📷 Scan wine label (AI)'
-                  : wishlistForm
-                    ? '📷 Scan label'
-                    : '📷 Scan wine label'}
+                  ? '📷 Scan label (AI)'
+                  : '📷 Scan label'}
             </button>
             <input
               ref={scanInputRef}

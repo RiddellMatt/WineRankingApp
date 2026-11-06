@@ -9,6 +9,7 @@ import { ACCOUNT_EVENT, CHECKOUT_SUCCESS_EVENT } from './lib/mobileDeepLinks'
 import { hideNativeSplashOnce } from './lib/nativeSplash'
 import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
+import { AddWineChooser, type AddWineDestination } from './components/AddWineChooser'
 import { AuthScreen } from './components/AuthScreen'
 import {
   CellarFilterBar,
@@ -147,6 +148,8 @@ export default function App() {
   const [cellarSegment, setCellarSegment] = useState<CellarSegment>('tried')
   const [formMode, setFormMode] = useState<'tried' | 'wishlist'>('tried')
   const [formOpen, setFormOpen] = useState(false)
+  const [addWineChooserOpen, setAddWineChooserOpen] = useState(false)
+  const [autoOpenScan, setAutoOpenScan] = useState(false)
   const [editing, setEditing] = useState<Wine | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileLoaded, setProfileLoaded] = useState(false)
@@ -667,23 +670,25 @@ export default function App() {
   const atFreeLimit = !pro && triedCount(wines) >= FREE_WINE_LIMIT
   const atWishlistLimit = !pro && wishlistCount(wines) >= FREE_WISHLIST_LIMIT
 
-  function openAddForm() {
-    if (atFreeLimit) {
-      goToAccount(true)
-      return
-    }
-    setFormMode('tried')
-    setEditing(null)
-    setFormOpen(true)
+  function openAddWineChooser() {
+    setAddWineChooserOpen(true)
   }
 
-  function openAddWishlistForm() {
-    if (atWishlistLimit) {
+  function startAddWine(destination: AddWineDestination, openScan: boolean) {
+    if (destination === 'tried' && atFreeLimit) {
+      setAddWineChooserOpen(false)
       goToAccount(true)
       return
     }
-    setFormMode('wishlist')
+    if (destination === 'wishlist' && atWishlistLimit) {
+      setAddWineChooserOpen(false)
+      goToAccount(true)
+      return
+    }
+    setAddWineChooserOpen(false)
+    setFormMode(destination)
     setEditing(null)
+    setAutoOpenScan(openScan)
     setFormOpen(true)
   }
 
@@ -915,16 +920,10 @@ export default function App() {
                 }}
               />
             )}
-            {!friendView && view === 'cellar' && cellarSegment === 'wishlist' ? (
-              <button className="btn primary" onClick={openAddWishlistForm}>
-                + Add to wishlist
+            {!friendView && view === 'cellar' && (
+              <button type="button" className="btn primary" onClick={openAddWineChooser}>
+                + Add wine
               </button>
-            ) : (
-              !friendView && (
-                <button className="btn primary" onClick={openAddForm}>
-                  + Add wine
-                </button>
-              )
             )}
           </div>
         </div>
@@ -1147,7 +1146,7 @@ export default function App() {
                 <h2>Your cellar is empty</h2>
                 <p>Add the wines you&apos;ve tried and rate them to build your personal ranking.</p>
                 <div className="empty-actions">
-                  <button className="btn primary" onClick={openAddForm}>
+                  <button type="button" className="btn primary" onClick={openAddWineChooser}>
                     Add your first wine
                   </button>
                   <button
@@ -1180,8 +1179,8 @@ export default function App() {
                   Save wines from the menu sommelier (Pro) or add bottles you want to try later.
                 </p>
                 <div className="empty-actions">
-                  <button className="btn primary" onClick={openAddWishlistForm}>
-                    Add to wishlist
+                  <button type="button" className="btn primary" onClick={openAddWineChooser}>
+                    Add wine
                   </button>
                   <button
                     className="btn ghost"
@@ -1324,16 +1323,27 @@ export default function App() {
         </button>
       </nav>
 
+      {addWineChooserOpen && (
+        <AddWineChooser
+          cellarLimitReached={atFreeLimit}
+          wishlistLimitReached={atWishlistLimit}
+          onClose={() => setAddWineChooserOpen(false)}
+          onChoose={startAddWine}
+        />
+      )}
+
       {formOpen && (
         <WineForm
           initial={editing}
           formMode={formMode}
+          autoOpenScan={autoOpenScan}
           cellarWines={wines}
           completedJourneys={completedJourneys}
           onSave={handleSave}
           onClose={() => {
             setFormOpen(false)
             setEditing(null)
+            setAutoOpenScan(false)
           }}
           rankingPreference={rankingPreference}
           pro={pro}
