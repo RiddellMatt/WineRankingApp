@@ -57,7 +57,6 @@ export function WineForm({
     initial?.ratingEnjoyment ?? initial?.rating ?? 0,
   )
   const [ratingValue, setRatingValue] = useState(initial?.ratingValue ?? 0)
-  const [ratingBuyAgain, setRatingBuyAgain] = useState(initial?.ratingBuyAgain ?? 0)
   const [taste, setTaste] = useState<TasteProfile>(initial?.taste ?? {})
   // Wines whose taste was customized keep it; otherwise the reference
   // profile tracks the varietal/type as the user types.
@@ -242,7 +241,7 @@ export function WineForm({
         price: parsedPrice,
         ratingEnjoyment: wishlistForm ? 0 : ratingEnjoyment,
         ratingValue: !wishlistForm && ratingValue > 0 ? ratingValue : null,
-        ratingBuyAgain: !wishlistForm && ratingBuyAgain > 0 ? ratingBuyAgain : null,
+        ratingBuyAgain: !wishlistForm ? (initial?.ratingBuyAgain ?? null) : null,
         rating: 0,
         notes: notes.trim(),
         tastingTags: wishlistForm
@@ -347,30 +346,6 @@ export function WineForm({
               Worth it for what you paid? Optional — you can add price later.
             </p>
             <StarInput value={ratingValue} onChange={setRatingValue} />
-          </div>
-          <div className="form-rating">
-            <label>Buy again?</label>
-            <p className="form-rating-hint">Optional — does not change your rank.</p>
-            <div className="buy-again-options">
-              {[
-                { label: 'Yes', value: 5 },
-                { label: 'Maybe', value: 3 },
-                { label: 'Pass', value: 1 },
-              ].map((option) => (
-                <button
-                  key={option.label}
-                  type="button"
-                  className={`buy-again-btn ${ratingBuyAgain === option.value ? 'active' : ''}`}
-                  onClick={() =>
-                    setRatingBuyAgain((current) =>
-                      current === option.value ? 0 : option.value,
-                    )
-                  }
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
           </div>
           {ratingEnjoyment > 0 && (
             <p className="rank-preview">

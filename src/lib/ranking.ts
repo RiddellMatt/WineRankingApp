@@ -131,9 +131,11 @@ export function normalizeWine(raw: Partial<Wine>): Wine {
   return applyCompositeRating(wine, pref)
 }
 
-export function buyAgainLabel(score: number | null | undefined): string | null {
-  if (score == null || score <= 0) return null
-  if (score >= 4.5) return 'Buy again'
-  if (score >= 2.5) return 'Maybe'
-  return 'Pass'
+/** Favorites reuse `ratingBuyAgain` (5 = favorited). */
+export function isWineFavorite(wine: { ratingBuyAgain?: number | null }): boolean {
+  return (wine.ratingBuyAgain ?? 0) >= 4.5
+}
+
+export function favoriteRatingValue(favorited: boolean): number | null {
+  return favorited ? 5 : null
 }
