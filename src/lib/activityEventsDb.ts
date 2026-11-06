@@ -87,3 +87,10 @@ export async function fetchFriendMilestoneEvents(
 
   return (data ?? []) as ActivityEventRow[]
 }
+
+export async function fetchUserMilestoneEvents(
+  userId: string,
+  limit = 30,
+): Promise<ActivityEventRow[]> {
+  return fetchFriendMilestoneEvents([userId], limit)
+}

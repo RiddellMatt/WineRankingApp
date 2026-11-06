@@ -9,6 +9,8 @@ import { hasTaste, lookupTaste } from '../tasteData'
 import { WINE_TYPES, type RankingPreference, type TasteProfile, type Wine, type WineType } from '../types'
 import { catalogTags } from '../lib/tastingTags'
 import { triedWines } from '../lib/wishlist'
+import { isNativeApp } from '../lib/platform'
+import { Keyboard } from '@capacitor/keyboard'
 import { StarInput } from './StarRating'
 import { TasteInput } from './TasteProfile'
 import { TastingTagsInput } from './TastingTagsInput'
@@ -80,6 +82,46 @@ export function WineForm({
     const t = window.setTimeout(() => scanInputRef.current?.click(), 120)
     return () => window.clearTimeout(t)
   }, [autoOpenScan, initial])
+
+  useEffect(() => {
+    const root = document.documentElement
+    const clearInset = () => root.style.setProperty('--keyboard-inset', '0px')
+
+    if (isNativeApp()) {
+      void Keyboard.setScroll({ isDisabled: false })
+      const handles: Array<{ remove: () => void }> = []
+      void Keyboard.addListener('keyboardWillShow', (info) => {
+        root.style.setProperty('--keyboard-inset', `${info.keyboardHeight}px`)
+      }).then((h) => handles.push(h))
+      void Keyboard.addListener('keyboardWillHide', clearInset).then((h) => handles.push(h))
+      return () => {
+        handles.forEach((h) => h.remove())
+        clearInset()
+      }
+    }
+
+    const viewport = window.visualViewport
+    if (!viewport) return undefined
+
+    const syncInset = () => {
+      const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+      root.style.setProperty('--keyboard-inset', `${inset}px`)
+    }
+    syncInset()
+    viewport.addEventListener('resize', syncInset)
+    viewport.addEventListener('scroll', syncInset)
+    return () => {
+      viewport.removeEventListener('resize', syncInset)
+      viewport.removeEventListener('scroll', syncInset)
+      clearInset()
+    }
+  }, [])
+
+  function focusField(el: HTMLElement) {
+    window.setTimeout(() => {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }, 320)
+  }
   const parsedPrice = price ? Number(price) : null
 
   const previewRank = useMemo(
@@ -283,7 +325,10 @@ export function WineForm({
         : 'Add to cellar'
 
   return (
-    <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal-backdrop wine-form-backdrop"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <form className="modal wine-form-modal" onSubmit={handleSubmit}>
         <div className="modal-header">
           <div className="modal-header-titles">
@@ -297,7 +342,19 @@ export function WineForm({
           </button>
         </div>
 
-        <div className="wine-form-body">
+        <div
+          className="wine-form-body"
+          onFocusCapture={(e) => {
+            const target = e.target
+            if (
+              target instanceof HTMLInputElement ||
+              target instanceof HTMLTextAreaElement ||
+              target instanceof HTMLSelectElement
+            ) {
+              focusField(target)
+            }
+          }}
+        >
         {!initial && (
           <div className="scan-box">
             <button

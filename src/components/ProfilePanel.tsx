@@ -3,7 +3,9 @@ import { Avatar } from './Avatar'
 import { BadgeGrid } from './BadgeGrid'
 import { OwnActivityFeed } from './OwnActivityFeed'
 import { WinePassport } from './WinePassport'
-import { ownRecentActivity } from '../lib/activityFeed'
+import { mergeOwnActivity } from '../lib/activityFeed'
+import { fetchUserMilestoneEvents, type ActivityEventRow } from '../lib/activityEventsDb'
+import { isSupabaseConfigured } from '../lib/supabase'
 import {
   computeDisplayedBadgeProgress,
   isBadgeTestingEnabled,
@@ -36,6 +38,7 @@ export function ProfilePanel({
 }: Props) {
   const [tab, setTab] = useState<ProfileTab>('activity')
   const [friendCount, setFriendCount] = useState(0)
+  const [milestoneRows, setMilestoneRows] = useState<ActivityEventRow[]>([])
 
   const displayName =
     profile.displayName?.trim() || profile.email?.split('@')[0] || email?.split('@')[0] || 'Wine lover'
@@ -46,6 +49,16 @@ export function ProfilePanel({
       .catch(() => setFriendCount(0))
   }, [profile.id])
 
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setMilestoneRows([])
+      return
+    }
+    fetchUserMilestoneEvents(profile.id, 40)
+      .then(setMilestoneRows)
+      .catch(() => setMilestoneRows([]))
+  }, [profile.id])
+
   const badges = useMemo(
     () => computeDisplayedBadgeProgress({ wines, friendCount, completedJourneys }),
     [wines, friendCount, completedJourneys],
@@ -53,15 +66,16 @@ export function ProfilePanel({
 
   const activity = useMemo(
     () =>
-      ownRecentActivity(
+      mergeOwnActivity(
         profile.id,
         displayName,
         profile.email ?? email ?? '',
         profile.avatarUrl,
         wines,
+        milestoneRows,
         40,
       ),
-    [profile.id, displayName, profile.email, profile.avatarUrl, email, wines],
+    [profile.id, displayName, profile.email, profile.avatarUrl, email, wines, milestoneRows],
   )
 
   const badgeTestingEnabled = isBadgeTestingEnabled()
