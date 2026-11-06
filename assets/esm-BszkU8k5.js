@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/web-Dkhu_j0Z.js","assets/index-CuJiFxax.js","assets/rolldown-runtime-C0FnF6B9.js","assets/index-ENShvMoS.css"])))=>i.map(i=>d[i]);
+import{i as e,s as t}from"./index-CuJiFxax.js";var n=t(`Media`,{web:()=>e(()=>import(`./web-Dkhu_j0Z.js`).then(e=>new e.MediaWeb),__vite__mapDeps([0,1,2,3]))});export{n as Media};
