@@ -285,7 +285,7 @@ export function WineForm({
 
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <form className="modal" onSubmit={handleSubmit}>
+      <form className="modal wine-form-modal" onSubmit={handleSubmit}>
         <div className="modal-header">
           <div className="modal-header-titles">
             <h2>{modalTitle}</h2>
@@ -298,6 +298,7 @@ export function WineForm({
           </button>
         </div>
 
+        <div className="wine-form-body">
         {!initial && (
           <div className="scan-box">
             <button
@@ -540,6 +541,7 @@ export function WineForm({
         </div>
 
         {error && <p className="form-error">{error}</p>}
+        </div>
 
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>
