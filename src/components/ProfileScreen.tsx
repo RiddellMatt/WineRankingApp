@@ -1,5 +1,5 @@
 import { AccountPanel } from './AccountPanel'
-import { ProfilePublicPreview } from './ProfilePublicPreview'
+import { ProfilePanel } from './ProfilePanel'
 import type { Wine } from '../types'
 import type { ComponentProps } from 'react'
 
@@ -11,18 +11,30 @@ interface Props extends AccountPanelProps {
   mode: ProfileScreenMode
   onModeChange: (mode: ProfileScreenMode) => void
   wines: Wine[]
+  completedJourneys?: Set<string>
+  onViewFriendCellar: (friendId: string, friendName: string, avatarUrl?: string) => void
 }
 
-export function ProfileScreen({ mode, onModeChange, profile, signedIn, wines, ...accountProps }: Props) {
-  const showPreview = signedIn && profile && mode === 'preview'
-
-  if (showPreview) {
+export function ProfileScreen({
+  mode,
+  onModeChange,
+  profile,
+  signedIn,
+  wines,
+  completedJourneys = new Set(),
+  onViewFriendCellar,
+  ...accountProps
+}: Props) {
+  if (signedIn && profile && mode === 'preview') {
     return (
-      <ProfilePublicPreview
+      <ProfilePanel
         profile={profile}
+        email={accountProps.email}
         wines={wines}
+        completedJourneys={completedJourneys}
         rankingPreference={accountProps.rankingPreference}
         onEditProfile={() => onModeChange('edit')}
+        onViewFriendCellar={onViewFriendCellar}
       />
     )
   }
@@ -31,7 +43,6 @@ export function ProfileScreen({ mode, onModeChange, profile, signedIn, wines, ..
     <AccountPanel
       profile={profile}
       signedIn={signedIn}
-      wines={wines}
       {...accountProps}
       onBackToProfile={signedIn && profile ? () => onModeChange('preview') : undefined}
     />

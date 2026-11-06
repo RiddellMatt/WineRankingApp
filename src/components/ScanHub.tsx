@@ -29,7 +29,7 @@ export function ScanHub({
       <section className="scan-hub-add" aria-labelledby="scan-hub-add-title">
         <h2 id="scan-hub-add-title">Add a bottle</h2>
         <p className="scan-hub-add-lead">
-          Scan a wine label or enter details manually — add to your cellar or wishlist.
+          Choose cellar or wishlist, then enter details or scan a label.
         </p>
         <button type="button" className="btn primary scan-hub-add-btn" onClick={onAddWine}>
           Add wine

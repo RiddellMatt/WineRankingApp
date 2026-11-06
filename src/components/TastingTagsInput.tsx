@@ -55,9 +55,7 @@ export function TastingTagsInput({
     <div className="tasting-tags-field">
       <div className="tasting-tags-header">
         <span className="tasting-tags-label">Tasting tags</span>
-        <span className="tasting-tags-hint">
-          Flavor notes only — use the sliders below for body, tannin, sweetness, and acidity.
-        </span>
+        <span className="tasting-tags-hint">Flavor notes only.</span>
       </div>
       <div className="tasting-tags-chips" role="group" aria-label="Tasting tags">
         {orderedCatalog.map((tag) => (

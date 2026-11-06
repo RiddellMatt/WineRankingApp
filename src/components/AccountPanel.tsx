@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FREE_WINE_LIMIT, PRO_CONFIG } from '../config'
 import { activatePro } from '../pro'
 import { createBillingPortal, createProCheckout } from '../lib/checkoutApi'
@@ -13,17 +13,10 @@ import { friendlyRevenueCatError } from '../lib/revenueCatErrors'
 import { openExternalUrl } from '../lib/openUrl'
 import { redeemProOnServer } from '../lib/proApi'
 import { RANKING_PREFERENCE_OPTIONS } from '../lib/ranking'
-import {
-  computeDisplayedBadgeProgress,
-  isBadgeTestingEnabled,
-  resetEarnedBadgeProgressForTesting,
-} from '../lib/badgeUnlocks'
-import { fetchFriendships } from '../lib/friendsDb'
 import { updateDisplayName, uploadAvatar, removeAvatar, type UserProfile } from '../lib/profileDb'
-import type { RankingPreference, Wine } from '../types'
+import type { RankingPreference } from '../types'
 import { APP_NAME_PRO } from '../brand'
 import { Avatar } from './Avatar'
-import { BadgeGrid } from './BadgeGrid'
 import { AppIconPicker } from './AppIconPicker'
 import { ThemePicker } from './ThemePicker'
 
@@ -42,8 +35,6 @@ interface Props {
   cloudConfigured: boolean
   pro: boolean
   wineCount: number
-  wines: Wine[]
-  completedJourneys?: Set<string>
   rankingPreference: RankingPreference
   highlightSubscription?: boolean
   onProfileSaved: (profile: UserProfile) => void
@@ -64,8 +55,6 @@ export function AccountPanel({
   cloudConfigured,
   pro,
   wineCount,
-  wines,
-  completedJourneys = new Set(),
   rankingPreference,
   highlightSubscription = false,
   onProfileSaved,
@@ -101,8 +90,6 @@ export function AccountPanel({
     return `Subscribe — ${PRO_CONFIG.priceLabel}`
   }
   const [rankingBusy, setRankingBusy] = useState(false)
-  const [friendCount, setFriendCount] = useState(0)
-
   const resolvedEmail = profile?.email || email || ''
   const resolvedName =
     profile?.displayName || email?.split('@')[0] || 'Wine lover'
@@ -136,35 +123,6 @@ export function AccountPanel({
     if (!highlightSubscription || !subscriptionRef.current) return
     subscriptionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [highlightSubscription])
-
-  useEffect(() => {
-    if (!signedIn || !profile?.id || offlineMode) {
-      setFriendCount(0)
-      return
-    }
-    fetchFriendships(profile.id)
-      .then((rows) => setFriendCount(rows.filter((f) => f.status === 'accepted').length))
-      .catch(() => setFriendCount(0))
-  }, [signedIn, profile?.id, offlineMode])
-
-  const badges = useMemo(
-    () => computeDisplayedBadgeProgress({ wines, friendCount, completedJourneys }),
-    [wines, friendCount, completedJourneys],
-  )
-
-  const badgeTestingEnabled = isBadgeTestingEnabled()
-
-  function handleResetBadgeProgress() {
-    if (
-      !window.confirm(
-        'Reset all earned badge tiers? The page will reload and the next time you add or edit a wine, unlock toasts should appear again for tiers your cellar already qualifies for.',
-      )
-    ) {
-      return
-    }
-    resetEarnedBadgeProgressForTesting()
-    window.location.reload()
-  }
 
   async function handleSaveProfile(e: FormEvent) {
     e.preventDefault()
@@ -403,23 +361,6 @@ export function AccountPanel({
           <p className="account-hint">Used for sign-in and finding friends.</p>
         </section>
       )}
-
-      <section className="account-section">
-        <h3>Badges</h3>
-        <p className="account-hint">
-          Earn metallic tiers as you log wines, explore origins, and connect with friends.
-        </p>
-        <BadgeGrid badges={badges} />
-        {badgeTestingEnabled && (
-          <button
-            type="button"
-            className="btn ghost small account-badge-reset"
-            onClick={handleResetBadgeProgress}
-          >
-            Reset badge progress (testing)
-          </button>
-        )}
-      </section>
 
       <section className="account-section">
         <h3>Appearance</h3>
