@@ -156,7 +156,7 @@ export function IconTrash({ className = 'ui-icon', size = defaultSize }: IconPro
   )
 }
 
-/** Tab: cellar / grapes. */
+/** Tab: cellar / grape bunch. */
 export function IconGrapes({ className = 'ui-icon', size = defaultSize }: IconProps) {
   return (
     <svg
@@ -171,10 +171,14 @@ export function IconGrapes({ className = 'ui-icon', size = defaultSize }: IconPr
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M8 22v-4" />
-      <path d="M16 22v-4" />
-      <path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-      <path d="M12 11c-2.5 0-4.5 1.5-5.5 3.5S7 19 12 19s5.5-1.5 5.5-4.5S14.5 11 12 11Z" />
+      <path d="M12 13v7" />
+      <path d="M8 20h8" />
+      <circle cx="8.5" cy="11" r="2.25" />
+      <circle cx="12" cy="8.5" r="2.25" />
+      <circle cx="15.5" cy="11" r="2.25" />
+      <circle cx="10" cy="14.5" r="2.25" />
+      <circle cx="14" cy="14.5" r="2.25" />
+      <path d="M12 13c-1.2-1.8-1.2-3.8 0-5.5" />
     </svg>
   )
 }
@@ -262,14 +266,18 @@ export function IconUser({ className = 'ui-icon', size = defaultSize }: IconProp
   )
 }
 
-export function IconHeart({ className = 'ui-icon', size = 16 }: IconProps) {
+export function IconHeart({
+  className = 'ui-icon',
+  size = 16,
+  filled = false,
+}: IconProps & { filled?: boolean }) {
   return (
     <svg
       className={className}
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
+      fill={filled ? 'currentColor' : 'none'}
       stroke="currentColor"
       strokeWidth="1.75"
       strokeLinecap="round"

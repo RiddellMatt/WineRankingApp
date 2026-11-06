@@ -73,6 +73,8 @@ import {
   applyCompositeRating,
   compareByRank,
   compositeScore,
+  favoriteRatingValue,
+  isWineFavorite,
   needsRankingPreferenceSetup,
   normalizeWine,
   resolveRankingPreference,
@@ -758,6 +760,14 @@ export default function App() {
     }
   }
 
+  async function handleToggleFavorite(wine: Wine) {
+    const next = {
+      ...wine,
+      ratingBuyAgain: favoriteRatingValue(!isWineFavorite(wine)),
+    }
+    await persistWine(applyCompositeRating(next, rankingPreference))
+  }
+
   async function handleSave(wine: Wine) {
     const savingWishlist = wine.status === 'wishlist'
     const exists = wines.some((w) => w.id === wine.id)
@@ -1227,6 +1237,7 @@ export default function App() {
                       setEditing(wine)
                       setFormOpen(true)
                     }}
+                    onToggleFavorite={() => void handleToggleFavorite(wine)}
                     onDelete={() => handleDelete(wine)}
                   />
                 ))}

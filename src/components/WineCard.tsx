@@ -1,6 +1,6 @@
 import type { RankingPreference, Wine } from '../types'
 import { shopUrl } from '../config'
-import { buyAgainLabel, compositeScore } from '../lib/ranking'
+import { compositeScore, isWineFavorite } from '../lib/ranking'
 import { getPairings } from '../pairings'
 import { hasTaste, lookupTaste } from '../tasteData'
 import { StarDisplay } from './StarRating'
@@ -15,6 +15,7 @@ interface Props {
   rankingPreference: RankingPreference
   onEdit: () => void
   onDelete: () => void
+  onToggleFavorite?: () => void
   readOnly?: boolean
   onSaveToWishlist?: () => void
   wishlistSaved?: boolean
@@ -40,6 +41,7 @@ export function WineCard({
   rankingPreference,
   onEdit,
   onDelete,
+  onToggleFavorite,
   readOnly = false,
   onSaveToWishlist,
   wishlistSaved = false,
@@ -51,7 +53,7 @@ export function WineCard({
   const medal = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : ''
   const meta = [wine.varietal, wine.region].filter(Boolean).join(' · ')
   const score = compositeScore(wine, rankingPreference)
-  const buyAgain = buyAgainLabel(wine.ratingBuyAgain)
+  const favorited = isWineFavorite(wine)
 
   // Show the wine's own profile when it has one; otherwise fall back to the
   // reference profile for its varietal/type so stats are always available.
@@ -75,6 +77,21 @@ export function WineCard({
       aria-label={readOnly ? undefined : `Edit ${wine.name}`}
     >
       <div className={`rank-badge ${medal}`}>{rank}</div>
+
+      {!readOnly && onToggleFavorite && (
+        <button
+          type="button"
+          className={`wine-favorite-btn ${favorited ? 'active' : ''}`}
+          aria-label={favorited ? `Unfavorite ${wine.name}` : `Favorite ${wine.name}`}
+          title={favorited ? 'Remove from favorites' : 'Add to favorites'}
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleFavorite()
+          }}
+        >
+          <IconHeart className="wine-favorite-icon" size={20} filled={favorited} />
+        </button>
+      )}
 
       <div className="wine-main">
         <div className="wine-title-row">
@@ -139,7 +156,6 @@ export function WineCard({
               T {wine.ratingEnjoyment.toFixed(1)} · V {wine.ratingValue!.toFixed(1)}
             </span>
           )}
-          {buyAgain && <span className="buy-again-chip">{buyAgain}</span>}
         </div>
         {wine.price != null && <span className="wine-price">${wine.price.toFixed(0)}</span>}
         {readOnly && onSaveToWishlist ? (

@@ -41,6 +41,7 @@
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --tab-bar-height: 4.25rem;
+  --modal-sheet-top-gap: 2.75rem;
 }
 
 [data-theme='navy'] {
@@ -1365,16 +1366,58 @@ a.icon-btn {
 }
 
 .wine-card {
+  position: relative;
   display: flex;
   gap: 1rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.1rem 1.2rem;
+  padding-top: 1.35rem;
   transition: background 0.15s, border-color 0.15s;
   max-width: 100%;
   min-width: 0;
   overflow-x: clip;
+}
+
+.wine-favorite-btn {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--text-faint);
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    transform 0.12s;
+}
+
+.wine-favorite-btn:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.wine-favorite-btn.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.wine-favorite-btn:active {
+  transform: scale(0.94);
+}
+
+.wine-favorite-icon {
+  pointer-events: none;
 }
 
 .wine-card:hover {
@@ -2304,7 +2347,11 @@ button.tasting-tag-pill-btn.active {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 4vh 1rem;
+  padding:
+    max(var(--modal-sheet-top-gap), 4vh)
+    max(1rem, var(--safe-right))
+    max(1rem, var(--safe-bottom))
+    max(1rem, var(--safe-left));
   overflow-y: auto;
   z-index: 10;
 }
@@ -2601,8 +2648,14 @@ textarea {
 .wine-form-modal {
   display: flex;
   flex-direction: column;
-  max-height: min(90vh, calc(100dvh - var(--safe-top) - var(--safe-bottom) - 2.25rem));
+  max-height: min(
+    90vh,
+    calc(
+      100dvh - var(--safe-top) - var(--safe-bottom) - var(--modal-sheet-top-gap) - 1.25rem
+    )
+  );
   overflow: hidden;
+  margin-top: 0;
 }
 
 .wine-form-body {
@@ -3484,11 +3537,29 @@ textarea {
     padding-bottom: 0;
   }
 
+  html,
+  body {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
   .app {
     width: 100%;
     max-width: none;
     padding: 0;
-    min-height: 100dvh;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .header {
+    flex-shrink: 0;
   }
 
   .header,
@@ -3508,6 +3579,10 @@ textarea {
   .content {
     order: 2;
     flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
     padding-bottom: 1rem;
   }
 
@@ -3570,12 +3645,11 @@ textarea {
   }
 
   .tabs {
-    position: sticky;
-    bottom: 0;
+    position: relative;
     z-index: 100;
     order: 4;
     flex-shrink: 0;
-    margin-top: auto;
+    margin-top: 0;
     margin-bottom: 0;
     gap: 0;
     width: 100%;
@@ -3699,25 +3773,25 @@ textarea {
 
   .modal-backdrop {
     padding:
-      max(0.85rem, calc(var(--safe-top) + 0.75rem))
+      max(var(--modal-sheet-top-gap), calc(var(--safe-top) + 0.5rem))
       max(0.75rem, var(--safe-right))
       max(1rem, var(--safe-bottom))
       max(0.75rem, var(--safe-left));
     align-items: flex-start;
-    overflow: hidden;
+    overflow-y: auto;
   }
 
   .modal:not(.wine-form-modal) {
-    margin: auto 0;
+    margin: 0;
     padding: 1.25rem 1.1rem;
-    max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 2.25rem);
+    max-height: calc(
+      100dvh - var(--safe-top) - var(--safe-bottom) - var(--modal-sheet-top-gap) - 1rem
+    );
     overflow-y: auto;
   }
 
   .wine-form-modal {
-    margin: 0;
     padding: 1.25rem 1.1rem;
-    max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 1.85rem);
     width: 100%;
   }
 
@@ -4510,21 +4584,25 @@ html.native-app .app {
   width: 100%;
   max-width: none;
   padding: 0;
-  min-height: 100dvh;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
   background: var(--bg);
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 html.native-app #root {
-  overflow-x: hidden;
+  overflow: hidden;
   width: 100%;
   max-width: 100%;
+  height: 100%;
 }
 
 html.native-app body {
-  overflow-x: hidden;
+  overflow: hidden;
   width: 100%;
   max-width: 100%;
+  height: 100dvh;
 }
 
 html.native-app .header,
@@ -4536,11 +4614,18 @@ html.native-app .app-footer-note {
   min-width: 0;
 }
 
+html.native-app .header {
+  flex-shrink: 0;
+}
+
 html.native-app .content {
   order: 2;
   flex: 1 1 auto;
+  min-height: 0;
   padding-bottom: 1rem;
   overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 html.native-app .header {
@@ -4562,12 +4647,11 @@ html.native-app .wine-list {
 
 /* Phone-style bottom tabs on all native sizes (iPad was using overflow-x: auto top tabs). */
 html.native-app .tabs {
-  position: sticky;
-  bottom: 0;
+  position: relative;
   z-index: 100;
   order: 4;
   flex-shrink: 0;
-  margin-top: auto;
+  margin-top: 0;
   margin-bottom: 0;
   gap: 0;
   width: 100%;
@@ -4646,11 +4730,7 @@ html.native-app .auth-screen {
 }
 
 html.native-app .modal-backdrop {
-  overflow: hidden;
   align-items: flex-start;
-  padding-top: max(0.85rem, calc(var(--safe-top) + 0.75rem));
-}
-
-html.native-app .wine-form-modal {
-  max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 1.85rem);
+  overflow-y: auto;
+  padding-top: max(var(--modal-sheet-top-gap), calc(var(--safe-top) + 0.5rem));
 }
