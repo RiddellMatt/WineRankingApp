@@ -686,6 +686,20 @@ export default function App() {
     setView('scan')
   }
 
+  function goToInsightsTab() {
+    setFriendView(null)
+    setView('insights')
+  }
+
+  function openCellarWine(wine: Wine) {
+    setFriendView(null)
+    setView('cellar')
+    setCellarSegment('tried')
+    setFormMode('tried')
+    setEditing(wine)
+    setFormOpen(true)
+  }
+
   function startAddWine(destination: AddWineDestination, openScan: boolean) {
     if (destination === 'tried' && atFreeLimit) {
       setAddWineChooserOpen(false)
@@ -1073,8 +1087,13 @@ export default function App() {
             </section>
 
             {cellarSegment === 'tried' && stats && (
-              <section className="stats">
-                <div className="stat">
+              <section className="stats stats-cellar" aria-label="Cellar summary">
+                <button
+                  type="button"
+                  className="stat stat-link"
+                  onClick={goToInsightsTab}
+                  aria-label="View stats and insights"
+                >
                   <span className="stat-value">
                     {stats.count}
                     {!pro && <span className="stat-limit"> / {FREE_WINE_LIMIT}</span>}
@@ -1082,17 +1101,27 @@ export default function App() {
                   <span className="stat-label">
                     {stats.count === 1 ? 'wine tried' : 'wines tried'}
                   </span>
-                </div>
-                <div className="stat">
+                </button>
+                <button
+                  type="button"
+                  className="stat stat-link"
+                  onClick={goToInsightsTab}
+                  aria-label="View average rating in insights"
+                >
                   <span className="stat-value">{stats.avg.toFixed(1)}</span>
                   <span className="stat-label">average rating</span>
-                </div>
-                <div className="stat">
+                </button>
+                <button
+                  type="button"
+                  className="stat stat-link stat-span-2"
+                  onClick={() => openCellarWine(stats.best)}
+                  aria-label={`Open ${stats.best.name}`}
+                >
                   <span className="stat-value stat-best" title={stats.best.name}>
                     {stats.best.name}
                   </span>
                   <span className="stat-label">current favorite</span>
-                </div>
+                </button>
               </section>
             )}
 

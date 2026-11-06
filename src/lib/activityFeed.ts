@@ -102,7 +102,7 @@ function milestoneFromRow(row: ActivityEventRow): ActivityMilestone {
   }
 }
 
-function milestoneEventFromRow(row: ActivityEventRow, actor: FriendProfile): ActivityEvent {
+export function milestoneEventFromRow(row: ActivityEventRow, actor: FriendProfile): ActivityEvent {
   return {
     id: row.id,
     type: row.event_type,
@@ -178,6 +178,53 @@ export async function fetchFriendActivity(
   return events.sort((a, b) => b.at - a.at).slice(0, limit)
 }
 
+export function ownActivityActor(
+  userId: string,
+  displayName: string,
+  email: string,
+  avatarUrl: string | undefined,
+): FriendProfile {
+  return {
+    id: userId,
+    displayName: displayName.trim() || email.split('@')[0] || 'You',
+    email,
+    avatarUrl,
+  }
+}
+
+function wineEventsFromCellar(
+  userId: string,
+  actor: FriendProfile,
+  wines: Wine[],
+): ActivityEvent[] {
+  return wines.map((wine) => {
+    const type = activityEventType(wine)
+    return {
+      id: `${userId}-${wine.id}-${type}`,
+      type,
+      at: wine.addedAt,
+      actor,
+      wine,
+    }
+  })
+}
+
+/** Own timeline: cellar logs/saves merged with milestone rows, newest first. */
+export function mergeOwnActivity(
+  userId: string,
+  displayName: string,
+  email: string,
+  avatarUrl: string | undefined,
+  wines: Wine[],
+  milestoneRows: ActivityEventRow[],
+  limit = 40,
+): ActivityEvent[] {
+  const actor = ownActivityActor(userId, displayName, email, avatarUrl)
+  const wineEvents = wineEventsFromCellar(userId, actor, wines)
+  const milestones = milestoneRows.map((row) => milestoneEventFromRow(row, actor))
+  return [...wineEvents, ...milestones].sort((a, b) => b.at - a.at).slice(0, limit)
+}
+
 /** Fallback when the user has no friends yet — show their own recent logs. */
 export function ownRecentActivity(
   userId: string,
@@ -187,26 +234,10 @@ export function ownRecentActivity(
   wines: Wine[],
   limit = 8,
 ): ActivityEvent[] {
-  const actor: FriendProfile = {
-    id: userId,
-    displayName: displayName.trim() || email.split('@')[0] || 'You',
-    email,
-    avatarUrl,
-  }
-
-  return [...wines]
-    .sort((a, b) => b.addedAt - a.addedAt)
+  const actor = ownActivityActor(userId, displayName, email, avatarUrl)
+  return wineEventsFromCellar(userId, actor, wines)
+    .sort((a, b) => b.at - a.at)
     .slice(0, limit)
-    .map((wine) => {
-      const type = activityEventType(wine)
-      return {
-        id: `${userId}-${wine.id}-${type}`,
-        type,
-        at: wine.addedAt,
-        actor,
-        wine,
-      }
-    })
 }
 
 export function actorLabel(actor: FriendProfile, viewerId: string): string {

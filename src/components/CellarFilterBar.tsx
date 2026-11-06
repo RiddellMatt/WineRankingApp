@@ -120,6 +120,12 @@ export function CellarFilterBar({
         placeholder="Search…"
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            ;(e.currentTarget as HTMLInputElement).blur()
+          }
+        }}
       />
 
       <CellarSortMenu

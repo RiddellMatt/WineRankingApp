@@ -42,10 +42,12 @@ export function OwnActivityFeed({ events, rankingPreference, emptyHint }: Props)
         const isMilestone = event.type === 'badge_unlock' || event.type === 'journey_complete'
         if (isMilestone) {
           const headline = milestoneHeadline(event)
+          const prefix =
+            event.type === 'badge_unlock' ? 'Earned badge' : activityEventLabel(event.type)
           return (
-            <li className="own-activity-item" key={event.id}>
+            <li className="own-activity-item own-activity-milestone" key={event.id}>
               <p className="own-activity-line">
-                {activityEventLabel(event.type)}
+                {prefix}
                 {headline ? ` — ${headline}` : ''}
               </p>
               <span className="own-activity-time">{formatActivityTime(event.at)}</span>
