@@ -10,9 +10,10 @@ interface Props {
   value: SortKey
   options: CellarSortOption[]
   onChange: (key: SortKey) => void
+  layout?: 'compact' | 'bar'
 }
 
-export function CellarSortMenu({ value, options, onChange }: Props) {
+export function CellarSortMenu({ value, options, onChange, layout = 'compact' }: Props) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -36,10 +37,13 @@ export function CellarSortMenu({ value, options, onChange }: Props) {
   const activeLabel = options.find((o) => o.key === value)?.label ?? 'Rating'
 
   return (
-    <div className="cellar-sort-menu" ref={rootRef}>
+    <div
+      className={`cellar-sort-menu ${layout === 'bar' ? 'cellar-sort-menu--bar' : ''}`}
+      ref={rootRef}
+    >
       <button
         type="button"
-        className={`cellar-sort-trigger ${open ? 'open' : ''}`}
+        className={`cellar-sort-trigger ${layout === 'bar' ? 'cellar-sort-trigger--bar' : ''} ${open ? 'open' : ''}`}
         aria-expanded={open}
         aria-haspopup="listbox"
         onClick={() => setOpen((v) => !v)}
@@ -48,7 +52,11 @@ export function CellarSortMenu({ value, options, onChange }: Props) {
         <span className="cellar-sort-trigger-value">{activeLabel}</span>
       </button>
       {open && (
-        <div className="cellar-sort-popover" role="listbox" aria-label="Sort cellar">
+        <div
+          className={`cellar-sort-popover ${layout === 'bar' ? 'cellar-sort-popover--sheet' : ''}`}
+          role="listbox"
+          aria-label="Sort cellar"
+        >
           {options.map((o) => (
             <button
               key={o.key}

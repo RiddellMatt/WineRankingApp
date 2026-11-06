@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { WINE_TYPES, type RankingPreference, type SortKey, type Wine, type WineType } from './types'
+import { type RankingPreference, type SortKey, type Wine, type WineType } from './types'
 import { loadWines, saveWines, SAMPLE_WINES } from './storage'
 import { FREE_WINE_LIMIT, FREE_WISHLIST_LIMIT } from './config'
 import { syncProSubscription } from './lib/checkoutApi'
@@ -10,7 +10,12 @@ import { hideNativeSplashOnce } from './lib/nativeSplash'
 import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
-import { CellarSortMenu } from './components/CellarSortMenu'
+import {
+  CellarFilterBar,
+  priceBoundsFromWines,
+  wineMatchesPriceFilter,
+  type PriceFilterRange,
+} from './components/CellarFilterBar'
 import { WineCard } from './components/WineCard'
 import { WishlistCard } from './components/WishlistCard'
 import { WineForm } from './components/WineForm'
@@ -137,6 +142,7 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<WineType | 'All'>('All')
   const [tagFilter, setTagFilter] = useState<string | null>(null)
+  const [priceFilter, setPriceFilter] = useState<PriceFilterRange | null>(null)
   const [sortKey, setSortKey] = useState<SortKey>('rating')
   const [cellarSegment, setCellarSegment] = useState<CellarSegment>('tried')
   const [formMode, setFormMode] = useState<'tried' | 'wishlist'>('tried')
@@ -602,11 +608,17 @@ export default function App() {
     return new Map(ordered.map((w, i) => [w.id, i + 1]))
   }, [cellarTried, rankingPreference])
 
+  const cellarPriceBounds = useMemo(() => {
+    const base = cellarSegment === 'wishlist' ? cellarWishlist : cellarTried
+    return priceBoundsFromWines(base)
+  }, [cellarSegment, cellarTried, cellarWishlist])
+
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase()
     const base = cellarSegment === 'wishlist' ? cellarWishlist : cellarTried
     let list = base.filter((w) => {
       if (typeFilter !== 'All' && w.type !== typeFilter) return false
+      if (!wineMatchesPriceFilter(w, priceFilter, cellarPriceBounds)) return false
       if (cellarSegment === 'tried' && !wineMatchesTagFilter(w, tagFilter)) return false
       if (!q) return true
       const tagText = (w.tastingTags ?? []).map(tastingTagLabel).join(' ')
@@ -617,7 +629,18 @@ export default function App() {
     })
     const effectiveSort = cellarSegment === 'wishlist' && sortKey === 'rating' ? 'addedAt' : sortKey
     return sortWines(list, effectiveSort, rankingPreference)
-  }, [cellarSegment, cellarTried, cellarWishlist, search, typeFilter, tagFilter, sortKey, rankingPreference])
+  }, [
+    cellarSegment,
+    cellarTried,
+    cellarWishlist,
+    search,
+    typeFilter,
+    tagFilter,
+    priceFilter,
+    cellarPriceBounds,
+    sortKey,
+    rankingPreference,
+  ])
 
   const cellarTagFilters = useMemo(
     () => filterTagsForCellar(cellarTried, pro),
@@ -1024,6 +1047,7 @@ export default function App() {
                 onClick={() => {
                   setCellarSegment('wishlist')
                   setTagFilter(null)
+                  setPriceFilter(null)
                   setSortKey((k) => (k === 'rating' ? 'addedAt' : k))
                 }}
               >
@@ -1076,60 +1100,22 @@ export default function App() {
             )}
 
             {(cellarSegment === 'tried' ? cellarTried : cellarWishlist).length > 0 && (
-              <section className="toolbar cellar-toolbar">
-                <div className="toolbar-row toolbar-row-search">
-                  <input
-                    className="search"
-                    type="search"
-                    placeholder="Search…"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                  <CellarSortMenu
-                    value={sortKey}
-                    options={cellarSortOptions}
-                    onChange={setSortKey}
-                  />
-                </div>
-                <div className="toolbar-row type-filters-scroll">
-                  <div className="type-filters">
-                    {(['All', ...WINE_TYPES] as const).map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        className={`chip chip-compact ${typeFilter === t ? 'active' : ''}`}
-                        onClick={() => setTypeFilter(t)}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {cellarSegment === 'tried' && cellarTagFilters.length > 0 && (
-                  <div className="toolbar-row type-filters-scroll">
-                    <div className="tag-filters" aria-label="Filter by tasting tag">
-                      <span className="filter-row-label">Tags</span>
-                      <button
-                        type="button"
-                        className={`chip chip-compact ${tagFilter === null ? 'active' : ''}`}
-                        onClick={() => setTagFilter(null)}
-                      >
-                        All
-                      </button>
-                      {cellarTagFilters.map((tag) => (
-                        <button
-                          key={tag.id}
-                          type="button"
-                          className={`chip chip-compact tasting-tag-chip ${tagFilter === tag.id ? 'active' : ''}`}
-                          onClick={() => setTagFilter(tagFilter === tag.id ? null : tag.id)}
-                        >
-                          {tag.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="toolbar-row toolbar-row-meta">
+              <CellarFilterBar
+                search={search}
+                onSearchChange={setSearch}
+                sortKey={sortKey}
+                sortOptions={cellarSortOptions}
+                onSortChange={setSortKey}
+                typeFilter={typeFilter}
+                onTypeFilter={setTypeFilter}
+                tagFilter={tagFilter}
+                onTagFilter={setTagFilter}
+                tagOptions={cellarTagFilters}
+                showTagFilter={cellarSegment === 'tried'}
+                priceBounds={cellarPriceBounds}
+                priceFilter={priceFilter}
+                onPriceFilterChange={setPriceFilter}
+                exportImport={
                   <div className="data-actions">
                     <button type="button" className="link-btn" onClick={handleExport}>
                       Export{!pro && ' 🔒'}
@@ -1149,8 +1135,8 @@ export default function App() {
                       }}
                     />
                   </div>
-                </div>
-              </section>
+                }
+              />
             )}
 
             {cellarSegment === 'tried' && cellarTried.length === 0 ? (
@@ -1216,25 +1202,23 @@ export default function App() {
                     ? `No tried wines tagged “${tastingTagLabel(tagFilter)}”.`
                     : 'No wines match your search or filters.'}
                 </p>
-                {(tagFilter || search.trim() || typeFilter !== 'All') && (
+                {(tagFilter ||
+                  search.trim() ||
+                  typeFilter !== 'All' ||
+                  priceFilter != null) && (
                   <div className="empty-actions">
-                    {tagFilter && (
-                      <button type="button" className="btn ghost" onClick={() => setTagFilter(null)}>
-                        Clear tag filter
-                      </button>
-                    )}
-                    {(search.trim() || typeFilter !== 'All') && (
-                      <button
-                        type="button"
-                        className="btn ghost"
-                        onClick={() => {
-                          setSearch('')
-                          setTypeFilter('All')
-                        }}
-                      >
-                        Clear search &amp; type
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => {
+                        setSearch('')
+                        setTypeFilter('All')
+                        setTagFilter(null)
+                        setPriceFilter(null)
+                      }}
+                    >
+                      Clear all filters
+                    </button>
                   </div>
                 )}
               </section>
