@@ -24,6 +24,7 @@ import type { RankingPreference, Wine } from '../types'
 import { APP_NAME_PRO } from '../brand'
 import { Avatar } from './Avatar'
 import { BadgeGrid } from './BadgeGrid'
+import { AppIconPicker } from './AppIconPicker'
 import { ThemePicker } from './ThemePicker'
 
 const PRO_FEATURES = [
@@ -424,6 +425,12 @@ export function AccountPanel({
         <h3>Appearance</h3>
         <p className="account-hint">Choose a color theme inspired by the Decanti logo.</p>
         <ThemePicker />
+      </section>
+
+      <section className="account-section">
+        <h3>App icon</h3>
+        <p className="account-hint">Pick the home screen icon for Decanti (white is the default).</p>
+        <AppIconPicker />
       </section>
 
       <section className="account-section">

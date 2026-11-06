@@ -2,6 +2,7 @@ import { App } from '@capacitor/app'
 import { getSupabase } from '../lib/supabase'
 import { hideNativeSplashOnce } from '../lib/nativeSplash'
 import { isNativeApp } from '../lib/platform'
+import { initAppIcon } from '../lib/appIcon'
 import { loadStoredTheme, THEME_META } from '../lib/themes'
 import { completeOAuthFromUrl, listenForOAuthBrowserDismiss } from '../lib/mobileOAuth'
 import { emitMobileDeepLinkEvent, parseMobileDeepLink } from '../lib/mobileDeepLinks'
@@ -30,6 +31,8 @@ export async function initNativeShell(): Promise<void> {
   } catch {
     // Status bar plugin is unavailable in some web previews.
   }
+
+  void initAppIcon()
 
   const launch = await App.getLaunchUrl()
   if (launch?.url) {
