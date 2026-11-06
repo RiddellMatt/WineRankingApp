@@ -24,6 +24,7 @@ import { MenuScan } from './components/MenuScan'
 import { FriendsPanel } from './components/FriendsPanel'
 import { NotificationsBell } from './components/NotificationsBell'
 import { FriendCellarView } from './components/FriendCellarView'
+import { LearnPanel } from './components/LearnPanel'
 import { ProfileScreen, type ProfileScreenMode } from './components/ProfileScreen'
 import {
   BadgeUnlockToasts,
@@ -93,7 +94,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'addedAt', label: 'Recently added' },
 ]
 
-type View = 'cellar' | 'sommelier' | 'insights' | 'friends' | 'account'
+type View = 'cellar' | 'sommelier' | 'insights' | 'friends' | 'account' | 'learn'
 type CellarSegment = 'tried' | 'wishlist'
 
 function sortWines(list: Wine[], sortKey: SortKey, rankingPreference: RankingPreference): Wine[] {
@@ -139,6 +140,8 @@ export default function App() {
   const [view, setView] = useState<View>('cellar')
   const [accountHighlight, setAccountHighlight] = useState(false)
   const [profileMode, setProfileMode] = useState<ProfileScreenMode>('preview')
+  const [learnArticleSlug, setLearnArticleSlug] = useState<string | null>(null)
+  const [learnReturnView, setLearnReturnView] = useState<View>('account')
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<WineType | 'All'>('All')
   const [tagFilter, setTagFilter] = useState<string | null>(null)
@@ -335,6 +338,33 @@ export default function App() {
     setView('account')
     setProfileMode(highlightSubscription ? 'edit' : 'preview')
     setAccountHighlight(highlightSubscription)
+  }
+
+  function openLearn(returnView: View, articleSlug: string | null = null) {
+    setLearnReturnView(returnView)
+    setLearnArticleSlug(articleSlug)
+    setFriendView(null)
+    setView('learn')
+  }
+
+  function closeLearn() {
+    setView(learnReturnView)
+    setLearnArticleSlug(null)
+    if (!isNativeApp()) {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('view')
+      url.searchParams.delete('article')
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+    }
+  }
+
+  function syncLearnUrl(articleSlug: string | null) {
+    if (isNativeApp()) return
+    const url = new URL(window.location.href)
+    url.searchParams.set('view', 'learn')
+    if (articleSlug) url.searchParams.set('article', articleSlug)
+    else url.searchParams.delete('article')
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
   }
 
   // Load cloud cellar when signed in.
@@ -597,6 +627,21 @@ export default function App() {
     window.addEventListener(ACCOUNT_EVENT, openAccountFromReturn)
     return () => window.removeEventListener(ACCOUNT_EVENT, openAccountFromReturn)
   }, [cloudUser?.id])
+
+  // Web deep link: ?view=learn&article=slug
+  useEffect(() => {
+    if (isNativeApp()) return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('view') !== 'learn') return
+    const slug = params.get('article')
+    setLearnReturnView('cellar')
+    setLearnArticleSlug(slug)
+    setView('learn')
+  }, [])
+
+  useEffect(() => {
+    if (view === 'learn') syncLearnUrl(learnArticleSlug)
+  }, [view, learnArticleSlug])
 
   // Persist offline cellar locally.
   useEffect(() => {
@@ -920,7 +965,8 @@ export default function App() {
                 + Add to wishlist
               </button>
             ) : (
-              !friendView && (
+              !friendView &&
+              view === 'cellar' && (
                 <button className="btn primary" onClick={openAddForm}>
                   + Add wine
                 </button>
@@ -931,14 +977,21 @@ export default function App() {
       </header>
 
       <main className="content">
-        {cellarLoading && view !== 'account' && (
+        {cellarLoading && view !== 'account' && view !== 'learn' && (
           <p className="auth-info">Syncing cellar…</p>
         )}
 
-        {view === 'account' ? (
+        {view === 'learn' ? (
+          <LearnPanel
+            articleSlug={learnArticleSlug}
+            onArticleChange={setLearnArticleSlug}
+            onBack={closeLearn}
+          />
+        ) : view === 'account' ? (
           <ProfileScreen
             mode={profileMode}
             onModeChange={setProfileMode}
+            onOpenLearn={() => openLearn('account')}
             profile={profile}
             email={cloudUser?.email}
             signedIn={Boolean(cloudUser)}
@@ -1167,6 +1220,13 @@ export default function App() {
                     }}
                   >
                     Load sample wines
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => openLearn('cellar')}
+                  >
+                    Wine basics
                   </button>
                 </div>
               </section>

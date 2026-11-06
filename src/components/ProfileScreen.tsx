@@ -11,9 +11,18 @@ interface Props extends AccountPanelProps {
   mode: ProfileScreenMode
   onModeChange: (mode: ProfileScreenMode) => void
   wines: Wine[]
+  onOpenLearn: () => void
 }
 
-export function ProfileScreen({ mode, onModeChange, profile, signedIn, wines, ...accountProps }: Props) {
+export function ProfileScreen({
+  mode,
+  onModeChange,
+  profile,
+  signedIn,
+  wines,
+  onOpenLearn,
+  ...accountProps
+}: Props) {
   const showPreview = signedIn && profile && mode === 'preview'
 
   if (showPreview) {
@@ -23,6 +32,7 @@ export function ProfileScreen({ mode, onModeChange, profile, signedIn, wines, ..
         wines={wines}
         rankingPreference={accountProps.rankingPreference}
         onEditProfile={() => onModeChange('edit')}
+        onOpenLearn={onOpenLearn}
       />
     )
   }

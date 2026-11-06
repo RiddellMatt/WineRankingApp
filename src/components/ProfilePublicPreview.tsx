@@ -13,6 +13,7 @@ interface Props {
   wines: Wine[]
   rankingPreference: RankingPreference
   onEditProfile: () => void
+  onOpenLearn: () => void
 }
 
 export function ProfilePublicPreview({
@@ -20,6 +21,7 @@ export function ProfilePublicPreview({
   wines,
   rankingPreference,
   onEditProfile,
+  onOpenLearn,
 }: Props) {
   const displayName =
     profile.displayName?.trim() || profile.email?.split('@')[0] || 'Wine lover'
@@ -55,6 +57,15 @@ export function ProfilePublicPreview({
         rankingPreference={rankingPreference}
         emptyMessage="You haven't logged any wines yet. Friends only see rated bottles from your cellar."
       />
+      <section className="learn-cta passport-card">
+        <h3 className="learn-cta-title">Wine basics</h3>
+        <p className="learn-cta-copy">
+          Short guides on types, taste, labels, and serving — new articles over time.
+        </p>
+        <button type="button" className="btn ghost small" onClick={onOpenLearn}>
+          Browse guides
+        </button>
+      </section>
     </div>
   )
 }

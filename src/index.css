@@ -3025,6 +3025,137 @@ textarea {
   margin-top: 0.5rem;
 }
 
+.learn-cta {
+  margin-top: 1.25rem;
+}
+
+.learn-cta-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.learn-cta-copy {
+  margin: 0 0 0.65rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.learn-hero-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+}
+
+.learn-hero-lead {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.learn-hero-note {
+  margin: 0;
+}
+
+.learn-url-hint {
+  font-size: 0.82rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+  background: var(--surface-3);
+}
+
+.learn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.learn-card {
+  width: 100%;
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.learn-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: var(--surface-3);
+}
+
+.learn-card-title {
+  display: block;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.learn-card-summary {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-bottom: 0.35rem;
+}
+
+.learn-card-meta {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.learn-article-header {
+  margin-bottom: 1.25rem;
+}
+
+.learn-meta {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.learn-article-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  line-height: 1.2;
+}
+
+.learn-article-summary {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.learn-section {
+  margin-bottom: 1.15rem;
+}
+
+.learn-section-heading {
+  margin: 0 0 0.45rem;
+  font-size: 1.05rem;
+}
+
+.learn-paragraph {
+  margin: 0 0 0.65rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.learn-paragraph:last-child {
+  margin-bottom: 0;
+}
+
 .friend-cellar-header {
   display: flex;
   align-items: center;
