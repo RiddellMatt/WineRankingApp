@@ -168,6 +168,7 @@ export function ProfilePanel({
 
       {tab === 'passport' && (
         <section className="profile-tab-panel">
+          <p className="friends-hint">Your wine atlas — active journey, region stamps, and friend standings.</p>
           <WinePassport
             userId={profile.id}
             wines={wines}

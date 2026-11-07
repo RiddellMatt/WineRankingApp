@@ -5,15 +5,18 @@ import {
   buildPersonalPassport,
   friendSnapshotFromWines,
   type FriendCellarSnapshot,
-  type FriendStandingRow,
 } from '../lib/explorerStats'
 import { fetchFriendships } from '../lib/friendsDb'
-import { fetchFriendMilestoneSummaries, type FriendMilestoneSummary } from '../lib/friendMilestones'
 import { computeJourneyProgress } from '../lib/journeys'
 import { fetchWines } from '../lib/wineDb'
 import type { CountEntry } from '../lib/wineGeo'
 import type { Wine } from '../types'
-import { tierLabel } from '../lib/badges'
+import {
+  buildPassportStamps,
+  passportSocialHook,
+  pickActiveJourney,
+  type PassportStamp,
+} from '../lib/passportAtlas'
 
 interface Props {
   userId: string
@@ -55,64 +58,48 @@ function PassportBars({ title, data, emptyHint }: { title: string; data: CountEn
   )
 }
 
-function StandingRow({ row }: { row: FriendStandingRow }) {
+function ActiveJourneyCard({ journey }: { journey: NonNullable<ReturnType<typeof pickActiveJourney>> }) {
+  const pct = Math.min(100, (journey.current / journey.requiredWines) * 100)
   return (
-    <li className="standing-row">
-      <div className="standing-main">
-        <span className="standing-category">{row.category}</span>
-        <span className="standing-you">You · {row.you}</span>
+    <article className="passport-active-journey">
+      <div className="passport-active-journey-head">
+        <span className="passport-active-journey-icon" aria-hidden="true">
+          {journey.icon}
+        </span>
+        <div>
+          <p className="passport-active-journey-eyebrow">Active journey</p>
+          <h3 className="passport-active-journey-title">{journey.title}</h3>
+          <p className="passport-active-journey-desc">{journey.description}</p>
+        </div>
       </div>
-      <div className={`standing-leader ${row.youLead ? 'you-lead' : ''}`}>
-        {row.youLead ? (
-          <>You lead 👑</>
-        ) : (
-          <>
-            {row.leaderName} · {row.leaderCount} 👑
-          </>
-        )}
+      {journey.nudge && <p className="passport-active-journey-nudge">{journey.nudge}</p>}
+      <div className="journey-progress-row">
+        <div className="journey-progress-track">
+          <div className="journey-progress-fill" style={{ width: `${pct}%` }} />
+        </div>
+        <span className="journey-progress-label">{journey.progressLabel}</span>
       </div>
-    </li>
+    </article>
   )
 }
 
-function FriendMilestoneRow({
-  name,
-  avatarUrl,
-  friendId,
-  summary,
-  onViewCellar,
-}: {
-  name: string
-  avatarUrl?: string
-  friendId: string
-  summary: FriendMilestoneSummary
-  onViewCellar?: (friendId: string, friendName: string, avatarUrl?: string) => void
-}) {
+function StampCell({ stamp }: { stamp: PassportStamp }) {
   return (
-    <li className="friend-milestone-row">
-      <Avatar displayName={name} avatarUrl={avatarUrl} seed={friendId} size="sm" />
-      <div className="friend-milestone-copy">
-        <span className="friend-milestone-name">{name}</span>
-        <span className="friend-milestone-summary">{summary.summaryLine}</span>
-        {summary.badgeHighlights.length > 0 && (
-          <div className="friend-milestone-badges">
-            {summary.badgeHighlights.map((badge) => (
-              <span className="friend-milestone-badge" key={badge.id} title={`${badge.title} — ${tierLabel(badge.tier)}`}>
-                <span aria-hidden="true">{badge.icon}</span>
-                <span className="friend-milestone-badge-tier">{tierLabel(badge.tier)}</span>
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-      {onViewCellar && (
-        <button
-          type="button"
-          className="link-btn friend-milestone-view"
-          onClick={() => onViewCellar(friendId, name, avatarUrl)}
-        >
-          Cellar
-        </button>
+    <li
+      className={`passport-stamp passport-stamp-${stamp.kind}`}
+      title={stamp.detail}
+    >
+      <span className="passport-stamp-icon" aria-hidden="true">
+        {stamp.icon}
+      </span>
+      <span className="passport-stamp-label">{stamp.label}</span>
+      {stamp.kind === 'journey' && (
+        <span className="passport-stamp-badge" aria-label="Journey complete">
+          ✓
+        </span>
+      )}
+      {stamp.detail && stamp.kind === 'country' && (
+        <span className="passport-stamp-detail">{stamp.detail}</span>
       )}
     </li>
   )
@@ -120,9 +107,6 @@ function FriendMilestoneRow({
 
 export function WinePassport({ userId, wines, completedJourneys, onViewCellar }: Props) {
   const [friendSnapshots, setFriendSnapshots] = useState<FriendCellarSnapshot[]>([])
-  const [friendMilestones, setFriendMilestones] = useState<Map<string, FriendMilestoneSummary>>(
-    new Map(),
-  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -131,7 +115,9 @@ export function WinePassport({ userId, wines, completedJourneys, onViewCellar }:
     () => computeJourneyProgress(wines, completedJourneys),
     [wines, completedJourneys],
   )
-  const completedCount = journeys.filter((j) => j.earnedComplete).length
+  const stamps = useMemo(() => buildPassportStamps(passport, journeys), [passport, journeys])
+  const activeJourney = useMemo(() => pickActiveJourney(journeys), [journeys])
+  const completedJourneyCount = journeys.filter((j) => j.earnedComplete).length
 
   const loadFriends = useCallback(async () => {
     setLoading(true)
@@ -141,51 +127,36 @@ export function WinePassport({ userId, wines, completedJourneys, onViewCellar }:
       const accepted = friendships.filter((f) => f.status === 'accepted')
       if (accepted.length === 0) {
         setFriendSnapshots([])
-        setFriendMilestones(new Map())
         return
       }
 
-      const friendData = await Promise.all(
+      const snapshots = await Promise.all(
         accepted.map(async (f) => {
           const friendId =
             f.friend?.id ?? (f.requesterId === userId ? f.addresseeId : f.requesterId)
-          const profile = f.friend ?? {
-            id: friendId,
-            displayName: '',
-            email: '',
-          }
+          const profile = f.friend ?? { id: friendId, displayName: '', email: '' }
           const friendWines = await fetchWines(friendId)
-          return {
-            snapshot: friendSnapshotFromWines(profile, friendWines),
-            wines: friendWines,
-          }
+          return friendSnapshotFromWines(profile, friendWines)
         }),
       )
-      const snapshots = friendData.map((entry) => entry.snapshot)
-      const milestones = await fetchFriendMilestoneSummaries(
-        friendData.map((entry) => ({ userId: entry.snapshot.id, wines: entry.wines })),
-      )
       setFriendSnapshots(snapshots)
-      setFriendMilestones(milestones)
     } catch (e) {
       setError(String((e as Error).message ?? e))
       setFriendSnapshots([])
-      setFriendMilestones(new Map())
     } finally {
       setLoading(false)
     }
   }, [userId])
 
   useEffect(() => {
-    loadFriends().catch(() => {
-      // handled in loadFriends
-    })
+    loadFriends().catch(() => {})
   }, [loadFriends])
 
   const standings = useMemo(
     () => buildFriendStandings(wines, friendSnapshots),
     [wines, friendSnapshots],
   )
+  const social = useMemo(() => passportSocialHook(standings), [standings])
 
   if (passport.totalTried === 0) {
     return (
@@ -193,13 +164,13 @@ export function WinePassport({ userId, wines, completedJourneys, onViewCellar }:
         <span className="empty-icon" aria-hidden="true">
           🌍
         </span>
-        <p>Log a few wines to unlock your wine passport and friend standings.</p>
+        <p>Log a few wines to open your atlas — countries appear as stamps, journeys earn region seals.</p>
       </section>
     )
   }
 
   return (
-    <div className="wine-passport">
+    <div className="wine-passport wine-passport-atlas">
       {passport.highlight && (
         <section className="passport-highlight">
           <span className="passport-highlight-icon" aria-hidden="true">
@@ -209,143 +180,112 @@ export function WinePassport({ userId, wines, completedJourneys, onViewCellar }:
         </section>
       )}
 
-      <section className="passport-stats-row">
-        <div className="passport-stat">
-          <span className="passport-stat-value">{passport.totalTried}</span>
-          <span className="passport-stat-label">wines logged</span>
+      <section className="passport-atlas-summary" aria-label="Atlas summary">
+        <div className="passport-atlas-metric">
+          <span className="passport-atlas-metric-value">{passport.countries.length}</span>
+          <span className="passport-atlas-metric-label">countries stamped</span>
         </div>
-        <div className="passport-stat">
-          <span className="passport-stat-value">{passport.countries.length}</span>
-          <span className="passport-stat-label">origin countries</span>
-        </div>
-        <div className="passport-stat">
-          <span className="passport-stat-value">{passport.drinkLocations.length}</span>
-          <span className="passport-stat-label">places drank</span>
-        </div>
-        <div className="passport-stat">
-          <span className="passport-stat-value">{completedCount}</span>
-          <span className="passport-stat-label">journeys done</span>
+        <div className="passport-atlas-metric">
+          <span className="passport-atlas-metric-value">{completedJourneyCount}</span>
+          <span className="passport-atlas-metric-label">journey seals</span>
         </div>
       </section>
 
-      <section className="passport-card journeys-card">
-        <h3>Journeys</h3>
+      {activeJourney ? (
+        <ActiveJourneyCard journey={activeJourney} />
+      ) : (
+        <section className="passport-card passport-all-journeys-done">
+          <p className="passport-empty">All current journeys complete — new regions coming in future updates.</p>
+        </section>
+      )}
+
+      <section className="passport-card passport-stamps-card" aria-labelledby="passport-stamps-title">
+        <h3 id="passport-stamps-title">Your stamps</h3>
         <p className="passport-journeys-intro">
-          Log tried wines from iconic regions — complete a journey with 3 matching pours.
+          Countries from wines you&apos;ve tried; journey seals when you finish a regional trail.
         </p>
-        <ul className="journey-list">
-          {journeys.map((journey) => (
-            <li
-              className={`journey-card ${journey.earnedComplete ? 'complete' : ''}`}
-              key={journey.id}
-            >
-              <span className="journey-icon" aria-hidden="true">
-                {journey.icon}
-              </span>
-              <div className="journey-copy">
-                <h4 className="journey-title">{journey.title}</h4>
-                <p className="journey-desc">{journey.description}</p>
-                {journey.nudge && !journey.earnedComplete && (
-                  <p className="journey-nudge">{journey.nudge}</p>
-                )}
-                <div className="journey-progress-row">
-                  <div className="journey-progress-track">
-                    <div
-                      className="journey-progress-fill"
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          (Math.min(journey.current, journey.requiredWines) / journey.requiredWines) *
-                            100,
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                  <span className="journey-progress-label">{journey.progressLabel}</span>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+        {stamps.length === 0 ? (
+          <p className="passport-empty">Add regions to your wines to collect country stamps.</p>
+        ) : (
+          <ol className="passport-stamp-grid">
+            {stamps.map((stamp) => (
+              <StampCell stamp={stamp} key={stamp.id} />
+            ))}
+          </ol>
+        )}
       </section>
 
       {friendSnapshots.length > 0 && (
-        <section className="passport-card friend-milestones-card">
-          <h3>Friends&apos; milestones</h3>
-          <p className="passport-journeys-intro">
-            Badges and journeys your friends have earned — synced from their accounts.
-          </p>
-          <ul className="friend-milestones-list">
-            {friendSnapshots.map((friend) => {
-              const summary =
-                friendMilestones.get(friend.id) ??
-                ({
-                  userId: friend.id,
-                  journeyCount: 0,
-                  earnedBadgeCount: 0,
-                  badgeHighlights: [],
-                  summaryLine: 'No milestones yet',
-                } satisfies FriendMilestoneSummary)
-              return (
-                <FriendMilestoneRow
-                  key={friend.id}
-                  friendId={friend.id}
-                  name={friend.name}
-                  avatarUrl={friend.avatarUrl}
-                  summary={summary}
-                  onViewCellar={onViewCellar}
-                />
-              )
-            })}
+        <section className="passport-card passport-social-hook" aria-label="Friends">
+          <h3>Among friends</h3>
+          {loading ? (
+            <p className="auth-info">Loading…</p>
+          ) : social ? (
+            <p className={`passport-social-message ${social.youLead ? 'leads' : ''}`}>{social.message}</p>
+          ) : (
+            <p className="passport-empty">You're tied with friends across passport stats.</p>
+          )}
+          {error && <p className="form-error">{error}</p>}
+          <ul className="passport-friend-avatars">
+            {friendSnapshots.map((f) => (
+              <li key={f.id}>
+                {onViewCellar ? (
+                  <button
+                    type="button"
+                    className="passport-friend-avatar-btn"
+                    title={f.name}
+                    onClick={() => onViewCellar(f.id, f.name, f.avatarUrl)}
+                  >
+                    <Avatar displayName={f.name} avatarUrl={f.avatarUrl} seed={f.id} size="sm" />
+                  </button>
+                ) : (
+                  <span title={f.name}>
+                    <Avatar displayName={f.name} avatarUrl={f.avatarUrl} seed={f.id} size="sm" />
+                  </span>
+                )}
+              </li>
+            ))}
           </ul>
         </section>
       )}
 
-      <div className="passport-grid">
-        <PassportBars
-          title="Wine origins"
-          data={passport.countries}
-          emptyHint="Add regions to your wines to track countries of origin."
-        />
-        <PassportBars
-          title="Origin + type"
-          data={passport.originCombos}
-          emptyHint="Regions unlock combos like “Spain · White”."
-        />
-        <PassportBars
-          title="Where you drank it"
-          data={passport.drinkLocations}
-          emptyHint='Use “Where you drank it” when logging — e.g. “Charleston, SC” or “Rome, Italy”.'
-        />
-        {passport.regions.length > 0 && (
-          <PassportBars title="Top regions" data={passport.regions} emptyHint="" />
-        )}
-      </div>
-
-      <section className="passport-card standings-card">
-        <h3>Among friends</h3>
-        {loading ? (
-          <p className="auth-info">Loading friend standings…</p>
-        ) : friendSnapshots.length === 0 ? (
-          <p className="passport-empty">Add friends to compare passports — personal stats still count for badges.</p>
-        ) : (
-          <ul className="standings-list">
-            {standings.map((row) => (
-              <StandingRow row={row} key={row.category} />
-            ))}
-          </ul>
-        )}
-        {error && <p className="form-error">{error}</p>}
-        {friendSnapshots.length > 0 && (
-          <ul className="passport-friend-avatars">
-            {friendSnapshots.map((f) => (
-              <li key={f.id} title={f.name}>
-                <Avatar displayName={f.name} avatarUrl={f.avatarUrl} seed={f.id} size="sm" />
+      <details className="passport-details">
+        <summary className="passport-details-summary">Detailed breakdown</summary>
+        <div className="passport-grid">
+          <PassportBars
+            title="Wine origins"
+            data={passport.countries}
+            emptyHint="Add regions to your wines to track countries of origin."
+          />
+          <PassportBars
+            title="Where you drank it"
+            data={passport.drinkLocations}
+            emptyHint='Use “Where you drank it” when logging.'
+          />
+          {passport.regions.length > 0 && (
+            <PassportBars title="Top regions" data={passport.regions} emptyHint="" />
+          )}
+        </div>
+        <section className="passport-card journeys-card">
+          <h3>All journeys</h3>
+          <ul className="journey-list journey-list-compact">
+            {journeys.map((journey) => (
+              <li
+                className={`journey-card ${journey.earnedComplete ? 'complete' : ''}`}
+                key={journey.id}
+              >
+                <span className="journey-icon" aria-hidden="true">
+                  {journey.icon}
+                </span>
+                <div className="journey-copy">
+                  <h4 className="journey-title">{journey.title}</h4>
+                  <span className="journey-progress-label">{journey.progressLabel}</span>
+                </div>
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      </details>
     </div>
   )
 }
