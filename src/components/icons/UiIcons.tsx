@@ -156,7 +156,7 @@ export function IconTrash({ className = 'ui-icon', size = defaultSize }: IconPro
   )
 }
 
-/** Tab: cellar / grape bunch. */
+/** Tab: cellar / grape bunch (tilted ~45°). */
 export function IconGrapes({ className = 'ui-icon', size = defaultSize }: IconProps) {
   return (
     <svg
@@ -171,14 +171,25 @@ export function IconGrapes({ className = 'ui-icon', size = defaultSize }: IconPr
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M12 13v7" />
-      <path d="M8 20h8" />
-      <circle cx="8.5" cy="11" r="2.25" />
-      <circle cx="12" cy="8.5" r="2.25" />
-      <circle cx="15.5" cy="11" r="2.25" />
-      <circle cx="10" cy="14.5" r="2.25" />
-      <circle cx="14" cy="14.5" r="2.25" />
-      <path d="M12 13c-1.2-1.8-1.2-3.8 0-5.5" />
+      <g transform="rotate(45 12 12)">
+        <path d="M12 3.75v5.25" />
+        <path d="M12 5.1 10.6 3.9" />
+        <path d="M12 8.25 7.75 5.65 7.05 9.55 10.65 10.65 12 8.25" />
+        <path d="M12 8.25 16.25 5.65 16.95 9.55 13.35 10.65 12 8.25" />
+        <circle cx="12" cy="11.15" r="1.48" />
+        <circle cx="10.05" cy="12.55" r="1.48" />
+        <circle cx="12" cy="12.55" r="1.48" />
+        <circle cx="13.95" cy="12.55" r="1.48" />
+        <circle cx="9.15" cy="14.55" r="1.48" />
+        <circle cx="11.05" cy="14.55" r="1.48" />
+        <circle cx="12.95" cy="14.55" r="1.48" />
+        <circle cx="14.85" cy="14.55" r="1.48" />
+        <circle cx="10.1" cy="16.55" r="1.48" />
+        <circle cx="12" cy="16.55" r="1.48" />
+        <circle cx="13.9" cy="16.55" r="1.48" />
+        <circle cx="12" cy="18.45" r="1.48" />
+        <path d="M15.35 16.45c1.35.55 2.15 1.75 1.85 3.15-.25 1.1-1.05 1.85-2.15 1.55" />
+      </g>
     </svg>
   )
 }
