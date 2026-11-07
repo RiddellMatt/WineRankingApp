@@ -738,6 +738,18 @@ textarea::placeholder {
   color: var(--text);
 }
 
+.own-activity-milestone-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.own-activity-milestone-icon {
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  line-height: 1.35;
+}
+
 .own-activity-sub {
   margin: 0.25rem 0 0;
   font-size: 0.82rem;
@@ -2743,7 +2755,10 @@ textarea {
 }
 
 .wine-form-backdrop {
-  padding-bottom: calc(max(1rem, var(--safe-bottom)) + var(--keyboard-inset, 0px));
+  padding-bottom: max(1rem, var(--safe-bottom));
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .wine-form-modal {
@@ -2773,6 +2788,86 @@ textarea {
   margin-top: 0.85rem;
   padding-top: 0.85rem;
   border-top: 1px solid var(--border);
+}
+
+.stamp-wines-modal,
+.insights-leaders-modal {
+  max-width: 480px;
+  max-height: min(85vh, 32rem);
+  overflow-y: auto;
+}
+
+.stamp-wines-modal-icon {
+  font-size: 1.25rem;
+}
+
+.stamp-wines-list,
+.insights-leaders-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.stamp-wine-row,
+.insights-leader-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+}
+
+.stamp-wine-copy,
+.insights-leader-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.stamp-wine-name,
+.insights-leader-name {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.stamp-wine-winery,
+.insights-leader-sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.stamp-wine-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  flex-shrink: 0;
+}
+
+.stamp-wine-rating {
+  font-weight: 600;
+  color: var(--star);
+  font-size: 0.86rem;
+}
+
+.stamp-wine-when,
+.insights-leader-when {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+}
+
+.insights-leader-rank {
+  font-weight: 700;
+  color: var(--gold);
+  font-size: 0.85rem;
+  min-width: 1.5rem;
 }
 
 /* ── Upgrade modal ──────────────────────────────────── */
@@ -2874,6 +2969,28 @@ textarea {
 
 .insights .stats {
   grid-template-columns: repeat(4, 1fr);
+}
+
+.insights .stat.stat-feature {
+  text-align: left;
+  padding: 1.05rem 1.15rem;
+  min-height: 5.25rem;
+}
+
+.insights .stat-feature .stat-value {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.35;
+  font-size: 1.12rem;
+}
+
+.stat-tap-hint {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.35rem;
 }
 
 .insight-card {
@@ -3819,6 +3936,10 @@ textarea {
     grid-template-columns: 1fr 1fr;
   }
 
+  .insights .stat.stat-feature {
+    grid-column: 1 / -1;
+  }
+
   .wine-card {
     flex-wrap: wrap;
   }
@@ -3889,6 +4010,19 @@ textarea {
       max(0.75rem, var(--safe-left));
     align-items: flex-start;
     overflow-y: auto;
+  }
+
+  .modal-backdrop.wine-form-backdrop {
+    overflow: hidden;
+    align-items: stretch;
+    justify-content: center;
+  }
+
+  .wine-form-modal {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: min(560px, 100%);
   }
 
   .modal:not(.wine-form-modal) {
@@ -4258,24 +4392,33 @@ textarea {
 
 .passport-details {
   border-top: 1px solid var(--border);
-  padding-top: 0.5rem;
+  padding-top: 0.85rem;
+  margin-top: 0.25rem;
 }
 
-.passport-details-summary {
+.passport-details-heading {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.passport-stamp-btn {
+  width: 100%;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--text-dim);
-  padding: 0.35rem 0;
-  list-style: none;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
-.passport-details-summary::-webkit-details-marker {
-  display: none;
+.passport-stamp-btn:hover {
+  border-color: var(--accent);
+  background: var(--surface-hover);
 }
 
-.passport-details[open] .passport-details-summary {
-  margin-bottom: 0.75rem;
+.passport-stamp-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .journey-list-compact .journey-card {
@@ -5258,4 +5401,8 @@ html.native-app .modal-backdrop {
   align-items: flex-start;
   overflow-y: auto;
   padding-top: max(var(--modal-sheet-top-gap), calc(var(--safe-top) + 0.5rem));
+}
+
+html.native-app .modal-backdrop.wine-form-backdrop {
+  overflow: hidden;
 }

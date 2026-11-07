@@ -93,7 +93,11 @@ export function WineForm({
       void Keyboard.addListener('keyboardWillShow', (info) => {
         root.style.setProperty('--keyboard-inset', `${info.keyboardHeight}px`)
       }).then((h) => handles.push(h))
+      void Keyboard.addListener('keyboardDidShow', (info) => {
+        root.style.setProperty('--keyboard-inset', `${info.keyboardHeight}px`)
+      }).then((h) => handles.push(h))
       void Keyboard.addListener('keyboardWillHide', clearInset).then((h) => handles.push(h))
+      void Keyboard.addListener('keyboardDidHide', clearInset).then((h) => handles.push(h))
       return () => {
         handles.forEach((h) => h.remove())
         clearInset()
@@ -117,10 +121,22 @@ export function WineForm({
     }
   }, [])
 
+  const formBodyRef = useRef<HTMLDivElement>(null)
+
   function focusField(el: HTMLElement) {
+    const scrollParent = formBodyRef.current
     window.setTimeout(() => {
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    }, 320)
+      if (!scrollParent) {
+        el.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+        return
+      }
+      const parentRect = scrollParent.getBoundingClientRect()
+      const elRect = el.getBoundingClientRect()
+      const margin = 20
+      if (elRect.bottom > parentRect.bottom - margin || elRect.top < parentRect.top + margin) {
+        el.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+      }
+    }, 120)
   }
   const parsedPrice = price ? Number(price) : null
 
@@ -343,6 +359,7 @@ export function WineForm({
         </div>
 
         <div
+          ref={formBodyRef}
           className="wine-form-body"
           onFocusCapture={(e) => {
             const target = e.target

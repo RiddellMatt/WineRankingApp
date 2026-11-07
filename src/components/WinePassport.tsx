@@ -18,11 +18,15 @@ import {
   type PassportStamp,
 } from '../lib/passportAtlas'
 import { MonthlyChallengeCard } from './MonthlyChallengeCard'
+import { StampWinesModal } from './StampWinesModal'
+import { winesForPassportStamp } from '../lib/passportStampWines'
+import type { RankingPreference } from '../types'
 
 interface Props {
   userId: string
   wines: Wine[]
   completedJourneys: Set<string>
+  rankingPreference: RankingPreference
   viewerEmail?: string
   viewerAvatarUrl?: string
   onViewCellar?: (friendId: string, friendName: string, avatarUrl?: string) => void
@@ -86,24 +90,28 @@ function ActiveJourneyCard({ journey }: { journey: NonNullable<ReturnType<typeof
   )
 }
 
-function StampCell({ stamp }: { stamp: PassportStamp }) {
+function StampCell({ stamp, onSelect }: { stamp: PassportStamp; onSelect: () => void }) {
   return (
-    <li
-      className={`passport-stamp passport-stamp-${stamp.kind}`}
-      title={stamp.detail}
-    >
-      <span className="passport-stamp-icon" aria-hidden="true">
-        {stamp.icon}
-      </span>
-      <span className="passport-stamp-label">{stamp.label}</span>
-      {stamp.kind === 'journey' && (
-        <span className="passport-stamp-badge" aria-label="Journey complete">
-          ✓
+    <li>
+      <button
+        type="button"
+        className={`passport-stamp passport-stamp-${stamp.kind} passport-stamp-btn`}
+        title={stamp.detail}
+        onClick={onSelect}
+      >
+        <span className="passport-stamp-icon" aria-hidden="true">
+          {stamp.icon}
         </span>
-      )}
-      {stamp.detail && stamp.kind === 'country' && (
-        <span className="passport-stamp-detail">{stamp.detail}</span>
-      )}
+        <span className="passport-stamp-label">{stamp.label}</span>
+        {stamp.kind === 'journey' && (
+          <span className="passport-stamp-badge" aria-label="Journey complete">
+            ✓
+          </span>
+        )}
+        {stamp.detail && stamp.kind === 'country' && (
+          <span className="passport-stamp-detail">{stamp.detail}</span>
+        )}
+      </button>
     </li>
   )
 }
@@ -112,6 +120,7 @@ export function WinePassport({
   userId,
   wines,
   completedJourneys,
+  rankingPreference,
   viewerEmail,
   viewerAvatarUrl,
   onViewCellar,
@@ -119,6 +128,7 @@ export function WinePassport({
   const [friendSnapshots, setFriendSnapshots] = useState<FriendCellarSnapshot[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [activeStamp, setActiveStamp] = useState<PassportStamp | null>(null)
 
   const passport = useMemo(() => buildPersonalPassport(wines), [wines])
   const journeys = useMemo(
@@ -238,7 +248,11 @@ export function WinePassport({
         ) : (
           <ol className="passport-stamp-grid">
             {stamps.map((stamp) => (
-              <StampCell stamp={stamp} key={stamp.id} />
+              <StampCell
+                stamp={stamp}
+                key={stamp.id}
+                onSelect={() => setActiveStamp(stamp)}
+              />
             ))}
           </ol>
         )}
@@ -278,8 +292,10 @@ export function WinePassport({
         </section>
       )}
 
-      <details className="passport-details">
-        <summary className="passport-details-summary">Detailed breakdown</summary>
+      <section className="passport-details" aria-labelledby="passport-details-title">
+        <h3 id="passport-details-title" className="passport-details-heading">
+          Details
+        </h3>
         <div className="passport-grid">
           <PassportBars
             title="Wine origins"
@@ -315,7 +331,16 @@ export function WinePassport({
             ))}
           </ul>
         </section>
-      </details>
+      </section>
+
+      {activeStamp && (
+        <StampWinesModal
+          stamp={activeStamp}
+          wines={winesForPassportStamp(activeStamp, wines)}
+          rankingPreference={rankingPreference}
+          onClose={() => setActiveStamp(null)}
+        />
+      )}
     </div>
   )
 }
