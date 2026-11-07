@@ -156,7 +156,7 @@ export function IconTrash({ className = 'ui-icon', size = defaultSize }: IconPro
   )
 }
 
-/** Tab: cellar / grape bunch (tilted ~45°). */
+/** Tab: cellar / grape bunch (reference style, ~45° tilt). */
 export function IconGrapes({ className = 'ui-icon', size = defaultSize }: IconProps) {
   return (
     <svg
@@ -166,29 +166,24 @@ export function IconGrapes({ className = 'ui-icon', size = defaultSize }: IconPr
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.75"
+      strokeWidth="1.85"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
     >
-      <g transform="rotate(45 12 12)">
-        <path d="M12 3.75v5.25" />
-        <path d="M12 5.1 10.6 3.9" />
-        <path d="M12 8.25 7.75 5.65 7.05 9.55 10.65 10.65 12 8.25" />
-        <path d="M12 8.25 16.25 5.65 16.95 9.55 13.35 10.65 12 8.25" />
-        <circle cx="12" cy="11.15" r="1.48" />
-        <circle cx="10.05" cy="12.55" r="1.48" />
-        <circle cx="12" cy="12.55" r="1.48" />
-        <circle cx="13.95" cy="12.55" r="1.48" />
-        <circle cx="9.15" cy="14.55" r="1.48" />
-        <circle cx="11.05" cy="14.55" r="1.48" />
-        <circle cx="12.95" cy="14.55" r="1.48" />
-        <circle cx="14.85" cy="14.55" r="1.48" />
-        <circle cx="10.1" cy="16.55" r="1.48" />
-        <circle cx="12" cy="16.55" r="1.48" />
-        <circle cx="13.9" cy="16.55" r="1.48" />
-        <circle cx="12" cy="18.45" r="1.48" />
-        <path d="M15.35 16.45c1.35.55 2.15 1.75 1.85 3.15-.25 1.1-1.05 1.85-2.15 1.55" />
+      <g transform="rotate(-42 12 12)">
+        <path d="M12 3.5v5.2" />
+        <path d="M12 5.5c-2.1.35-3.35 1.85-3.05 3.55.25 1.35 1.95 1.85 3.25 1.05" />
+        <path d="M9.55 7.1 10.85 9.2" />
+        <circle cx="12" cy="9.35" r="1.62" />
+        <circle cx="10.35" cy="10.85" r="1.62" />
+        <circle cx="13.65" cy="10.85" r="1.62" />
+        <circle cx="9.85" cy="12.35" r="1.62" />
+        <circle cx="12" cy="12.25" r="1.62" />
+        <circle cx="14.15" cy="12.35" r="1.62" />
+        <circle cx="10.5" cy="13.85" r="1.62" />
+        <circle cx="13.5" cy="13.85" r="1.62" />
+        <circle cx="12" cy="15.35" r="1.62" />
       </g>
     </svg>
   )
