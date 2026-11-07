@@ -166,16 +166,16 @@ export function IconCellarList({ className = 'ui-icon', size = defaultSize }: Ic
       viewBox="0 0 24 24"
       fill="currentColor"
       stroke="currentColor"
-      strokeWidth="2.1"
-      strokeLinecap="butt"
+      strokeWidth="2.25"
+      strokeLinecap="round"
       aria-hidden
     >
-      <circle cx="6.85" cy="7.25" r="1.3" stroke="none" />
-      <circle cx="6.85" cy="12" r="1.3" stroke="none" />
-      <circle cx="6.85" cy="16.75" r="1.3" stroke="none" />
-      <path fill="none" d="M10.65 7.25h8.25" />
-      <path fill="none" d="M10.65 12h8.25" />
-      <path fill="none" d="M10.65 16.75h8.25" />
+      <circle cx="6.25" cy="7.5" r="1.45" stroke="none" />
+      <circle cx="6.25" cy="12" r="1.45" stroke="none" />
+      <circle cx="6.25" cy="16.5" r="1.45" stroke="none" />
+      <path fill="none" d="M10.25 7.5h9.5" />
+      <path fill="none" d="M10.25 12h9.5" />
+      <path fill="none" d="M10.25 16.5h9.5" />
     </svg>
   )
 }

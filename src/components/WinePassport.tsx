@@ -308,6 +308,7 @@ export function WinePassport({
                 </span>
                 <div className="journey-copy">
                   <h4 className="journey-title">{journey.title}</h4>
+                  <p className="journey-requirement">{journey.description}</p>
                   <span className="journey-progress-label">{journey.progressLabel}</span>
                 </div>
               </li>

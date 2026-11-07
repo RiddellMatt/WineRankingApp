@@ -3626,7 +3626,9 @@ textarea {
   html,
   body {
     overscroll-behavior: none;
+    overscroll-behavior-x: none;
     overflow-x: hidden;
+    touch-action: pan-y;
   }
 
   #root,
@@ -3634,6 +3636,8 @@ textarea {
   .content {
     overflow-x: hidden;
     max-width: 100%;
+    min-width: 0;
+    touch-action: pan-y;
   }
 
   body {
@@ -3749,8 +3753,9 @@ textarea {
   }
 
   .tabs {
-    position: relative;
-    z-index: 100;
+    position: sticky;
+    bottom: 0;
+    z-index: 200;
     order: 4;
     flex-shrink: 0;
     margin-top: 0;
@@ -4279,6 +4284,22 @@ textarea {
 
 .journey-list-compact .journey-title {
   font-size: 0.88rem;
+}
+
+.journey-list-compact .journey-requirement {
+  margin: 0.12rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+
+.wine-passport-atlas,
+.profile-panel,
+.passport-card,
+.monthly-challenge-card,
+.friends-panel {
+  max-width: 100%;
+  min-width: 0;
 }
 
 .passport-all-journeys-done {
@@ -4932,6 +4953,81 @@ textarea {
   animation: badge-toast-in 0.35s ease;
 }
 
+/* ── XP feedback toasts ─────────────────────────────── */
+
+.xp-toast-stack {
+  position: fixed;
+  top: calc(var(--safe-top) + 0.65rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(18rem, calc(100% - 1.5rem));
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  z-index: 10001;
+  pointer-events: none;
+}
+
+.xp-toast {
+  pointer-events: auto;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 92%, var(--gold));
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+  animation: xp-toast-in 0.28s ease;
+  text-align: center;
+  width: 100%;
+}
+
+.xp-toast-gain {
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.xp-toast-level {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  border-radius: var(--radius);
+  padding: 0.65rem 1rem;
+  border-color: color-mix(in srgb, var(--gold) 45%, var(--border));
+}
+
+.xp-toast-level-kicker {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.xp-toast-level-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.xp-toast-level-xp {
+  font-size: 0.78rem;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes xp-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.35rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .badge-toast-medal {
   width: 3.25rem;
   height: 3.25rem;
@@ -4977,6 +5073,7 @@ html.native-app {
   overflow-x: hidden;
   max-width: 100%;
   overscroll-behavior: none;
+  touch-action: pan-y;
 }
 
 html.native-app body {
@@ -4985,6 +5082,8 @@ html.native-app body {
   padding-left: 0;
   padding-right: 0;
   overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
   min-height: 100dvh;
   /* fixed backgrounds repaint badly in WKWebView when pulling past scroll top */
   background-attachment: scroll;
@@ -4998,13 +5097,16 @@ html.native-app #root {
 
 html.native-app .app {
   width: 100%;
-  max-width: none;
+  max-width: 100%;
   padding: 0;
   height: 100dvh;
   max-height: 100dvh;
   min-height: 0;
+  min-width: 0;
   background: var(--bg);
   overflow: hidden;
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
 }
 
 html.native-app #root {
@@ -5039,10 +5141,14 @@ html.native-app .content {
   order: 2;
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
+  max-width: 100%;
   padding-bottom: var(--content-scroll-pad);
   scroll-padding-bottom: var(--content-scroll-pad);
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -5065,8 +5171,9 @@ html.native-app .wine-list {
 
 /* Phone-style bottom tabs on all native sizes (iPad was using overflow-x: auto top tabs). */
 html.native-app .tabs {
-  position: relative;
-  z-index: 100;
+  position: sticky;
+  bottom: 0;
+  z-index: 200;
   order: 4;
   flex-shrink: 0;
   margin-top: 0;

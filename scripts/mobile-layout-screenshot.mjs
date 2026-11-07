@@ -67,10 +67,13 @@ async function main() {
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60000 })
   // Auth/session bootstrap on configured builds can take a few seconds.
-  await page.waitForTimeout(8000)
-  if ((await page.locator('nav.tabs').count()) === 0) {
-    throw new Error('Tab bar did not render — is the app shell loaded?')
+  await page.waitForTimeout(2500)
+  const offlineBtn = page.getByRole('button', { name: /Continue without an account/i })
+  if (await offlineBtn.isVisible().catch(() => false)) {
+    await offlineBtn.click()
+    await page.waitForTimeout(800)
   }
+  await page.waitForSelector('nav.tabs', { timeout: 20000 })
 
   const rankingModal = page.locator('.ranking-onboarding')
   if (await rankingModal.isVisible().catch(() => false)) {
@@ -108,6 +111,18 @@ async function main() {
     const tabs = document.querySelector('.tabs')
     const main = document.querySelector('main.content')
     const lastCard = document.querySelector('.wine-card:last-child, .own-activity-item:last-child')
+    const vw = document.documentElement.clientWidth
+    let widest = { tag: '', width: vw }
+    for (const el of document.querySelectorAll('body *')) {
+      const rect = el.getBoundingClientRect()
+      if (rect.width > widest.width + 0.5) {
+        widest = { tag: el.tagName + (el.className ? `.${String(el.className).split(' ')[0]}` : ''), width: rect.width }
+      }
+    }
+    const docOverflow = Math.max(
+      document.documentElement.scrollWidth - vw,
+      document.body.scrollWidth - vw,
+    )
     if (!tabs || !main) return null
     const tr = tabs.getBoundingClientRect()
     const vr = { bottom: window.innerHeight, top: 0, left: 0, right: window.innerWidth }
@@ -119,14 +134,49 @@ async function main() {
     }
     return {
       viewportHeight: window.innerHeight,
+      viewportWidth: vw,
       tabsTop: tr.top,
       tabsBottom: tr.bottom,
       tabsClipped,
       cardAboveTabs,
       mainScrollHeight: main.scrollHeight,
       mainClientHeight: main.clientHeight,
+      docHorizontalOverflow: docOverflow,
+      widestElement: widest,
     }
   })
+
+  // Profile passport tab — common overflow surface
+  await page.click('button[aria-label="Profile"]')
+  await page.waitForTimeout(300)
+  const passportTab = page.getByRole('button', { name: 'Passport' })
+  if (await passportTab.isVisible().catch(() => false)) {
+    await passportTab.click()
+    await page.waitForTimeout(500)
+  }
+  await page.screenshot({
+    path: path.join(OUT_DIR, 'mobile-passport-tab.png'),
+    fullPage: false,
+  })
+
+  // Attempt horizontal pan on the shell — tabs should stay anchored
+  const panMetrics = await page.evaluate(() => {
+    const tabs = document.querySelector('.tabs')
+    const before = tabs?.getBoundingClientRect().left ?? 0
+    window.scrollBy(80, 0)
+    const afterScroll = tabs?.getBoundingClientRect().left ?? 0
+    window.scrollTo(0, 0)
+    const vw = document.documentElement.clientWidth
+    const overflow = Math.max(
+      document.documentElement.scrollWidth - vw,
+      document.body.scrollWidth - vw,
+    )
+    return { tabsShifted: Math.abs(afterScroll - before) > 1, overflow }
+  })
+  await writeFile(
+    path.join(OUT_DIR, 'mobile-horizontal-pan-metrics.json'),
+    JSON.stringify(panMetrics, null, 2),
+  )
 
   await writeFile(path.join(OUT_DIR, 'mobile-layout-metrics.json'), JSON.stringify(metrics, null, 2))
   await browser.close()
@@ -135,11 +185,17 @@ async function main() {
     console.error('Layout metrics unavailable')
     process.exit(1)
   }
-  if (metrics.tabsClipped || !metrics.cardAboveTabs) {
-    console.error('Layout check FAILED', metrics)
+  if (
+    metrics.tabsClipped ||
+    !metrics.cardAboveTabs ||
+    metrics.docHorizontalOverflow > 1 ||
+    panMetrics.overflow > 1 ||
+    panMetrics.tabsShifted
+  ) {
+    console.error('Layout check FAILED', { metrics, panMetrics })
     process.exit(1)
   }
-  console.log('Layout check OK', metrics)
+  console.log('Layout check OK', { metrics, panMetrics })
 }
 
 main().catch((e) => {
