@@ -1,9 +1,9 @@
 import {
   activityEventLabel,
   formatActivityTime,
-  milestoneHeadline,
   type ActivityEvent,
 } from '../lib/activityFeed'
+import { tierLabel, type BadgeTier } from '../lib/badges'
 import { compositeScore } from '../lib/ranking'
 import { isWishlist } from '../lib/wishlist'
 import type { RankingPreference } from '../types'
@@ -41,15 +41,30 @@ export function OwnActivityFeed({ events, rankingPreference, emptyHint }: Props)
       {events.map((event) => {
         const isMilestone = event.type === 'badge_unlock' || event.type === 'journey_complete'
         if (isMilestone) {
-          const headline = milestoneHeadline(event)
+          const ms = event.milestone
+          const badgeLine =
+            event.type === 'badge_unlock' && ms?.badgeTitle
+              ? `${ms.badgeTitle}${ms.tier && ms.tier !== 'locked' ? ` · ${tierLabel(ms.tier as BadgeTier)}` : ''}`
+              : null
+          const journeyLine =
+            event.type === 'journey_complete' && ms?.journeyTitle ? ms.journeyTitle : null
           const prefix =
             event.type === 'badge_unlock' ? 'Earned badge' : activityEventLabel(event.type)
+          const detail = badgeLine ?? journeyLine
+          const icon = ms?.badgeIcon ?? ms?.journeyIcon
           return (
             <li className="own-activity-item own-activity-milestone" key={event.id}>
-              <p className="own-activity-line">
-                {prefix}
-                {headline ? ` — ${headline}` : ''}
-              </p>
+              <div className="own-activity-milestone-row">
+                {icon && (
+                  <span className="own-activity-milestone-icon" aria-hidden="true">
+                    {icon}
+                  </span>
+                )}
+                <p className="own-activity-line">
+                  {prefix}
+                  {detail ? ` — ${detail}` : ''}
+                </p>
+              </div>
               <span className="own-activity-time">{formatActivityTime(event.at)}</span>
             </li>
           )

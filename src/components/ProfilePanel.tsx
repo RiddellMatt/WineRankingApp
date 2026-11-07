@@ -183,6 +183,7 @@ export function ProfilePanel({
             userId={profile.id}
             wines={wines}
             completedJourneys={completedJourneys}
+            rankingPreference={rankingPreference}
             viewerEmail={profile.email ?? email}
             viewerAvatarUrl={profile.avatarUrl}
             onViewCellar={onViewFriendCellar}

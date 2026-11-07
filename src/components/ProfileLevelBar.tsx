@@ -20,7 +20,7 @@ export function ProfileLevelBar({ level, compact = false }: Props) {
           {!compact && !atMax && (
             <span className="profile-level-xp-delta">
               {' '}
-              · {level.xpIntoLevel} / {level.xpForNextLevel} XP
+              · {level.xpIntoLevel} / {level.xpForNextLevel} pts
             </span>
           )}
         </span>

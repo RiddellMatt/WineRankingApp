@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
-import { compositeScore, wineEnjoyment, wineValueScore } from '../lib/ranking'
+import { compositeScore } from '../lib/ranking'
+import { topInsightWines, type InsightsLeaderKind } from '../lib/insightsLeaders'
+import { InsightsLeadersModal } from './InsightsLeadersModal'
 import type { RankingPreference, Wine } from '../types'
 
 interface Props {
@@ -68,18 +70,15 @@ function groupBy(
 
 export function Insights({ wines, rankingPreference }: Props) {
   const [groupMetric, setGroupMetric] = useState<GroupMetric>('count')
+  const [leadersOpen, setLeadersOpen] = useState<InsightsLeaderKind | null>(null)
 
   const insights = useMemo(() => {
     const priced = wines.filter((w) => w.price != null && w.price > 0)
     const totalSpend = priced.reduce((s, w) => s + (w.price ?? 0), 0)
     const avgPrice = priced.length ? totalSpend / priced.length : 0
 
-    const bestValue = [...priced].sort((a, b) => {
-      const aValue = wineValueScore(a) ?? wineEnjoyment(a)
-      const bValue = wineValueScore(b) ?? wineEnjoyment(b)
-      return bValue / (b.price ?? 1) - aValue / (a.price ?? 1)
-    })[0]
-    const splurge = [...priced].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))[0]
+    const topValue = topInsightWines(wines, 'value', rankingPreference, 1)[0]
+    const topSplurge = topInsightWines(wines, 'splurge', rankingPreference, 1)[0]
 
     const histogram: { label: string; value: number; display: string }[] = []
     for (let r = 5; r >= 0.5; r -= 0.5) {
@@ -95,14 +94,19 @@ export function Insights({ wines, rankingPreference }: Props) {
       totalSpend,
       avgPrice,
       pricedCount: priced.length,
-      bestValue,
-      splurge,
+      bestValue: topValue,
+      splurge: topSplurge,
       histogram,
       byType: groupBy(wines, (w) => w.type, rankingPreference),
       byRegion: groupBy(wines, (w) => w.region, rankingPreference),
       byVarietal: groupBy(wines, (w) => w.varietal, rankingPreference),
     }
   }, [wines, rankingPreference])
+
+  const leadersWines = useMemo(
+    () => (leadersOpen ? topInsightWines(wines, leadersOpen, rankingPreference, 3) : []),
+    [leadersOpen, wines, rankingPreference],
+  )
 
   if (wines.length === 0) {
     return (
@@ -126,26 +130,32 @@ export function Insights({ wines, rankingPreference }: Props) {
           <span className="stat-value">${insights.avgPrice.toFixed(0)}</span>
           <span className="stat-label">average bottle</span>
         </div>
-        <div className="stat">
-          <span className="stat-value stat-best" title={insights.bestValue?.name}>
-            {insights.bestValue?.name ?? '—'}
-          </span>
+        <button
+          type="button"
+          className="stat stat-link stat-feature"
+          onClick={() => setLeadersOpen('value')}
+        >
+          <span className="stat-value stat-best">{insights.bestValue?.name ?? '—'}</span>
           <span className="stat-label">
             best value{' '}
             {insights.bestValue &&
               `(${compositeScore(insights.bestValue, rankingPreference).toFixed(1)}★ at $${insights.bestValue.price?.toFixed(0)})`}
           </span>
-        </div>
-        <div className="stat">
-          <span className="stat-value stat-best" title={insights.splurge?.name}>
-            {insights.splurge?.name ?? '—'}
-          </span>
+          <span className="stat-tap-hint">Top 3</span>
+        </button>
+        <button
+          type="button"
+          className="stat stat-link stat-feature"
+          onClick={() => setLeadersOpen('splurge')}
+        >
+          <span className="stat-value stat-best">{insights.splurge?.name ?? '—'}</span>
           <span className="stat-label">
             biggest splurge{' '}
             {insights.splurge &&
               `($${insights.splurge.price?.toFixed(0)} · ${compositeScore(insights.splurge, rankingPreference).toFixed(1)}★)`}
           </span>
-        </div>
+          <span className="stat-tap-hint">Top 3</span>
+        </button>
       </section>
 
       <section className="insight-card">
@@ -204,6 +214,15 @@ export function Insights({ wines, rankingPreference }: Props) {
           </section>
         )}
       </div>
+
+      {leadersOpen && (
+        <InsightsLeadersModal
+          kind={leadersOpen}
+          wines={leadersWines}
+          rankingPreference={rankingPreference}
+          onClose={() => setLeadersOpen(null)}
+        />
+      )}
     </div>
   )
 }

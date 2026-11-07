@@ -82,7 +82,7 @@ function XpGainToast({
       className="xp-toast xp-toast-gain"
       onClick={() => onDismiss(item.toastId)}
     >
-      +{item.amount} XP
+      +{item.amount} points
     </button>
   )
 }
@@ -109,7 +109,9 @@ function LevelUpToast({
       <span className="xp-toast-level-title">
         Level {item.level} · {item.title}
       </span>
-      {item.gained > 0 && <span className="xp-toast-level-xp">+{item.gained} XP</span>}
+      {item.gained > 0 && (
+        <span className="xp-toast-level-xp">+{item.gained} points</span>
+      )}
     </button>
   )
 }
