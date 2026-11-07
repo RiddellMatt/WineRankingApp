@@ -168,11 +168,15 @@ export function ProfilePanel({
 
       {tab === 'passport' && (
         <section className="profile-tab-panel">
-          <p className="friends-hint">Your wine atlas — active journey, region stamps, and friend standings.</p>
+          <p className="friends-hint">
+            Your wine atlas — monthly challenge, active journey, stamps, and friend standings.
+          </p>
           <WinePassport
             userId={profile.id}
             wines={wines}
             completedJourneys={completedJourneys}
+            viewerEmail={profile.email ?? email}
+            viewerAvatarUrl={profile.avatarUrl}
             onViewCellar={onViewFriendCellar}
           />
         </section>
