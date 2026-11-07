@@ -39,6 +39,13 @@ import {
   createJourneyToastItems,
   type MilestoneToastItem,
 } from './components/BadgeUnlockToasts'
+import {
+  createLevelUpToast,
+  createXpGainToast,
+  XpFeedbackToasts,
+  type XpFeedbackToastItem,
+} from './components/XpFeedbackToasts'
+import { computePlayerXpDelta } from './lib/playerXpFeedback'
 import { RankingPreferenceModal } from './components/RankingPreferenceModal'
 import { DecantiLogo, usesThemeWordmarkLogo } from './components/DecantiLogo'
 import { useAppTheme } from './lib/useAppTheme'
@@ -169,6 +176,7 @@ export default function App() {
   const [friendCountLoaded, setFriendCountLoaded] = useState(false)
   const [friendsRequestedTab, setFriendsRequestedTab] = useState<'feed' | 'manage' | null>(null)
   const [badgeToastItems, setBadgeToastItems] = useState<MilestoneToastItem[]>([])
+  const [xpToastItems, setXpToastItems] = useState<XpFeedbackToastItem[]>([])
   const [completedJourneys, setCompletedJourneys] = useState<Set<string>>(() =>
     loadCompletedJourneysLocal(),
   )
@@ -179,6 +187,7 @@ export default function App() {
   const progressSyncedRef = useRef(false)
   const [progressSynced, setProgressSynced] = useState(false)
   const badgeCellarBaselineRef = useRef<Wine[] | null>(null)
+  const xpFeedbackReadyRef = useRef(false)
   const winesRef = useRef(wines)
   const importInputRef = useRef<HTMLInputElement>(null)
 
@@ -283,6 +292,26 @@ export default function App() {
     setBadgeToastItems((prev) => prev.filter((item) => item.toastId !== toastId))
   }, [])
 
+  const dismissXpToast = useCallback((toastId: string) => {
+    setXpToastItems((prev) => prev.filter((item) => item.toastId !== toastId))
+  }, [])
+
+  const pushXpFeedback = useCallback(
+    (previous: BadgeInput, next: BadgeInput) => {
+      if (!xpFeedbackReadyRef.current) return
+      const delta = computePlayerXpDelta(previous, next)
+      if (delta.gained <= 0) return
+      const items: XpFeedbackToastItem[] = []
+      if (delta.leveledUp) {
+        items.push(createLevelUpToast(delta.newLevel, delta.newTitle, delta.gained))
+      } else {
+        items.push(createXpGainToast(delta.gained))
+      }
+      setXpToastItems((prev) => [...prev, ...items])
+    },
+    [],
+  )
+
   const applyBadgeProgressChange = useCallback(
     (previous: BadgeInput, next: BadgeInput) => {
       const earned = earnedBadgeTiersRef.current ?? loadEarnedBadgeTiers() ?? {}
@@ -332,12 +361,12 @@ export default function App() {
       if (count <= previousCount) return
 
       ensureBadgeHydrated({ seedIfMissing: false })
-      applyBadgeProgressChange(
-        buildBadgeInput(winesRef.current, previousCount),
-        buildBadgeInput(winesRef.current, count),
-      )
+      const previousInput = buildBadgeInput(winesRef.current, previousCount)
+      const nextInput = buildBadgeInput(winesRef.current, count)
+      applyBadgeProgressChange(previousInput, nextInput)
+      pushXpFeedback(previousInput, nextInput)
     },
-    [applyBadgeProgressChange, badgeReady, buildBadgeInput, ensureBadgeHydrated],
+    [applyBadgeProgressChange, badgeReady, buildBadgeInput, ensureBadgeHydrated, pushXpFeedback],
   )
 
   function goToAccount(highlightSubscription = false) {
@@ -493,6 +522,7 @@ export default function App() {
     if (badgeCellarBaselineRef.current === null) {
       badgeCellarBaselineRef.current = wines
       ensureBadgeHydrated()
+      xpFeedbackReadyRef.current = true
       return
     }
 
@@ -502,11 +532,19 @@ export default function App() {
     badgeCellarBaselineRef.current = wines
 
     ensureBadgeHydrated({ seedIfMissing: false })
-    applyBadgeProgressChange(
-      buildBadgeInput(previousWines, badgeFriendCountRef.current),
-      buildBadgeInput(wines, badgeFriendCountRef.current),
-    )
-  }, [wines, badgeReady, friendCount, applyBadgeProgressChange, buildBadgeInput, ensureBadgeHydrated])
+    const previousInput = buildBadgeInput(previousWines, badgeFriendCountRef.current)
+    const nextInput = buildBadgeInput(wines, badgeFriendCountRef.current)
+    applyBadgeProgressChange(previousInput, nextInput)
+    pushXpFeedback(previousInput, nextInput)
+  }, [
+    wines,
+    badgeReady,
+    friendCount,
+    applyBadgeProgressChange,
+    buildBadgeInput,
+    ensureBadgeHydrated,
+    pushXpFeedback,
+  ])
 
   // Nudge existing accounts that still use the auto-generated email prefix as their name.
   useEffect(() => {
@@ -758,10 +796,10 @@ export default function App() {
     winesRef.current = nextWines
     badgeCellarBaselineRef.current = nextWines
     ensureBadgeHydrated({ seedIfMissing: false })
-    applyBadgeProgressChangeRef.current(
-      buildBadgeInput(previousWines, badgeFriendCountRef.current),
-      buildBadgeInput(nextWines, friendCount),
-    )
+    const previousInput = buildBadgeInput(previousWines, badgeFriendCountRef.current)
+    const nextInput = buildBadgeInput(nextWines, friendCount)
+    applyBadgeProgressChangeRef.current(previousInput, nextInput)
+    pushXpFeedback(previousInput, nextInput)
     if (cloudUser) {
       try {
         const synced = await upsertWine(cloudUser.id, wine, rankingPreference)
@@ -1380,6 +1418,7 @@ export default function App() {
       )}
 
       <BadgeUnlockToasts items={badgeToastItems} onDismiss={dismissBadgeToast} />
+      <XpFeedbackToasts items={xpToastItems} onDismiss={dismissXpToast} />
 
       {!isSupabaseConfigured && (
         <p className="auth-offline-note app-footer-note">
