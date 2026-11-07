@@ -25,7 +25,7 @@ import { ScanHub } from './components/ScanHub'
 import {
   IconBarChart,
   IconChatBubble,
-  IconGrapes,
+  IconCellarList,
   IconPlus,
   IconUser,
 } from './components/icons/UiIcons'
@@ -1287,7 +1287,7 @@ export default function App() {
             setView('cellar')
           }}
         >
-          <IconGrapes className="tab-icon-svg" size={22} />
+          <IconCellarList className="tab-icon-svg" size={22} />
         </button>
         {cloudUser && (
           <button
