@@ -10,7 +10,8 @@ import { StatusBar, Style } from '@capacitor/status-bar'
 
 async function handleDeepLink(url: string): Promise<void> {
   if (await completeOAuthFromUrl(url)) return
-  emitMobileDeepLinkEvent(parseMobileDeepLink(url))
+  const kind = parseMobileDeepLink(url)
+  emitMobileDeepLinkEvent(kind, url)
 }
 
 async function refreshSession(): Promise<void> {

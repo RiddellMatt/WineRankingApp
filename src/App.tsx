@@ -5,7 +5,12 @@ import { FREE_WINE_LIMIT, FREE_WISHLIST_LIMIT } from './config'
 import { syncProSubscription } from './lib/checkoutApi'
 import { activatePro, loadProStatus, syncProFromServer } from './pro'
 import { isCheckoutSuccessUrl } from './lib/authRedirect'
-import { ACCOUNT_EVENT, CHECKOUT_SUCCESS_EVENT } from './lib/mobileDeepLinks'
+import { ACCOUNT_EVENT, CHECKOUT_SUCCESS_EVENT, FRIENDS_PUSH_EVENT } from './lib/mobileDeepLinks'
+import {
+  PUSH_NAV_EVENT,
+  startPushNotifications,
+  stopPushNotifications,
+} from './lib/pushNotifications'
 import { hideNativeSplashOnce } from './lib/nativeSplash'
 import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
@@ -564,6 +569,32 @@ export default function App() {
       }),
     )
   }, [profile?.rankingPreference, cloudUser, profileLoaded])
+
+  useEffect(() => {
+    if (!configured || !cloudUser?.id) {
+      void stopPushNotifications()
+      return
+    }
+    void startPushNotifications(cloudUser.id)
+    return () => {
+      void stopPushNotifications()
+    }
+  }, [configured, cloudUser?.id])
+
+  useEffect(() => {
+    function onFriendsPush(e: Event) {
+      const tab = (e as CustomEvent<{ tab: 'feed' | 'manage' }>).detail?.tab ?? 'feed'
+      setFriendView(null)
+      setView('friends')
+      setFriendsRequestedTab(tab)
+    }
+    window.addEventListener(PUSH_NAV_EVENT, onFriendsPush)
+    window.addEventListener(FRIENDS_PUSH_EVENT, onFriendsPush)
+    return () => {
+      window.removeEventListener(PUSH_NAV_EVENT, onFriendsPush)
+      window.removeEventListener(FRIENDS_PUSH_EVENT, onFriendsPush)
+    }
+  }, [])
 
   useEffect(() => {
     if (view !== 'account') setAccountHighlight(false)
