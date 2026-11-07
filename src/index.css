@@ -4007,6 +4007,127 @@ textarea {
   color: var(--gold);
 }
 
+.monthly-challenge-card {
+  border-color: color-mix(in srgb, var(--gold) 35%, var(--border));
+  background: color-mix(in srgb, var(--gold) 6%, var(--surface));
+}
+
+.monthly-challenge-head {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.monthly-challenge-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.monthly-challenge-eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.monthly-challenge-head h3 {
+  margin: 0.15rem 0 0;
+  font-size: 1.05rem;
+  font-family: var(--font-display);
+}
+
+.monthly-challenge-desc {
+  margin: 0.35rem 0 0;
+  font-size: 0.86rem;
+  color: var(--text-dim);
+}
+
+.monthly-challenge-progress-row {
+  margin-top: 0.85rem;
+}
+
+.monthly-challenge-track {
+  margin-bottom: 0.35rem;
+}
+
+.monthly-challenge-fill.complete {
+  background: var(--gold);
+}
+
+.monthly-challenge-done {
+  margin: 0.5rem 0 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.monthly-challenge-join {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.monthly-challenge-join-copy {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--text-dim);
+}
+
+.monthly-challenge-friends {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.monthly-challenge-friends-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.monthly-challenge-standings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.monthly-challenge-standing {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.86rem;
+}
+
+.monthly-challenge-standing.is-you {
+  font-weight: 600;
+}
+
+.monthly-challenge-standing-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monthly-challenge-standing-pct {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.monthly-challenge-standing.complete .monthly-challenge-standing-pct {
+  color: var(--gold);
+  font-weight: 600;
+}
+
 .passport-stamp-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

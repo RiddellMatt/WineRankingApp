@@ -17,11 +17,14 @@ import {
   pickActiveJourney,
   type PassportStamp,
 } from '../lib/passportAtlas'
+import { MonthlyChallengeCard } from './MonthlyChallengeCard'
 
 interface Props {
   userId: string
   wines: Wine[]
   completedJourneys: Set<string>
+  viewerEmail?: string
+  viewerAvatarUrl?: string
   onViewCellar?: (friendId: string, friendName: string, avatarUrl?: string) => void
 }
 
@@ -105,7 +108,14 @@ function StampCell({ stamp }: { stamp: PassportStamp }) {
   )
 }
 
-export function WinePassport({ userId, wines, completedJourneys, onViewCellar }: Props) {
+export function WinePassport({
+  userId,
+  wines,
+  completedJourneys,
+  viewerEmail,
+  viewerAvatarUrl,
+  onViewCellar,
+}: Props) {
   const [friendSnapshots, setFriendSnapshots] = useState<FriendCellarSnapshot[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -160,12 +170,22 @@ export function WinePassport({ userId, wines, completedJourneys, onViewCellar }:
 
   if (passport.totalTried === 0) {
     return (
-      <section className="passport-empty-state">
-        <span className="empty-icon" aria-hidden="true">
-          🌍
-        </span>
-        <p>Log a few wines to open your atlas — countries appear as stamps, journeys earn region seals.</p>
-      </section>
+      <div className="wine-passport wine-passport-atlas">
+        <MonthlyChallengeCard
+          wines={wines}
+          completedJourneys={completedJourneys}
+          friendSnapshots={friendSnapshots}
+          viewerId={userId}
+          viewerEmail={viewerEmail}
+          viewerAvatarUrl={viewerAvatarUrl}
+        />
+        <section className="passport-empty-state">
+          <span className="empty-icon" aria-hidden="true">
+            🌍
+          </span>
+          <p>Log a few wines to open your atlas — countries appear as stamps, journeys earn region seals.</p>
+        </section>
+      </div>
     )
   }
 
@@ -190,6 +210,15 @@ export function WinePassport({ userId, wines, completedJourneys, onViewCellar }:
           <span className="passport-atlas-metric-label">journey seals</span>
         </div>
       </section>
+
+      <MonthlyChallengeCard
+        wines={wines}
+        completedJourneys={completedJourneys}
+        friendSnapshots={friendSnapshots}
+        viewerId={userId}
+        viewerEmail={viewerEmail}
+        viewerAvatarUrl={viewerAvatarUrl}
+      />
 
       {activeJourney ? (
         <ActiveJourneyCard journey={activeJourney} />
