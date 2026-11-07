@@ -3737,6 +3737,29 @@ textarea {
   color: var(--accent);
 }
 
+.push-settings-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.push-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.push-settings-row input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+}
+
 /* ── Responsive ─────────────────────────────────────── */
 
 @media (max-width: 640px) {

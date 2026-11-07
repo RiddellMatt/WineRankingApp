@@ -19,6 +19,7 @@ import { APP_NAME_PRO } from '../brand'
 import { Avatar } from './Avatar'
 import { AppIconPicker } from './AppIconPicker'
 import { ThemePicker } from './ThemePicker'
+import { PushNotificationSettings } from './PushNotificationSettings'
 
 const PRO_FEATURES = [
   'Unlimited wines',
@@ -360,6 +361,14 @@ export function AccountPanel({
           </label>
           <p className="account-hint">Used for sign-in and finding friends.</p>
         </section>
+      )}
+
+      {profile && (
+        <PushNotificationSettings
+          userId={profile.id}
+          signedIn={signedIn}
+          cloudConfigured={cloudConfigured}
+        />
       )}
 
       <section className="account-section">
