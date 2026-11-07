@@ -12,6 +12,8 @@ import {
   resetEarnedBadgeProgressForTesting,
 } from '../lib/badgeUnlocks'
 import { fetchFriendships } from '../lib/friendsDb'
+import { computePlayerLevel } from '../lib/playerLevel'
+import { ProfileLevelBar } from './ProfileLevelBar'
 import type { UserProfile } from '../lib/profileDb'
 import type { RankingPreference, Wine } from '../types'
 
@@ -64,6 +66,11 @@ export function ProfilePanel({
     [wines, friendCount, completedJourneys],
   )
 
+  const playerLevel = useMemo(
+    () => computePlayerLevel({ wines, friendCount, completedJourneys }),
+    [wines, friendCount, completedJourneys],
+  )
+
   const activity = useMemo(
     () =>
       mergeOwnActivity(
@@ -107,6 +114,7 @@ export function ProfilePanel({
           {(profile.email ?? email) && (
             <p className="profile-panel-email">{profile.email ?? email}</p>
           )}
+          <ProfileLevelBar level={playerLevel} />
         </div>
         <button type="button" className="btn primary small profile-panel-edit" onClick={onEditProfile}>
           Edit
