@@ -80,7 +80,8 @@ workflows:
         - decanti_keystore
       groups:
         - decanti_env
-        - google_play
+        # Add `google_play` group + publishing block when Play upload credentials exist
+        # (see mobile/CODEMAGIC_SETUP.md §6).
       vars:
         PACKAGE_NAME: com.northline.decanti
       node: v22
@@ -110,8 +111,3 @@ workflows:
             -PversionName=1.0.$UPDATED_BUILD_NUMBER
     artifacts:
       - android/app/build/outputs/**/*.aab
-    publishing:
-      google_play:
-        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
-        track: internal
-        submit_as_draft: true

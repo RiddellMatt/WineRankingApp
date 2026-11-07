@@ -110,6 +110,7 @@ Then run the **Android Play internal track** workflow.
 | `get-latest-app-store-build-number` fails | Set correct `APP_STORE_APPLE_ID` in `codemagic.yaml` |
 | Google sign-in fails on TestFlight | Confirm Supabase redirect URL + Google OAuth test users |
 | Codemagic post-process **422 export compliance** | App Store Connect → TestFlight → build → **Provide Export Compliance** (standard HTTPS only). Rebuilds with `ITSAppUsesNonExemptEncryption` in `Info.plist` declare this automatically. Keep `submit_to_testflight: false` until you need **External** TestFlight beta review. |
+| `unknown variable group(s): google_play` | Either merge a `codemagic.yaml` without `google_play` (build AAB only) or create personal **Environment variables** group `google_play` with `GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS` |
 | Blank app / no backend | Check `decanti_env` group has both `VITE_*` variables |
 | Stripe Pro on iOS | Works for testing; replace with IAP before App Store review |
 
