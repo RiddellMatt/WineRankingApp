@@ -156,35 +156,26 @@ export function IconTrash({ className = 'ui-icon', size = defaultSize }: IconPro
   )
 }
 
-/** Tab: cellar / grape bunch (reference style, ~45° tilt). */
-export function IconGrapes({ className = 'ui-icon', size = defaultSize }: IconProps) {
+/** Tab: cellar — Beli-style “your lists” (3 bullets + 3 lines). */
+export function IconCellarList({ className = 'ui-icon', size = defaultSize }: IconProps) {
   return (
     <svg
       className={className}
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
+      fill="currentColor"
       stroke="currentColor"
-      strokeWidth="1.85"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeWidth="2.1"
+      strokeLinecap="butt"
       aria-hidden
     >
-      <g transform="rotate(-42 12 12)">
-        <path d="M12 3.5v5.2" />
-        <path d="M12 5.5c-2.1.35-3.35 1.85-3.05 3.55.25 1.35 1.95 1.85 3.25 1.05" />
-        <path d="M9.55 7.1 10.85 9.2" />
-        <circle cx="12" cy="9.35" r="1.62" />
-        <circle cx="10.35" cy="10.85" r="1.62" />
-        <circle cx="13.65" cy="10.85" r="1.62" />
-        <circle cx="9.85" cy="12.35" r="1.62" />
-        <circle cx="12" cy="12.25" r="1.62" />
-        <circle cx="14.15" cy="12.35" r="1.62" />
-        <circle cx="10.5" cy="13.85" r="1.62" />
-        <circle cx="13.5" cy="13.85" r="1.62" />
-        <circle cx="12" cy="15.35" r="1.62" />
-      </g>
+      <circle cx="6.85" cy="7.25" r="1.3" stroke="none" />
+      <circle cx="6.85" cy="12" r="1.3" stroke="none" />
+      <circle cx="6.85" cy="16.75" r="1.3" stroke="none" />
+      <path fill="none" d="M10.65 7.25h8.25" />
+      <path fill="none" d="M10.65 12h8.25" />
+      <path fill="none" d="M10.65 16.75h8.25" />
     </svg>
   )
 }
