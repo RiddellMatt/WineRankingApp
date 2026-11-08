@@ -2832,6 +2832,20 @@ textarea {
   align-items: flex-start;
 }
 
+.insights-leaders-header {
+  padding-bottom: 0.65rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.insights-leaders-header h2 {
+  font-size: 1.2rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--text);
+  -webkit-text-fill-color: currentColor;
+}
+
 .stamp-wines-modal-icon {
   font-size: 1.25rem;
 }
@@ -4077,6 +4091,10 @@ textarea {
     overflow-y: auto;
   }
 
+  .modal-backdrop.insights-leaders-backdrop {
+    padding-top: max(0.5rem, calc(var(--safe-top) + 0.35rem));
+  }
+
   .modal-backdrop.wine-form-backdrop {
     overflow: hidden;
     align-items: stretch;
@@ -4090,7 +4108,7 @@ textarea {
     max-width: min(560px, 100%);
   }
 
-  .modal:not(.wine-form-modal) {
+  .modal:not(.wine-form-modal):not(.insights-leaders-modal) {
     margin: 0;
     padding: 1.25rem 1.1rem;
     max-height: calc(

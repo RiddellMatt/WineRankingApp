@@ -24,7 +24,7 @@ export function InsightsLeadersModal({ kind, wines, rankingPreference, onClose }
       <div className="modal insights-leaders-modal" role="dialog" aria-labelledby="insights-leaders-title">
         <div className="modal-header insights-leaders-header">
           <div className="modal-header-titles">
-            <h2 id="insights-leaders-title">Top 3 — {TITLES[kind]}</h2>
+            <h2 id="insights-leaders-title">Your top 3 · {TITLES[kind]}</h2>
           </div>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
             ✕
