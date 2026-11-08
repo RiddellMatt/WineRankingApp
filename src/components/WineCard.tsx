@@ -64,6 +64,7 @@ export function WineCard({
 
   return (
     <li
+      id={`wine-card-${wine.id}`}
       className={`wine-card ${readOnly ? '' : 'clickable'}`}
       onClick={readOnly ? undefined : onEdit}
       onKeyDown={
