@@ -1,1 +1,0 @@
-import{a as e}from"./index-BcWnjK23.js";var t=class extends e{isSupported(){throw this.unimplemented(`isSupported not available on web`)}getName(){throw this.unimplemented(`getName not available on web`)}change(){throw this.unimplemented(`change not available on web`)}reset(){throw this.unimplemented(`reset not available on web`)}};export{t as AppIconWeb};
