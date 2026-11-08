@@ -2,6 +2,12 @@ import { useMemo, useState } from 'react'
 import { compositeScore } from '../lib/ranking'
 import { topInsightWines, type InsightsLeaderKind } from '../lib/insightsLeaders'
 import { InsightsLeadersModal } from './InsightsLeadersModal'
+import {
+  RankedBreakdown,
+  RatingColumnChart,
+  TypeMixDonut,
+  type GroupDatum,
+} from './InsightsVisuals'
 import type { RankingPreference, Wine } from '../types'
 
 interface Props {
@@ -9,49 +15,11 @@ interface Props {
   rankingPreference: RankingPreference
 }
 
-type GroupMetric = 'count' | 'avg'
-
-interface BarDatum {
-  label: string
-  count: number
-  avg: number
-}
-
-function BarChart({ data, metric }: { data: BarDatum[]; metric: GroupMetric }) {
-  const max =
-    metric === 'count'
-      ? Math.max(...data.map((d) => d.count), 1)
-      : Math.max(...data.map((d) => d.avg), 1)
-
-  return (
-    <div className="bar-chart">
-      {data.map((d) => {
-        const value = metric === 'count' ? d.count : d.avg
-        const display = metric === 'count' ? `${d.count}` : d.avg.toFixed(1)
-        return (
-          <div className="bar-row" key={d.label}>
-            <span className="bar-label" title={d.label}>
-              {d.label}
-            </span>
-            <div className="bar-track">
-              <div
-                className="bar-fill"
-                style={{ width: `${max > 0 ? Math.max((value / max) * 100, 2) : 0}%` }}
-              />
-            </div>
-            <span className="bar-value">{display}</span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 function groupBy(
   wines: Wine[],
   key: (w: Wine) => string,
   rankingPreference: RankingPreference,
-): BarDatum[] {
+): GroupDatum[] {
   const groups = new Map<string, Wine[]>()
   for (const w of wines) {
     const k = key(w).trim()
@@ -69,7 +37,6 @@ function groupBy(
 }
 
 export function Insights({ wines, rankingPreference }: Props) {
-  const [groupMetric, setGroupMetric] = useState<GroupMetric>('count')
   const [leadersOpen, setLeadersOpen] = useState<InsightsLeaderKind | null>(null)
 
   const insights = useMemo(() => {
@@ -82,9 +49,7 @@ export function Insights({ wines, rankingPreference }: Props) {
 
     const histogram: { label: string; value: number; display: string }[] = []
     for (let r = 5; r >= 0.5; r -= 0.5) {
-      const count = wines.filter(
-        (w) => compositeScore(w, rankingPreference) === r,
-      ).length
+      const count = wines.filter((w) => compositeScore(w, rankingPreference) === r).length
       if (count > 0 || r >= 3) {
         histogram.push({ label: `${r.toFixed(1)}★`, value: count, display: `${count}` })
       }
@@ -102,6 +67,11 @@ export function Insights({ wines, rankingPreference }: Props) {
       byVarietal: groupBy(wines, (w) => w.varietal, rankingPreference),
     }
   }, [wines, rankingPreference])
+
+  const typeTotal = useMemo(
+    () => insights.byType.reduce((s, d) => s + d.count, 0),
+    [insights.byType],
+  )
 
   const leadersWines = useMemo(
     () => (leadersOpen ? topInsightWines(wines, leadersOpen, rankingPreference, 3) : []),
@@ -121,6 +91,8 @@ export function Insights({ wines, rankingPreference }: Props) {
 
   return (
     <div className="insights">
+      <p className="insights-lead">Based on {wines.length} wines in your cellar.</p>
+
       <section className="stats">
         <div className="stat">
           <span className="stat-value">${insights.totalSpend.toFixed(0)}</span>
@@ -158,61 +130,39 @@ export function Insights({ wines, rankingPreference }: Props) {
         </button>
       </section>
 
-      <section className="insight-card">
-        <h3>Rating distribution</h3>
-        <div className="bar-chart">
-          {insights.histogram.map((d) => (
-            <div className="bar-row bar-row-histogram" key={d.label}>
-              <span className="bar-label">{d.label}</span>
-              <div className="bar-track">
-                <div
-                  className="bar-fill"
-                  style={{ width: `${maxHist > 0 ? Math.max((d.value / maxHist) * 100, 2) : 0}%` }}
-                />
-              </div>
-              <span className="bar-value">{d.display}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+      <div className="insight-hero">
+        <section className="insight-card insight-card-ratings">
+          <h3>Your ratings</h3>
+          <p className="insight-card-hint">How your bottles spread across scores.</p>
+          <RatingColumnChart histogram={insights.histogram} maxValue={maxHist} />
+        </section>
 
-      <div className="insight-group-toolbar">
-        <span className="insight-group-toolbar-label">Breakdown bars show</span>
-        <div className="insight-metric-toggle" role="group" aria-label="Breakdown metric">
-          <button
-            type="button"
-            className={`chip ${groupMetric === 'count' ? 'active' : ''}`}
-            onClick={() => setGroupMetric('count')}
-          >
-            Count
-          </button>
-          <button
-            type="button"
-            className={`chip ${groupMetric === 'avg' ? 'active' : ''}`}
-            onClick={() => setGroupMetric('avg')}
-          >
-            Avg rating
-          </button>
-        </div>
+        <section className="insight-card insight-card-type">
+          <h3>Cellar mix</h3>
+          <p className="insight-card-hint">By wine type — count and average score.</p>
+          <TypeMixDonut data={insights.byType} total={typeTotal} />
+        </section>
       </div>
 
-      <div className="insight-grid">
+      <div className="insight-grid insight-grid-breakdowns">
         <section className="insight-card">
-          <h3>By type</h3>
-          <BarChart data={insights.byType} metric={groupMetric} />
+          <h3>Places</h3>
+          <p className="insight-card-hint">Top regions by bottles logged.</p>
+          <RankedBreakdown
+            title="Top regions"
+            data={insights.byRegion}
+            emptyHint="Add regions when you log wines to see where you drink."
+          />
         </section>
-        {insights.byRegion.length > 0 && (
-          <section className="insight-card">
-            <h3>Top regions</h3>
-            <BarChart data={insights.byRegion} metric={groupMetric} />
-          </section>
-        )}
-        {insights.byVarietal.length > 0 && (
-          <section className="insight-card">
-            <h3>Top varietals</h3>
-            <BarChart data={insights.byVarietal} metric={groupMetric} />
-          </section>
-        )}
+        <section className="insight-card">
+          <h3>Grapes</h3>
+          <p className="insight-card-hint">Most tried varietals.</p>
+          <RankedBreakdown
+            title="Top varietals"
+            data={insights.byVarietal}
+            emptyHint="Varietals appear as you fill them in on each wine."
+          />
+        </section>
       </div>
 
       {leadersOpen && (
