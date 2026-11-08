@@ -28,6 +28,11 @@ final class DecantiBridgeViewController: CAPBridgeViewController {
         scroll.alwaysBounceHorizontal = false
         scroll.isDirectionalLockEnabled = true
         scroll.showsHorizontalScrollIndicator = false
+        // Double-tap zoom without a reliable pinch back out leaves the UI stuck; native apps stay at 1×.
+        scroll.minimumZoomScale = 1
+        scroll.maximumZoomScale = 1
+        scroll.zoomScale = 1
+        scroll.pinchGestureRecognizer?.isEnabled = false
         if #available(iOS 11.0, *) {
             // Safe areas come from CSS; avoid UIKit inset animation fighting layout on cold start.
             scroll.contentInsetAdjustmentBehavior = .never
