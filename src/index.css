@@ -204,9 +204,9 @@ textarea::placeholder {
 /* ── Header ─────────────────────────────────────────── */
 
 .header {
-  padding: 1.15rem 0 0.65rem;
+  padding: 0.7rem 0 0.45rem;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 1rem;
+  margin-bottom: 0.65rem;
   order: 1;
 }
 
@@ -246,7 +246,7 @@ textarea::placeholder {
 }
 
 .brand-mark-header {
-  align-self: flex-start;
+  align-self: center;
 }
 
 .decanti-logo {
@@ -255,15 +255,15 @@ textarea::placeholder {
 }
 
 .decanti-logo-header {
-  height: 2.05rem;
+  height: 1.85rem;
   width: auto;
-  align-self: flex-start;
+  align-self: center;
 }
 
 .decanti-logo-navy.decanti-logo-header,
 .decanti-logo-light.decanti-logo-header {
-  height: clamp(2.75rem, 10vw, 3.35rem);
-  width: clamp(2.75rem, 10vw, 3.35rem);
+  height: clamp(2.35rem, 9vw, 2.85rem);
+  width: clamp(2.35rem, 9vw, 2.85rem);
   object-fit: contain;
   object-position: center;
 }
@@ -291,7 +291,7 @@ textarea::placeholder {
 }
 
 .brand-pro-line {
-  margin: 0 0 0.15rem;
+  margin: 0;
   line-height: 1;
 }
 
@@ -349,7 +349,13 @@ textarea::placeholder {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.header-actions:not(:empty) {
+  min-width: 2.35rem;
 }
 
 /* ── Notifications bell ───────────────────────────────── */
@@ -363,8 +369,8 @@ textarea::placeholder {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.35rem;
+  height: 2.35rem;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface);
@@ -4102,9 +4108,9 @@ textarea {
   }
 
   .header {
-    padding-top: max(1.15rem, var(--safe-top));
-    padding-bottom: 0.75rem;
-    margin-bottom: 1rem;
+    padding-top: max(0.55rem, var(--safe-top));
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.6rem;
     border-bottom: none;
   }
 
@@ -4125,8 +4131,11 @@ textarea {
   }
 
   .header-inner {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem;
+    flex-wrap: nowrap;
   }
 
   .brand h1 {
@@ -4138,14 +4147,8 @@ textarea {
   }
 
   .header-actions {
-    width: 100%;
-    gap: 0.5rem;
-  }
-
-  .notifications-bell {
-    order: 2;
-    margin-left: auto;
-    flex-shrink: 0;
+    width: auto;
+    gap: 0.35rem;
   }
 
   .header-actions .btn {
@@ -4162,7 +4165,7 @@ textarea {
 
   .notifications-panel {
     position: fixed;
-    top: calc(var(--safe-top) + 3.75rem);
+    top: calc(var(--safe-top) + 3.15rem);
     left: max(0.75rem, var(--safe-left));
     right: max(0.75rem, var(--safe-right));
     width: auto;
@@ -5612,15 +5615,23 @@ html.native-app .content {
 }
 
 html.native-app .header {
-  padding-top: max(0.65rem, var(--safe-top));
-  padding-bottom: 0.45rem;
-  margin-bottom: 0.65rem;
+  padding-top: max(0.5rem, var(--safe-top));
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.55rem;
   border-bottom: none;
 }
 
 html.native-app .header-inner {
-  flex-direction: column;
-  align-items: stretch;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  flex-wrap: nowrap;
+}
+
+html.native-app .brand {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 html.native-app .wine-list {
