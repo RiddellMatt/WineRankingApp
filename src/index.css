@@ -40,7 +40,7 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
-  --tab-bar-height: 4.25rem;
+  --tab-bar-height: 3.55rem;
   /* Extra scroll room at end of lists (tab bar is a flex row, not overlapping). */
   --content-scroll-pad: 1.25rem;
   --modal-sheet-top-gap: 15dvh;
@@ -288,6 +288,23 @@ textarea::placeholder {
 
 .brand.brand-theme-logo .tagline {
   margin-top: 0.1rem;
+}
+
+.brand-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.header-page-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  line-height: 1.2;
 }
 
 .brand-pro-line {
@@ -2824,6 +2841,18 @@ textarea {
   flex-shrink: 0;
 }
 
+.insights-leaders-modal .modal-header {
+  z-index: 2;
+  padding-bottom: 0.45rem;
+  margin-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.insights-leaders-modal .modal-header h2 {
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
 .insights-leaders-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -4180,41 +4209,45 @@ textarea {
     display: inline;
   }
 
-  .tabs {
+  .tabs.tabs-dock {
     position: sticky;
     bottom: 0;
     z-index: 200;
     order: 4;
     flex-shrink: 0;
     margin-top: 0;
-    margin-bottom: 0;
-    gap: 0;
-    width: 100%;
-    max-width: 100%;
-    min-height: calc(var(--tab-bar-height) + var(--safe-bottom));
-    padding:
-      0.65rem max(0.25rem, var(--safe-left))
-      max(0.75rem, calc(var(--safe-bottom) + 0.35rem))
-      max(0.25rem, var(--safe-right));
-    background: var(--bg-soft);
-    border-top: 1px solid var(--border);
+    margin-left: max(0.45rem, var(--safe-left));
+    margin-right: max(0.45rem, var(--safe-right));
+    margin-bottom: max(0.35rem, calc(var(--safe-bottom) + 0.2rem));
+    gap: 0.15rem;
+    width: auto;
+    max-width: none;
+    min-height: calc(var(--tab-bar-height) + 0.15rem);
+    padding: 0.28rem 0.35rem max(0.3rem, var(--safe-bottom));
+    border-radius: 22px;
+    border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+    background: color-mix(in srgb, var(--surface) 68%, transparent);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
     justify-content: space-between;
     overflow-x: hidden;
     overflow-y: visible;
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+    box-shadow:
+      0 10px 36px rgba(0, 0, 0, 0.42),
+      inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
   }
 
-  .tab {
+  .tabs.tabs-dock .tab {
     flex: 1 1 0;
     min-width: 0;
     max-width: none;
     justify-content: center;
     font-size: 0.75rem;
     font-weight: 600;
-    padding: 0.35rem 0.1rem;
-    min-height: 2.75rem;
-    border-bottom: none;
-    border-top: 2px solid transparent;
+    padding: 0.3rem 0.08rem;
+    min-height: 2.45rem;
+    border: none;
+    border-radius: 14px;
     flex-direction: column;
     gap: 0.15rem;
     line-height: 1.15;
@@ -4222,11 +4255,21 @@ textarea {
     touch-action: manipulation;
     white-space: normal;
     overflow-wrap: anywhere;
+    transition: background 0.15s, color 0.15s;
   }
 
-  .tab.active {
-    border-bottom-color: transparent;
-    border-top-color: var(--accent);
+  .tabs.tabs-dock .tab.active {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    color: var(--text);
+  }
+
+  .tabs.tabs-dock .tab-fab-bubble {
+    width: 2.85rem;
+    height: 2.85rem;
+    margin-top: -0.95rem;
+    box-shadow:
+      0 6px 18px rgba(196, 30, 58, 0.5),
+      0 0 0 2px color-mix(in srgb, var(--surface) 85%, transparent);
   }
 
   .tab .pro-badge {
@@ -4344,7 +4387,7 @@ textarea {
     max-width: min(560px, 100%);
   }
 
-  .modal:not(.wine-form-modal) {
+  .modal:not(.wine-form-modal):not(.insights-leaders-modal) {
     margin: 0;
     padding: 1.25rem 1.1rem;
     max-height: calc(
@@ -5141,6 +5184,75 @@ textarea {
   white-space: nowrap;
 }
 
+.varietal-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.varietal-select select,
+.varietal-select-custom {
+  width: 100%;
+}
+
+.region-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.region-picker-search-label {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  margin-bottom: 0.25rem;
+}
+
+.region-picker-nested {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.region-picker-field {
+  margin: 0;
+}
+
+.region-picker-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 9rem;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+}
+
+.region-picker-result {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.region-picker-result:hover {
+  background: var(--accent-soft);
+}
+
+.region-picker-empty {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.region-picker-custom {
+  margin: 0;
+}
+
 .region-suggestions {
   display: flex;
   flex-wrap: wrap;
@@ -5647,41 +5759,45 @@ html.native-app .wine-list {
 }
 
 /* Phone-style bottom tabs on all native sizes (iPad was using overflow-x: auto top tabs). */
-html.native-app .tabs {
+html.native-app .tabs.tabs-dock {
   position: sticky;
   bottom: 0;
   z-index: 200;
   order: 4;
   flex-shrink: 0;
   margin-top: 0;
-  margin-bottom: 0;
-  gap: 0;
-  width: 100%;
-  max-width: 100%;
-  min-height: calc(var(--tab-bar-height) + var(--safe-bottom));
-  padding:
-    0.65rem max(0.25rem, var(--safe-left))
-    max(0.75rem, calc(var(--safe-bottom) + 0.35rem))
-    max(0.25rem, var(--safe-right));
-  background: var(--bg-soft);
-  border-top: 1px solid var(--border);
+  margin-left: max(0.45rem, var(--safe-left));
+  margin-right: max(0.45rem, var(--safe-right));
+  margin-bottom: max(0.35rem, calc(var(--safe-bottom) + 0.2rem));
+  gap: 0.15rem;
+  width: auto;
+  max-width: none;
+  min-height: calc(var(--tab-bar-height) + 0.15rem);
+  padding: 0.28rem 0.35rem max(0.3rem, var(--safe-bottom));
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
   justify-content: space-between;
   overflow-x: hidden;
   overflow-y: visible;
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow:
+    0 10px 36px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
 }
 
-html.native-app .tab {
+html.native-app .tabs.tabs-dock .tab {
   flex: 1 1 0;
   min-width: 0;
   max-width: none;
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.35rem 0.1rem;
-  min-height: 2.75rem;
-  border-bottom: none;
-  border-top: 2px solid transparent;
+  padding: 0.3rem 0.08rem;
+  min-height: 2.45rem;
+  border: none;
+  border-radius: 14px;
   flex-direction: column;
   gap: 0.15rem;
   line-height: 1.15;
@@ -5689,11 +5805,13 @@ html.native-app .tab {
   touch-action: manipulation;
   white-space: normal;
   overflow-wrap: anywhere;
+  transition: background 0.15s, color 0.15s;
 }
 
-html.native-app .tab.active {
-  border-bottom-color: transparent;
-  border-top-color: var(--accent);
+html.native-app .tabs.tabs-dock .tab.active {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--text);
+  border-top-color: transparent;
 }
 
 html.native-app .tab-text-long {
@@ -5713,10 +5831,13 @@ html.native-app .tab-icon-svg {
   height: 1.45rem;
 }
 
-html.native-app .tab-fab-bubble {
-  width: 3.5rem;
-  height: 3.5rem;
-  margin-top: -1.25rem;
+html.native-app .tabs.tabs-dock .tab-fab-bubble {
+  width: 2.85rem;
+  height: 2.85rem;
+  margin-top: -0.95rem;
+  box-shadow:
+    0 6px 18px rgba(196, 30, 58, 0.5),
+    0 0 0 2px color-mix(in srgb, var(--surface) 85%, transparent);
 }
 
 html.native-app .tab-fab .tab-fab-icon {

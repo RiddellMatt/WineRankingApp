@@ -14,6 +14,8 @@ import { Keyboard } from '@capacitor/keyboard'
 import { StarInput } from './StarRating'
 import { TasteInput } from './TasteProfile'
 import { TastingTagsInput } from './TastingTagsInput'
+import { VarietalSelect } from './VarietalSelect'
+import { RegionPicker } from './RegionPicker'
 
 interface Props {
   initial: Wine | null
@@ -476,33 +478,15 @@ export function WineForm({
           </label>
           <label className="field">
             <span>Varietal</span>
-            <input
-              value={varietal}
-              onChange={(e) => setVarietal(e.target.value)}
-              placeholder="e.g. Nebbiolo"
-            />
+            <VarietalSelect value={varietal} onChange={setVarietal} />
           </label>
           <label className="field">
             <span>Region</span>
-            <input
+            <RegionPicker
               value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              placeholder="e.g. Piedmont, Italy"
+              onChange={setRegion}
+              suggestionChips={regionSuggestions.length > 0 && !region.trim() ? regionSuggestions : []}
             />
-            {regionSuggestions.length > 0 && !region.trim() && (
-              <div className="region-suggestions">
-                {regionSuggestions.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    className="region-suggestion-chip"
-                    onClick={() => setRegion(suggestion)}
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            )}
             {journeyHints.length > 0 && (
               <ul className="journey-form-hints">
                 {journeyHints.map((hint) => (
