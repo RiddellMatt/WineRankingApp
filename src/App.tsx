@@ -54,7 +54,7 @@ import { computePlayerXpDelta } from './lib/playerXpFeedback'
 import { RankingPreferenceModal } from './components/RankingPreferenceModal'
 import { DecantiLogo, usesThemeWordmarkLogo } from './components/DecantiLogo'
 import { useAppTheme } from './lib/useAppTheme'
-import { APP_NAME, APP_NAME_PRO, APP_TAGLINE, STORAGE_PREFIX } from './brand'
+import { APP_NAME, APP_NAME_PRO, STORAGE_PREFIX } from './brand'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
 import { fetchFriendships } from './lib/friendsDb'
 import {
@@ -849,6 +849,11 @@ export default function App() {
       ratingBuyAgain: favoriteRatingValue(!isWineFavorite(wine)),
     }
     await persistWine(applyCompositeRating(next, rankingPreference))
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`wine-card-${wine.id}`)
+        ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    })
   }
 
   async function handleSave(wine: Wine) {
@@ -1009,7 +1014,6 @@ export default function App() {
                   {pro && <span className="pro-badge inline">PRO</span>}
                 </h1>
               )}
-              <p className="tagline">{APP_TAGLINE}</p>
             </div>
           </div>
           <div className="header-actions">

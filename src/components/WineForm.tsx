@@ -442,7 +442,7 @@ export function WineForm({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Barolo Riserva"
-              autoFocus
+              autoFocus={!initial}
             />
           </label>
           <label className="field">
