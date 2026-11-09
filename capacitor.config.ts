@@ -45,7 +45,7 @@ const config: CapacitorConfig = {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
     TabBar: {
-      selectedColor: '#E8B04B',
+      selectedColor: '#c41e3a',
     },
   },
 }

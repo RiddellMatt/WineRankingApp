@@ -3,7 +3,8 @@ import { TabBar, type Tab } from '@capawesome/capacitor-tab-bar'
 
 export type NativeTabId = 'cellar' | 'friends' | 'scan' | 'insights' | 'account'
 
-const SELECTED_GOLD = '#E8B04B'
+/** Classic Decanti accent — matches `--accent` on the default theme. */
+const NATIVE_TAB_SELECTED = '#c41e3a'
 
 let visible = false
 let listenerReady = false
@@ -77,7 +78,7 @@ export async function syncNativeTabBar(options: {
   const selectedTabId = pickSelected(tabs, options.selected)
 
   try {
-    await TabBar.setColors({ selectedColor: SELECTED_GOLD })
+    await TabBar.setColors({ selectedColor: NATIVE_TAB_SELECTED })
     await TabBar.setTabs({ tabs, selectedTabId })
     if (!visible) {
       await TabBar.show()
