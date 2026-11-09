@@ -19,6 +19,7 @@ import {
   setNativeTabBarSelectHandler,
   syncNativeTabBar,
 } from './lib/nativeTabBar'
+import { adsEnabledForUser } from './lib/adConfig'
 import { refreshBannerMargin, startBannerAds, stopBannerAds } from './lib/bannerAds'
 import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
@@ -259,8 +260,10 @@ export default function App() {
     void selectNativeTab(view)
   }, [view])
 
+  const adsAllowed = adsEnabledForUser(pro)
+
   useEffect(() => {
-    if (!isNativeApp() || !mainAppShell || authGateScreen || pro) {
+    if (!isNativeApp() || !mainAppShell || authGateScreen || !adsAllowed) {
       void stopBannerAds()
       return
     }
@@ -268,12 +271,12 @@ export default function App() {
     return () => {
       void stopBannerAds()
     }
-  }, [mainAppShell, authGateScreen, pro])
+  }, [mainAppShell, authGateScreen, adsAllowed])
 
   useEffect(() => {
-    if (!isNativeApp() || pro || !mainAppShell || authGateScreen) return
+    if (!isNativeApp() || !adsAllowed || !mainAppShell || authGateScreen) return
     void refreshBannerMargin()
-  }, [cloudUser, mainAppShell, authGateScreen, pro])
+  }, [cloudUser, mainAppShell, authGateScreen, adsAllowed])
 
   const cellarProgressReady =
     cellarReady && (!cloudUser || profileLoaded) && friendCountLoaded
