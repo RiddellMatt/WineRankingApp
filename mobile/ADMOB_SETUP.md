@@ -7,6 +7,20 @@ Decanti shows an **adaptive bottom banner** on **iOS and Android** via `@capacit
 
 ---
 
+## How the app decides to show a banner
+
+| Condition | Banner? |
+| --------- | ------- |
+| Mobile web / browser | No — native only |
+| Auth / login screen | No |
+| **Pro** subscriber | No (unless `VITE_ADMOB_SHOW_FOR_PRO=true`) |
+| Free signed-in user, main app | Yes — if SDK init + consent allow |
+| `VITE_ADMOB_TEST_MODE=false` but no `VITE_ADMOB_BANNER_*` | No — fails closed |
+
+Flow: `startBannerAds()` → `AdMob.initialize()` → UMP consent → `showBanner()` with adaptive size. The native view sits **above** the WebView; `--banner-ad-height` pads your scrollable content.
+
+---
+
 ## Test ads while you are Pro
 
 Production policy is **no ads for Pro**. To verify banners on a Pro account (TestFlight / internal builds):
@@ -83,7 +97,18 @@ VITE_ADMOB_TEST_MODE=false
 # VITE_ADMOB_SHOW_FOR_PRO=true   # QA only; omit for release
 ```
 
-**Codemagic** (or CI that runs `build:mobile`): add the same variables to the environment group you use for `decanti_env` / mobile builds so TestFlight and Play bundles get production units.
+**Codemagic** — Team settings → Environment variables → group **`decanti_env`** (same group as Supabase in `codemagic.yaml`):
+
+| Variable | Example | Secure? |
+| -------- | ------- | ------- |
+| `VITE_ADMOB_BANNER_IOS` | `ca-app-pub-1234567890123456/1111111111` | No (not secret) |
+| `VITE_ADMOB_BANNER_ANDROID` | `ca-app-pub-1234567890123456/2222222222` | No |
+| `VITE_ADMOB_TEST_MODE` | `false` when earning real revenue; omit or `true` for Google test ads | No |
+| `VITE_ADMOB_SHOW_FOR_PRO` | `true` only while **you** test on Pro TestFlight; remove before public release | No |
+
+Codemagic runs `npm run build:mobile`, which loads these via Vite at compile time — changing them requires a **new build**, not just a web deploy.
+
+**Windows local Android debug:** copy the same keys into `.env.local`, then `npm run cap:sync` and run from Android Studio/emulator.
 
 If `VITE_ADMOB_TEST_MODE=false` and a banner id is missing, the app **will not** request ads (by design).
 
