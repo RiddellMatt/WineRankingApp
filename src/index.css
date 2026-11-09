@@ -4209,7 +4209,6 @@ textarea {
     display: inline;
   }
 
-  /* Compact dock — CSS only; not iOS 26 UITabBar Liquid Glass (requires native tab UI). */
   .tabs.tabs-dock {
     position: sticky;
     bottom: 0;
@@ -4217,25 +4216,25 @@ textarea {
     order: 4;
     flex-shrink: 0;
     margin-top: 0;
-    margin-left: 0;
-    margin-right: 0;
-    margin-bottom: 0;
-    gap: 0;
-    width: 100%;
-    max-width: 100%;
-    min-height: calc(var(--tab-bar-height) + var(--safe-bottom));
-    padding:
-      0.35rem max(0.35rem, var(--safe-left))
-      max(0.4rem, var(--safe-bottom))
-      max(0.35rem, var(--safe-right));
-    border-radius: 0;
-    border: none;
-    border-top: 1px solid var(--border);
-    background: var(--bg-soft);
+    margin-left: max(0.45rem, var(--safe-left));
+    margin-right: max(0.45rem, var(--safe-right));
+    margin-bottom: max(0.35rem, calc(var(--safe-bottom) + 0.2rem));
+    gap: 0.15rem;
+    width: auto;
+    max-width: none;
+    min-height: calc(var(--tab-bar-height) + 0.15rem);
+    padding: 0.28rem 0.35rem max(0.3rem, var(--safe-bottom));
+    border-radius: 22px;
+    border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+    background: color-mix(in srgb, var(--surface) 68%, transparent);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
     justify-content: space-between;
     overflow-x: hidden;
     overflow-y: visible;
-    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.28);
+    box-shadow:
+      0 10px 36px rgba(0, 0, 0, 0.42),
+      inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
   }
 
   .tabs.tabs-dock .tab {
@@ -4245,10 +4244,10 @@ textarea {
     justify-content: center;
     font-size: 0.75rem;
     font-weight: 600;
-    padding: 0.28rem 0.08rem;
-    min-height: 2.35rem;
+    padding: 0.3rem 0.08rem;
+    min-height: 2.45rem;
     border: none;
-    border-radius: 10px;
+    border-radius: 14px;
     flex-direction: column;
     gap: 0.15rem;
     line-height: 1.15;
@@ -4256,22 +4255,21 @@ textarea {
     touch-action: manipulation;
     white-space: normal;
     overflow-wrap: anywhere;
-    transition: color 0.15s, background 0.15s;
+    transition: background 0.15s, color 0.15s;
   }
 
   .tabs.tabs-dock .tab.active {
-    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
     color: var(--text);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
   }
 
   .tabs.tabs-dock .tab-fab-bubble {
-    width: 2.75rem;
-    height: 2.75rem;
-    margin-top: -0.65rem;
+    width: 2.85rem;
+    height: 2.85rem;
+    margin-top: -0.95rem;
     box-shadow:
-      0 4px 14px rgba(196, 30, 58, 0.45),
-      0 0 0 2px var(--bg-soft);
+      0 6px 18px rgba(196, 30, 58, 0.5),
+      0 0 0 2px color-mix(in srgb, var(--surface) 85%, transparent);
   }
 
   .tab .pro-badge {
@@ -5767,23 +5765,26 @@ html.native-app .tabs.tabs-dock {
   z-index: 200;
   order: 4;
   flex-shrink: 0;
-  margin: 0;
-  gap: 0;
-  width: 100%;
-  max-width: 100%;
-  min-height: calc(var(--tab-bar-height) + var(--safe-bottom));
-  padding:
-    0.35rem max(0.35rem, var(--safe-left))
-    max(0.4rem, var(--safe-bottom))
-    max(0.35rem, var(--safe-right));
-  border-radius: 0;
-  border: none;
-  border-top: 1px solid var(--border);
-  background: var(--bg-soft);
+  margin-top: 0;
+  margin-left: max(0.45rem, var(--safe-left));
+  margin-right: max(0.45rem, var(--safe-right));
+  margin-bottom: max(0.35rem, calc(var(--safe-bottom) + 0.2rem));
+  gap: 0.15rem;
+  width: auto;
+  max-width: none;
+  min-height: calc(var(--tab-bar-height) + 0.15rem);
+  padding: 0.28rem 0.35rem max(0.3rem, var(--safe-bottom));
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
   justify-content: space-between;
   overflow-x: hidden;
   overflow-y: visible;
-  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.28);
+  box-shadow:
+    0 10px 36px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
 }
 
 html.native-app .tabs.tabs-dock .tab {
@@ -5793,10 +5794,10 @@ html.native-app .tabs.tabs-dock .tab {
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.28rem 0.08rem;
-  min-height: 2.35rem;
+  padding: 0.3rem 0.08rem;
+  min-height: 2.45rem;
   border: none;
-  border-radius: 10px;
+  border-radius: 14px;
   flex-direction: column;
   gap: 0.15rem;
   line-height: 1.15;
@@ -5804,14 +5805,13 @@ html.native-app .tabs.tabs-dock .tab {
   touch-action: manipulation;
   white-space: normal;
   overflow-wrap: anywhere;
-  transition: color 0.15s, background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 html.native-app .tabs.tabs-dock .tab.active {
-  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
   color: var(--text);
   border-top-color: transparent;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 html.native-app .tab-text-long {
@@ -5832,12 +5832,12 @@ html.native-app .tab-icon-svg {
 }
 
 html.native-app .tabs.tabs-dock .tab-fab-bubble {
-  width: 2.75rem;
-  height: 2.75rem;
-  margin-top: -0.65rem;
+  width: 2.85rem;
+  height: 2.85rem;
+  margin-top: -0.95rem;
   box-shadow:
-    0 4px 14px rgba(196, 30, 58, 0.45),
-    0 0 0 2px var(--bg-soft);
+    0 6px 18px rgba(196, 30, 58, 0.5),
+    0 0 0 2px color-mix(in srgb, var(--surface) 85%, transparent);
 }
 
 html.native-app .tab-fab .tab-fab-icon {
