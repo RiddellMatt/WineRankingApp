@@ -5867,3 +5867,13 @@ html.native-app .modal-backdrop.wine-form-backdrop {
 html.native-app .modal-backdrop.insights-leaders-backdrop {
   padding-top: max(0.35rem, calc(var(--safe-top) + 0.25rem));
 }
+
+/* iOS system UITabBar (@capawesome/capacitor-tab-bar) — Liquid Glass on iOS 26+ */
+html.native-ios-tab-bar .tabs.tabs-dock {
+  display: none !important;
+}
+
+html.native-ios-tab-bar .content {
+  padding-bottom: max(0.5rem, var(--safe-bottom));
+  scroll-padding-bottom: max(0.5rem, var(--safe-bottom));
+}

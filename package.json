@@ -31,6 +31,7 @@
     "@capacitor/share": "^8.0.3",
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
+    "@capawesome/capacitor-tab-bar": "^0.1.0",
     "@revenuecat/purchases-capacitor": "^14.0.0",
     "@supabase/supabase-js": "^2.112.3",
     "react": "^19.2.8",

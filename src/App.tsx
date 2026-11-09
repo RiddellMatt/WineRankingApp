@@ -12,6 +12,13 @@ import {
   stopPushNotifications,
 } from './lib/pushNotifications'
 import { hideNativeSplashOnce } from './lib/nativeSplash'
+import {
+  hideNativeTabBar,
+  isNativeIosTabBar,
+  selectNativeTab,
+  setNativeTabBarSelectHandler,
+  syncNativeTabBar,
+} from './lib/nativeTabBar'
 import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
 import { AddWineChooser, type AddWineDestination } from './components/AddWineChooser'
@@ -216,6 +223,40 @@ export default function App() {
     if (!el) return
     el.scrollTop = 0
   }, [view, friendView])
+
+  const viewRef = useRef(view)
+  viewRef.current = view
+
+  const mainAppShell =
+    !authLoading && (offlineMode || !configured || Boolean(user))
+  const authGateScreen = configured && !offlineMode && !user
+
+  useEffect(() => {
+    if (!isNativeIosTabBar()) return
+    setNativeTabBarSelectHandler((id) => {
+      setFriendView(null)
+      if (id === 'account') setProfileMode('preview')
+      setView(id)
+    })
+    return () => setNativeTabBarSelectHandler(null)
+  }, [])
+
+  useEffect(() => {
+    if (!isNativeIosTabBar() || authLoading) return
+    if (!mainAppShell || authGateScreen) {
+      void hideNativeTabBar()
+      return
+    }
+    void syncNativeTabBar({
+      signedIn: Boolean(cloudUser),
+      pro,
+      selected: viewRef.current,
+    })
+  }, [authLoading, mainAppShell, authGateScreen, cloudUser, pro])
+
+  useEffect(() => {
+    void selectNativeTab(view)
+  }, [view])
 
   const cellarProgressReady =
     cellarReady && (!cloudUser || profileLoaded) && friendCountLoaded
@@ -1371,6 +1412,7 @@ export default function App() {
         )}
       </main>
 
+      {!isNativeIosTabBar() && (
       <nav className="tabs tabs-dock" aria-label="Main">
         <button
           type="button"
@@ -1439,6 +1481,7 @@ export default function App() {
           <IconUser className="tab-icon-svg" size={22} />
         </button>
       </nav>
+      )}
 
       {addWineChooserOpen && (
         <AddWineChooser
