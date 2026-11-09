@@ -19,6 +19,7 @@ import {
   setNativeTabBarSelectHandler,
   syncNativeTabBar,
 } from './lib/nativeTabBar'
+import { refreshBannerMargin, startBannerAds, stopBannerAds } from './lib/bannerAds'
 import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
 import { AddWineChooser, type AddWineDestination } from './components/AddWineChooser'
@@ -257,6 +258,22 @@ export default function App() {
   useEffect(() => {
     void selectNativeTab(view)
   }, [view])
+
+  useEffect(() => {
+    if (!isNativeApp() || !mainAppShell || authGateScreen || pro) {
+      void stopBannerAds()
+      return
+    }
+    void startBannerAds().then(() => refreshBannerMargin())
+    return () => {
+      void stopBannerAds()
+    }
+  }, [mainAppShell, authGateScreen, pro])
+
+  useEffect(() => {
+    if (!isNativeApp() || pro || !mainAppShell || authGateScreen) return
+    void refreshBannerMargin()
+  }, [cloudUser, mainAppShell, authGateScreen, pro])
 
   const cellarProgressReady =
     cellarReady && (!cloudUser || profileLoaded) && friendCountLoaded
