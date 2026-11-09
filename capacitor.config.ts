@@ -1,3 +1,4 @@
+/// <reference types="@capawesome/capacitor-tab-bar" />
 import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
@@ -42,6 +43,9 @@ const config: CapacitorConfig = {
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
+    },
+    TabBar: {
+      selectedColor: '#E8B04B',
     },
   },
 }
