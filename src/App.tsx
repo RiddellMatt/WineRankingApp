@@ -118,6 +118,14 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 type View = 'cellar' | 'scan' | 'insights' | 'friends' | 'account'
 type CellarSegment = 'tried' | 'wishlist'
 
+const VIEW_PAGE_TITLES: Record<View, string> = {
+  cellar: 'Cellar',
+  scan: 'Add',
+  insights: 'Stats',
+  friends: 'Social',
+  account: 'Profile',
+}
+
 function sortWines(list: Wine[], sortKey: SortKey, rankingPreference: RankingPreference): Wine[] {
   return [...list].sort((a, b) => {
     switch (sortKey) {
@@ -195,6 +203,19 @@ export default function App() {
   const xpFeedbackReadyRef = useRef(false)
   const winesRef = useRef(wines)
   const importInputRef = useRef<HTMLInputElement>(null)
+  const contentRef = useRef<HTMLElement>(null)
+
+  const headerPageTitle = useMemo(() => {
+    if (view === 'friends' && friendView) return `${friendView.name}'s cellar`
+    if (view === 'account' && profileMode === 'edit') return 'Edit profile'
+    return VIEW_PAGE_TITLES[view]
+  }, [view, friendView, profileMode])
+
+  useEffect(() => {
+    const el = contentRef.current
+    if (!el) return
+    el.scrollTop = 0
+  }, [view, friendView])
 
   const cellarProgressReady =
     cellarReady && (!cloudUser || profileLoaded) && friendCountLoaded
@@ -1001,7 +1022,7 @@ export default function App() {
         <div className="header-inner">
           <div className={`brand${showThemeLogo ? ' brand-theme-logo' : ''}`}>
             <DecantiLogo context="header" />
-            <div>
+            <div className="brand-text">
               {showThemeLogo ? (
                 pro && (
                   <p className="brand-pro-line">
@@ -1014,6 +1035,7 @@ export default function App() {
                   {pro && <span className="pro-badge inline">PRO</span>}
                 </h1>
               )}
+              <p className="header-page-title">{headerPageTitle}</p>
             </div>
           </div>
           <div className="header-actions">
@@ -1031,7 +1053,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="content">
+      <main ref={contentRef} className="content">
         {cellarLoading && view !== 'account' && (
           <p className="auth-info">Syncing cellar…</p>
         )}
@@ -1349,7 +1371,7 @@ export default function App() {
         )}
       </main>
 
-      <nav className="tabs" aria-label="Main">
+      <nav className="tabs tabs-dock" aria-label="Main">
         <button
           type="button"
           className={`tab tab-icon ${view === 'cellar' ? 'active' : ''}`}
