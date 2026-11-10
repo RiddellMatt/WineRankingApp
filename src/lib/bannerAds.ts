@@ -25,13 +25,20 @@ function setBannerInset(heightPx: number): void {
   }
 }
 
+function cssPx(value: string): number {
+  const n = parseFloat(value)
+  return Number.isFinite(n) ? n : 0
+}
+
 /** Lift banner above Decanti bottom chrome (native UITabBar or HTML dock). */
 function bannerBottomMarginPx(): number {
   const root = document.documentElement
-  const tabBar =
-    parseFloat(getComputedStyle(root).getPropertyValue('--tab-bar-height')) || 3.55 * 16
+  const style = getComputedStyle(root)
+  const tabBar = cssPx(style.getPropertyValue('--tab-bar-height')) || 3.55 * 16
+  const safeBottom = cssPx(style.getPropertyValue('--safe-bottom'))
   if (root.classList.contains('native-ios-tab-bar')) {
-    return Math.round(tabBar)
+    // Banner pins to safe-area bottom; UITabBar + home indicator sit below / overlap that edge.
+    return Math.round(tabBar + safeBottom + 4)
   }
   if (root.classList.contains('native-app')) {
     return Math.round(tabBar + 12)
@@ -45,8 +52,15 @@ async function ensureConsent(): Promise<boolean> {
     if (consent.isConsentFormAvailable && consent.status === AdmobConsentStatus.REQUIRED) {
       consent = await AdMob.showConsentForm()
     }
+    if (!consent.canRequestAds) {
+      console.warn('AdMob banner: consent blocked ads', {
+        status: consent.status,
+        isConsentFormAvailable: consent.isConsentFormAvailable,
+      })
+    }
     return consent.canRequestAds
-  } catch {
+  } catch (err) {
+    console.warn('AdMob banner: consent check failed (continuing)', err)
     return true
   }
 }
@@ -57,7 +71,8 @@ async function attachListeners(): Promise<void> {
     AdMob.addListener(BannerAdPluginEvents.SizeChanged, (size: AdMobBannerSize) => {
       setBannerInset(size.height)
     }),
-    AdMob.addListener(BannerAdPluginEvents.FailedToLoad, () => {
+    AdMob.addListener(BannerAdPluginEvents.FailedToLoad, (err) => {
+      console.warn('AdMob banner failed to load', err)
       setBannerInset(0)
     }),
   ])
@@ -80,6 +95,7 @@ export async function startBannerAds(): Promise<void> {
   }
 
   running = true
+  console.info('AdMob banner: starting', { adUnitTail: adId.slice(-12) })
 
   try {
     await AdMob.initialize()

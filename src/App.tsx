@@ -253,6 +253,10 @@ export default function App() {
       signedIn: Boolean(cloudUser),
       pro,
       selected: viewRef.current,
+    }).then(() => {
+      if (adsEnabledForUser(pro) && mainAppShell && !authGateScreen) {
+        void refreshBannerMargin()
+      }
     })
   }, [authLoading, mainAppShell, authGateScreen, cloudUser, pro])
 
