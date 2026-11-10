@@ -19,6 +19,8 @@ import {
   setNativeTabBarSelectHandler,
   syncNativeTabBar,
 } from './lib/nativeTabBar'
+import { adsEnabledForUser } from './lib/adConfig'
+import { refreshBannerMargin, startBannerAds, stopBannerAds } from './lib/bannerAds'
 import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
 import { AddWineChooser, type AddWineDestination } from './components/AddWineChooser'
@@ -257,6 +259,24 @@ export default function App() {
   useEffect(() => {
     void selectNativeTab(view)
   }, [view])
+
+  const adsAllowed = adsEnabledForUser(pro)
+
+  useEffect(() => {
+    if (!isNativeApp() || !mainAppShell || authGateScreen || !adsAllowed) {
+      void stopBannerAds()
+      return
+    }
+    void startBannerAds().then(() => refreshBannerMargin())
+    return () => {
+      void stopBannerAds()
+    }
+  }, [mainAppShell, authGateScreen, adsAllowed])
+
+  useEffect(() => {
+    if (!isNativeApp() || !adsAllowed || !mainAppShell || authGateScreen) return
+    void refreshBannerMargin()
+  }, [cloudUser, mainAppShell, authGateScreen, adsAllowed])
 
   const cellarProgressReady =
     cellarReady && (!cloudUser || profileLoaded) && friendCountLoaded
