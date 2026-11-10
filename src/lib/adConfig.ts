@@ -4,6 +4,10 @@ import { Capacitor } from '@capacitor/core'
 const TEST_BANNER_IOS = 'ca-app-pub-3940256089942544/2934735716'
 const TEST_BANNER_ANDROID = 'ca-app-pub-3940256089942544/6300978111'
 
+/** Decanti production banner units (AdMob console). */
+const PRODUCTION_BANNER_IOS = 'ca-app-pub-5228268438882570/1899228305'
+const PRODUCTION_BANNER_ANDROID = 'ca-app-pub-5228268438882570/1149253411'
+
 function envString(key: string): string {
   const value = import.meta.env[key]
   return typeof value === 'string' ? value.trim() : ''
@@ -34,9 +38,10 @@ export function bannerAdUnitId(): string | null {
     return platform === 'ios' ? TEST_BANNER_IOS : TEST_BANNER_ANDROID
   }
 
-  const configured =
+  const fromEnv =
     platform === 'ios' ? envString('VITE_ADMOB_BANNER_IOS') : envString('VITE_ADMOB_BANNER_ANDROID')
-  return configured || null
+  if (fromEnv) return fromEnv
+  return platform === 'ios' ? PRODUCTION_BANNER_IOS : PRODUCTION_BANNER_ANDROID
 }
 
 /** Whether ads may run for this subscriber state. */

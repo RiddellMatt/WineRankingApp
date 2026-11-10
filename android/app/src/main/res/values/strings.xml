@@ -5,5 +5,5 @@
     <string name="package_name">com.northline.decanti</string>
     <string name="custom_url_scheme">com.northline.decanti</string>
     <!-- Replace with your AdMob app ID before release (see mobile/ADMOB_SETUP.md). Google sample ID for dev. -->
-    <string name="admob_app_id">ca-app-pub-3940256089942544~3347511713</string>
+    <string name="admob_app_id">ca-app-pub-5228268438882570~8788070289</string>
 </resources>
