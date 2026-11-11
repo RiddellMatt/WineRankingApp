@@ -5891,3 +5891,46 @@ html.show-banner-ad.native-app:not(.native-ios-tab-bar) .content {
     var(--banner-ad-height, 0px) + var(--tab-bar-height) + var(--safe-bottom) + 0.65rem
   );
 }
+
+/* Reserved slot while native AdMob is loading (TestFlight / QA). */
+html.ad-banner-pending.show-banner-ad::after {
+  content: '';
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--tab-bar-height, 3.55rem) + var(--safe-bottom));
+  height: var(--banner-ad-height, 50px);
+  background: linear-gradient(
+    180deg,
+    rgba(196, 30, 58, 0.12) 0%,
+    rgba(196, 30, 58, 0.22) 100%
+  );
+  border-top: 1px dashed rgba(196, 30, 58, 0.45);
+  pointer-events: none;
+  z-index: 18;
+}
+
+html.native-ios-tab-bar.ad-banner-pending.show-banner-ad::after {
+  bottom: calc(var(--tab-bar-height, 3.55rem) + var(--safe-bottom));
+}
+
+.ad-banner-probe {
+  position: fixed;
+  left: 0.35rem;
+  right: 0.35rem;
+  bottom: calc(var(--tab-bar-height, 3.55rem) + var(--safe-bottom) + var(--banner-ad-height, 0px));
+  z-index: 19;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.62rem;
+  line-height: 1.25;
+  text-align: center;
+  color: #ffd8df;
+  background: rgba(18, 8, 12, 0.92);
+  border: 1px solid rgba(196, 30, 58, 0.55);
+  border-radius: 0.35rem;
+  pointer-events: none;
+}
+
+html.native-ios-tab-bar .ad-banner-probe {
+  bottom: calc(var(--tab-bar-height, 3.55rem) + var(--safe-bottom) + var(--banner-ad-height, 0px) + 2px);
+}

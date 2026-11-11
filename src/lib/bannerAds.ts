@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core'
+import { setBannerAdDebug } from './bannerAdDebug'
 import {
   AdMob,
   AdmobConsentStatus,
@@ -19,15 +20,34 @@ let requestNonPersonalizedAds = false
 let listeners: PluginListenerHandle[] = []
 let refreshMarginTimer: ReturnType<typeof setTimeout> | null = null
 
+const PENDING_SLOT_PX = 50
+
 function setBannerInset(heightPx: number): void {
   const root = document.documentElement
   if (heightPx > 0) {
     root.style.setProperty('--banner-ad-height', `${heightPx}px`)
     root.classList.add('show-banner-ad')
+    root.classList.remove('ad-banner-pending')
   } else {
     root.style.removeProperty('--banner-ad-height')
     root.classList.remove('show-banner-ad')
+    root.classList.remove('ad-banner-pending')
   }
+}
+
+function setPendingAdSlot(): void {
+  const root = document.documentElement
+  root.classList.add('show-banner-ad', 'ad-banner-pending')
+  root.style.setProperty('--banner-ad-height', `${PENDING_SLOT_PX}px`)
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      window.setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    }),
+  ])
 }
 
 function cssPx(value: string): number {
@@ -64,9 +84,11 @@ function bannerOptions(adId: string): BannerAdOptions {
 async function ensureConsent(): Promise<boolean> {
   requestNonPersonalizedAds = false
   try {
-    let consent = await AdMob.requestConsentInfo()
+    setBannerAdDebug('consent', 'requesting')
+    let consent = await withTimeout(AdMob.requestConsentInfo(), 12_000, 'UMP consent info')
     if (consent.isConsentFormAvailable && consent.status === AdmobConsentStatus.REQUIRED) {
-      consent = await AdMob.showConsentForm()
+      setBannerAdDebug('consent', 'form')
+      consent = await withTimeout(AdMob.showConsentForm(), 120_000, 'UMP consent form')
     }
     if (!consent.canRequestAds) {
       console.warn('AdMob banner: consent blocked personalized ads', {
@@ -86,9 +108,10 @@ async function ensureConsent(): Promise<boolean> {
   }
 }
 
-async function presentBanner(adId: string): Promise<void> {
+async function presentBanner(adId: string, size = BannerAdSize.ADAPTIVE_BANNER): Promise<void> {
   activeAdUnitId = adId
-  await AdMob.showBanner(bannerOptions(adId))
+  setBannerAdDebug('show', size)
+  await AdMob.showBanner({ ...bannerOptions(adId), adSize: size })
 }
 
 async function tryTestBannerAfterProductionNoFill(): Promise<void> {
@@ -113,10 +136,17 @@ async function attachListeners(): Promise<void> {
   listeners = await Promise.all([
     AdMob.addListener(BannerAdPluginEvents.SizeChanged, (size: AdMobBannerSize) => {
       setBannerInset(size.height)
+      if (size.height > 0) setBannerAdDebug('loaded', `${Math.round(size.height)}px`)
     }),
     AdMob.addListener(BannerAdPluginEvents.FailedToLoad, (err) => {
+      const message =
+        typeof err === 'object' && err && 'message' in err
+          ? String((err as { message?: string }).message)
+          : String(err)
       console.warn('AdMob banner failed to load', err)
-      setBannerInset(0)
+      setBannerAdDebug('failed', message.slice(0, 80))
+      if (shouldUseTestAdUnits()) setPendingAdSlot()
+      else setBannerInset(0)
       void tryTestBannerAfterProductionNoFill()
     }),
   ])
@@ -141,18 +171,30 @@ function waitForTabBarLayout(): Promise<void> {
 
 /** Show adaptive bottom banner for signed-in free users on native builds. */
 export async function startBannerAds(): Promise<void> {
-  if (!isNativeApp() || Capacitor.getPlatform() === 'web') return
+  if (!isNativeApp() || Capacitor.getPlatform() === 'web') {
+    setBannerAdDebug('skipped', 'not native')
+    return
+  }
   if (running) return
 
   const adId = bannerAdUnitId()
   if (!adId) {
+    setBannerAdDebug('skipped', 'no ad unit id')
     console.warn('AdMob banner: no ad unit id (set VITE_ADMOB_* or use test mode)')
+    return
+  }
+
+  if (!Capacitor.isPluginAvailable('AdMob')) {
+    setBannerAdDebug('error', 'AdMob plugin missing in binary')
+    console.warn('AdMob banner: Capacitor plugin not available')
     return
   }
 
   running = true
   productionLoadFailed = false
   activeAdUnitId = adId
+  setPendingAdSlot()
+  setBannerAdDebug('starting', `unit …${adId.slice(-10)}`)
   console.info('AdMob banner: starting', {
     adUnitTail: adId.slice(-12),
     testMode: shouldUseTestAdUnits(),
@@ -163,23 +205,48 @@ export async function startBannerAds(): Promise<void> {
 
     const ok = await ensureConsent()
     if (!ok) {
+      setBannerAdDebug('blocked', 'consent')
       running = false
       activeAdUnitId = null
       await detachListeners()
       return
     }
 
-    await AdMob.initialize({
-      initializeForTesting: shouldUseTestAdUnits(),
-    })
+    setBannerAdDebug('init', 'sdk')
+    await withTimeout(
+      AdMob.initialize({
+        initializeForTesting: shouldUseTestAdUnits(),
+      }),
+      15_000,
+      'AdMob.initialize',
+    )
 
     await waitForTabBarLayout()
-    await presentBanner(adId)
+    try {
+      await presentBanner(adId)
+    } catch (firstErr) {
+      if (shouldUseTestAdUnits() && Capacitor.getPlatform() === 'ios') {
+        console.warn('AdMob adaptive banner failed, retrying BANNER @ margin 0', firstErr)
+        setBannerAdDebug('retry', 'BANNER margin 0')
+        await AdMob.removeBanner()
+        await AdMob.showBanner({
+          ...bannerOptions(adId),
+          adSize: BannerAdSize.BANNER,
+          margin: 0,
+        })
+      } else {
+        throw firstErr
+      }
+    }
+    setBannerAdDebug('requested', 'awaiting native load')
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    setBannerAdDebug('error', message.slice(0, 72))
     console.warn('AdMob banner failed to start', err)
     running = false
     activeAdUnitId = null
-    setBannerInset(0)
+    if (shouldUseTestAdUnits()) setPendingAdSlot()
+    else setBannerInset(0)
     await detachListeners()
   }
 }
@@ -190,6 +257,7 @@ export async function stopBannerAds(): Promise<void> {
     clearTimeout(refreshMarginTimer)
     refreshMarginTimer = null
   }
+  setBannerAdDebug('stopped')
   setBannerInset(0)
   try {
     await AdMob.removeBanner()
