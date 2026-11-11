@@ -22,8 +22,6 @@ let refreshMarginTimer: ReturnType<typeof setTimeout> | null = null
 let loadWatchdogTimer: ReturnType<typeof setTimeout> | null = null
 /** True after native SizeChanged reports height > 0 (safe to remove+re-show for margin). */
 let nativeBannerSized = false
-let marginSyncedAfterLoad = false
-
 const PENDING_SLOT_PX = 50
 
 function setBannerInset(heightPx: number): void {
@@ -88,6 +86,11 @@ function bannerOptions(adId: string): BannerAdOptions {
 
 async function ensureConsent(): Promise<boolean> {
   requestNonPersonalizedAds = false
+  if (shouldUseTestAdUnits()) {
+    requestNonPersonalizedAds = true
+    setBannerAdDebug('consent', 'skipped (test)')
+    return true
+  }
   try {
     setBannerAdDebug('consent', 'requesting')
     let consent = await withTimeout(AdMob.requestConsentInfo(), 12_000, 'UMP consent info')
@@ -113,13 +116,13 @@ async function ensureConsent(): Promise<boolean> {
   }
 }
 
-function armNativeLoadWatchdog(adId: string): void {
+function armNativeLoadWatchdog(adId: string, ms = 8_000): void {
   if (loadWatchdogTimer) clearTimeout(loadWatchdogTimer)
   loadWatchdogTimer = setTimeout(() => {
     loadWatchdogTimer = null
     if (!running || nativeBannerSized) return
   void (async () => {
-    setBannerAdDebug('timeout', 'retry BANNER margin 0')
+    setBannerAdDebug('timeout', 'retry BANNER m0')
     try {
       await AdMob.removeBanner()
       nativeBannerSized = false
@@ -132,7 +135,7 @@ function armNativeLoadWatchdog(adId: string): void {
       setBannerAdDebug('timeout', err instanceof Error ? err.message.slice(0, 40) : 'retry failed')
     }
   })()
-  }, 20_000)
+  }, ms)
 }
 
 async function presentBanner(adId: string, size = BannerAdSize.ADAPTIVE_BANNER): Promise<void> {
@@ -172,10 +175,6 @@ async function attachListeners(): Promise<void> {
           loadWatchdogTimer = null
         }
         setBannerAdDebug('loaded', `${Math.round(size.height)}px`)
-        if (!marginSyncedAfterLoad && Capacitor.getPlatform() === 'ios') {
-          marginSyncedAfterLoad = true
-          window.setTimeout(() => void refreshBannerMargin(true), 400)
-        }
       }
     }),
     AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
@@ -237,7 +236,6 @@ export async function startBannerAds(): Promise<void> {
   running = true
   productionLoadFailed = false
   nativeBannerSized = false
-  marginSyncedAfterLoad = false
   activeAdUnitId = adId
   setPendingAdSlot()
   setBannerAdDebug('starting', `unit …${adId.slice(-10)}`)
@@ -267,8 +265,24 @@ export async function startBannerAds(): Promise<void> {
       'AdMob.initialize',
     )
 
+    const iosTest = shouldUseTestAdUnits() && Capacitor.getPlatform() === 'ios'
+    if (iosTest) {
+      await AdMob.showBanner({
+        adId,
+        adSize: BannerAdSize.BANNER,
+        position: BannerAdPosition.BOTTOM_CENTER,
+        margin: 0,
+        isTesting: false,
+        npa: true,
+      })
+      activeAdUnitId = adId
+      armNativeLoadWatchdog(adId)
+      setBannerAdDebug('requested', 'iOS BANNER m0 — waiting SDK')
+      return
+    }
+
     await waitForTabBarLayout()
-    try {
+  try {
       await presentBanner(adId)
     } catch (firstErr) {
       if (shouldUseTestAdUnits() && Capacitor.getPlatform() === 'ios') {
@@ -320,7 +334,6 @@ export async function stopBannerAds(): Promise<void> {
   productionLoadFailed = false
   requestNonPersonalizedAds = false
   nativeBannerSized = false
-  marginSyncedAfterLoad = false
 }
 
 /**

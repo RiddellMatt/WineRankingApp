@@ -60,6 +60,49 @@ function patchBannerDefaultTestUnit() {
   console.log('[patch-admob-ios] Applied iOS banner test unit default')
 }
 
+function patchBannerReceiveAdSizing() {
+  if (!existsSync(bannerFile)) return
+  const marker = 'bannerView.layoutIfNeeded()'
+  let source = readFileSync(bannerFile, 'utf8')
+  if (source.includes(marker)) return
+
+  const target = `        NSLog("bannerViewDidReceiveAd")
+        if let rootViewController = plugin?.getRootVC() {
+            rootViewController.view.addSubview(bannerView)`
+  const replacement = `        NSLog("bannerViewDidReceiveAd")
+        guard let rootViewController = plugin?.getRootVC() else {
+            NSLog("AdMob: getRootVC nil in bannerViewDidReceiveAd")
+            return
+        }
+        rootViewController.view.addSubview(bannerView)`
+  if (!source.includes(target)) {
+    console.warn('[patch-admob-ios] bannerViewDidReceiveAd layout changed; skipping sizing patch')
+    return
+  }
+  source = source.replace(target, replacement)
+
+  const sizeTarget = `            self.plugin?.notifyListeners(BannerAdPluginEvents.SizeChanged.rawValue, data: [
+                "width": bannerView.frame.width,
+                "height": bannerView.frame.height
+            ])`
+  const sizeReplacement = `            bannerView.layoutIfNeeded()
+            let h = max(bannerView.frame.size.height, bannerView.bounds.size.height)
+            let w = max(bannerView.frame.size.width, bannerView.bounds.size.width)
+            self.plugin?.notifyListeners(BannerAdPluginEvents.SizeChanged.rawValue, data: [
+                "width": w,
+                "height": h
+            ])`
+  if (source.includes(sizeTarget)) {
+    source = source.replace(sizeTarget, sizeReplacement)
+    writeFileSync(bannerFile, source)
+    console.log('[patch-admob-ios] Applied banner receive sizing patch')
+  } else if (source.includes('guard let rootViewController')) {
+    writeFileSync(bannerFile, source)
+    console.log('[patch-admob-ios] Applied banner getRootVC guard')
+  }
+}
+
 patchBannerZOrder()
 patchGetRootVC()
 patchBannerDefaultTestUnit()
+patchBannerReceiveAdSizing()
