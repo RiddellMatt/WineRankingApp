@@ -30,6 +30,11 @@ export function shouldUseTestAdUnits(): boolean {
   return useTestAds
 }
 
+/** Shown on the TestFlight ad probe so testers know which unit class failed. */
+export function adUnitModeLabel(): 'test' | 'prod' {
+  return useTestAds ? 'test' : 'prod'
+}
+
 /** Google demo units — use when production has no fill during AdMob app setup. */
 export function googleTestBannerAdUnitId(): string | null {
   const platform = Capacitor.getPlatform()

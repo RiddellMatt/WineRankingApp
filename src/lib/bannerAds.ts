@@ -10,7 +10,12 @@ import {
   type BannerAdOptions,
 } from '@capacitor-community/admob'
 import type { PluginListenerHandle } from '@capacitor/core'
-import { bannerAdUnitId, googleTestBannerAdUnitId, shouldUseTestAdUnits } from './adConfig'
+import {
+  adUnitModeLabel,
+  bannerAdUnitId,
+  googleTestBannerAdUnitId,
+  shouldUseTestAdUnits,
+} from './adConfig'
 import { isNativeApp } from './platform'
 
 let running = false
@@ -187,7 +192,8 @@ async function attachListeners(): Promise<void> {
           : String(err)
       console.warn('AdMob banner failed to load', err)
       nativeBannerSized = false
-      setBannerAdDebug('failed', message.slice(0, 80))
+      const short = message.replace(/\s*<https?:\/\/[^>]+>/g, '').slice(0, 72)
+      setBannerAdDebug('failed', `${short} (${adUnitModeLabel()})`)
       if (shouldUseTestAdUnits()) setPendingAdSlot()
       else setBannerInset(0)
       void tryTestBannerAfterProductionNoFill()

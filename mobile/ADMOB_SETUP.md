@@ -143,7 +143,28 @@ Then **new iOS TestFlight / Play** builds. Ads do not update via web-only deploy
 | Production | Real units + real app IDs + `VITE_ADMOB_TEST_MODE=false` → real impressions count toward pay. |
 | Pro users | With `VITE_ADMOB_SHOW_FOR_PRO` unset, Pro never loads banners. |
 
-### 10. Common pitfalls
+### 10. “Publisher data not found” (iOS probe shows `failed — …`)
+
+This comes from **Google’s ad servers**, not from Capacitor. The native banner **did** load and the SDK returned `bannerAdFailedToLoad`.
+
+| Probe prefix | Meaning |
+| ------------ | ------- |
+| `[test]` | JS bundled **Google demo** banner unit (`…/2934735716`). You should see a “Test Ad” label when fill works. |
+| `[prod]` | JS bundled **Decanti** unit (`…/1899228305`). AdMob often returns *Publisher data not found* until the account and unit are fully active. |
+
+**If Tester A still shows `waiting SDK` but Tester B shows this error:** both can be on the same build — one device may hit the failure path faster while the other is still in the 8s watchdog. The important part is the **`[prod]` vs `[test]`** prefix on the chip (after the next build).
+
+**When `[prod]`:**
+
+1. In Codemagic group **`decanti_env`**, set `VITE_ADMOB_TEST_MODE=true` (or omit it — default is test) until you see fill; only set `false` when you want real revenue units.
+2. In [AdMob](https://apps.admob.com): finish payments/tax, clear Policy center issues, link the iOS app to bundle `com.northline.decanti` and your App Store listing.
+3. New banner units can take **up to an hour** (sometimes longer) before they serve.
+
+**When `[test]`** and it still fails: the CI build should use Google’s sample **app** id in `Info.plist` (`configure-admob-ios-app-id.mjs`). Trigger a fresh iOS build after merge.
+
+The app automatically retries **Google test** banners after a production load failure when `VITE_ADMOB_TEST_MODE=false`.
+
+### 11. Common pitfalls
 
 - **`initialize()` before UMP consent** — request consent first, then `initialize()` + `showBanner()` (see `bannerAds.ts`).
 - **Production unit, no fill** — new AdMob apps often show no banner until verified; leave `VITE_ADMOB_TEST_MODE` unset (Google test ads) until you see a banner, or use the app’s built-in test fallback when production fails.
