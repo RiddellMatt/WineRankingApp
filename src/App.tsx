@@ -22,7 +22,7 @@ import {
 import { adsEnabledForAccount, shouldUseTestAdUnits } from './lib/adConfig'
 import { AdBannerProbe } from './components/AdBannerProbe'
 import { setBannerAdDebug } from './lib/bannerAdDebug'
-import { refreshBannerMargin, startBannerAds, stopBannerAds } from './lib/bannerAds'
+import { startBannerAds, stopBannerAds } from './lib/bannerAds'
 import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
 import { AddWineChooser, type AddWineDestination } from './components/AddWineChooser'
@@ -262,12 +262,8 @@ export default function App() {
       signedIn: Boolean(cloudUser),
       pro,
       selected: viewRef.current,
-    }).then(() => {
-      if (adsAllowed && mainAppShell && !authGateScreen) {
-        void refreshBannerMargin()
-      }
     })
-  }, [authLoading, mainAppShell, authGateScreen, cloudUser, pro, adsAllowed])
+  }, [authLoading, mainAppShell, authGateScreen, cloudUser, pro])
 
   useEffect(() => {
     void selectNativeTab(view)
@@ -284,16 +280,11 @@ export default function App() {
       void stopBannerAds()
       return
     }
-    void startBannerAds().then(() => refreshBannerMargin())
+    void startBannerAds()
     return () => {
       void stopBannerAds()
     }
   }, [mainAppShell, authGateScreen, adsAllowed, profileLoaded])
-
-  useEffect(() => {
-    if (!isNativeApp() || !adsAllowed || !mainAppShell || authGateScreen) return
-    void refreshBannerMargin()
-  }, [cloudUser, mainAppShell, authGateScreen, adsAllowed, profileLoaded])
 
   const cellarProgressReady =
     cellarReady && (!cloudUser || profileLoaded) && friendCountLoaded

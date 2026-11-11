@@ -19,6 +19,10 @@ let productionLoadFailed = false
 let requestNonPersonalizedAds = false
 let listeners: PluginListenerHandle[] = []
 let refreshMarginTimer: ReturnType<typeof setTimeout> | null = null
+let loadWatchdogTimer: ReturnType<typeof setTimeout> | null = null
+/** True after native SizeChanged reports height > 0 (safe to remove+re-show for margin). */
+let nativeBannerSized = false
+let marginSyncedAfterLoad = false
 
 const PENDING_SLOT_PX = 50
 
@@ -109,10 +113,34 @@ async function ensureConsent(): Promise<boolean> {
   }
 }
 
+function armNativeLoadWatchdog(adId: string): void {
+  if (loadWatchdogTimer) clearTimeout(loadWatchdogTimer)
+  loadWatchdogTimer = setTimeout(() => {
+    loadWatchdogTimer = null
+    if (!running || nativeBannerSized) return
+  void (async () => {
+    setBannerAdDebug('timeout', 'retry BANNER margin 0')
+    try {
+      await AdMob.removeBanner()
+      nativeBannerSized = false
+      await AdMob.showBanner({
+        ...bannerOptions(adId),
+        adSize: BannerAdSize.BANNER,
+        margin: 0,
+      })
+    } catch (err) {
+      setBannerAdDebug('timeout', err instanceof Error ? err.message.slice(0, 40) : 'retry failed')
+    }
+  })()
+  }, 20_000)
+}
+
 async function presentBanner(adId: string, size = BannerAdSize.ADAPTIVE_BANNER): Promise<void> {
   activeAdUnitId = adId
+  nativeBannerSized = false
   setBannerAdDebug('show', size)
   await AdMob.showBanner({ ...bannerOptions(adId), adSize: size })
+  armNativeLoadWatchdog(adId)
 }
 
 async function tryTestBannerAfterProductionNoFill(): Promise<void> {
@@ -137,7 +165,21 @@ async function attachListeners(): Promise<void> {
   listeners = await Promise.all([
     AdMob.addListener(BannerAdPluginEvents.SizeChanged, (size: AdMobBannerSize) => {
       setBannerInset(size.height)
-      if (size.height > 0) setBannerAdDebug('loaded', `${Math.round(size.height)}px`)
+      if (size.height > 0) {
+        nativeBannerSized = true
+        if (loadWatchdogTimer) {
+          clearTimeout(loadWatchdogTimer)
+          loadWatchdogTimer = null
+        }
+        setBannerAdDebug('loaded', `${Math.round(size.height)}px`)
+        if (!marginSyncedAfterLoad && Capacitor.getPlatform() === 'ios') {
+          marginSyncedAfterLoad = true
+          window.setTimeout(() => void refreshBannerMargin(true), 400)
+        }
+      }
+    }),
+    AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
+      setBannerAdDebug('loaded', 'native creative')
     }),
     AdMob.addListener(BannerAdPluginEvents.FailedToLoad, (err) => {
       const message =
@@ -145,6 +187,7 @@ async function attachListeners(): Promise<void> {
           ? String((err as { message?: string }).message)
           : String(err)
       console.warn('AdMob banner failed to load', err)
+      nativeBannerSized = false
       setBannerAdDebug('failed', message.slice(0, 80))
       if (shouldUseTestAdUnits()) setPendingAdSlot()
       else setBannerInset(0)
@@ -193,6 +236,8 @@ export async function startBannerAds(): Promise<void> {
 
   running = true
   productionLoadFailed = false
+  nativeBannerSized = false
+  marginSyncedAfterLoad = false
   activeAdUnitId = adId
   setPendingAdSlot()
   setBannerAdDebug('starting', `unit …${adId.slice(-10)}`)
@@ -258,6 +303,10 @@ export async function stopBannerAds(): Promise<void> {
     clearTimeout(refreshMarginTimer)
     refreshMarginTimer = null
   }
+  if (loadWatchdogTimer) {
+    clearTimeout(loadWatchdogTimer)
+    loadWatchdogTimer = null
+  }
   setBannerAdDebug('stopped')
   setBannerInset(0)
   try {
@@ -270,11 +319,17 @@ export async function stopBannerAds(): Promise<void> {
   activeAdUnitId = null
   productionLoadFailed = false
   requestNonPersonalizedAds = false
+  nativeBannerSized = false
+  marginSyncedAfterLoad = false
 }
 
-/** Call when bottom chrome changes (e.g. native tab bar appears) so banner is not covered. */
-export async function refreshBannerMargin(): Promise<void> {
+/**
+ * Re-show banner with updated bottom margin after native tab bar layout.
+ * Skips until the first ad has reported a height — removeBanner() during load cancels requests.
+ */
+export async function refreshBannerMargin(force = false): Promise<void> {
   if (!running) return
+  if (!force && !nativeBannerSized) return
   const adId = activeAdUnitId ?? bannerAdUnitId()
   if (!adId) return
 
