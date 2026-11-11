@@ -6,12 +6,15 @@ import {
   BannerAdPosition,
   BannerAdSize,
   type AdMobBannerSize,
+  type BannerAdOptions,
 } from '@capacitor-community/admob'
 import type { PluginListenerHandle } from '@capacitor/core'
-import { bannerAdUnitId } from './adConfig'
+import { bannerAdUnitId, googleTestBannerAdUnitId, shouldUseTestAdUnits } from './adConfig'
 import { isNativeApp } from './platform'
 
 let running = false
+let activeAdUnitId: string | null = null
+let productionLoadFailed = false
 let listeners: PluginListenerHandle[] = []
 
 function setBannerInset(heightPx: number): void {
@@ -37,13 +40,23 @@ function bannerBottomMarginPx(): number {
   const tabBar = cssPx(style.getPropertyValue('--tab-bar-height')) || 3.55 * 16
   const safeBottom = cssPx(style.getPropertyValue('--safe-bottom'))
   if (root.classList.contains('native-ios-tab-bar')) {
-    // Banner pins to safe-area bottom; UITabBar + home indicator sit below / overlap that edge.
-    return Math.round(tabBar + safeBottom + 4)
+    // UITabBar + home indicator; generous minimum avoids banner sitting under glass tab bar.
+    return Math.max(100, Math.round(tabBar + safeBottom + 12))
   }
   if (root.classList.contains('native-app')) {
     return Math.round(tabBar + 12)
   }
   return 0
+}
+
+function bannerOptions(adId: string): BannerAdOptions {
+  return {
+    adId,
+    adSize: BannerAdSize.ADAPTIVE_BANNER,
+    position: BannerAdPosition.BOTTOM_CENTER,
+    margin: bannerBottomMarginPx(),
+    isTesting: shouldUseTestAdUnits(),
+  }
 }
 
 async function ensureConsent(): Promise<boolean> {
@@ -65,15 +78,44 @@ async function ensureConsent(): Promise<boolean> {
   }
 }
 
+async function presentBanner(adId: string): Promise<void> {
+  activeAdUnitId = adId
+  await AdMob.showBanner(bannerOptions(adId))
+}
+
+async function tryTestBannerAfterProductionNoFill(): Promise<void> {
+  if (shouldUseTestAdUnits() || productionLoadFailed) return
+  const testId = googleTestBannerAdUnitId()
+  if (!testId || !running) return
+  productionLoadFailed = true
+  console.warn(
+    'AdMob banner: production unit did not load — showing Google test banner so you can verify the pipeline.',
+  )
+  try {
+    await AdMob.removeBanner()
+    await AdMob.showBanner({
+      ...bannerOptions(testId),
+      isTesting: true,
+    })
+    activeAdUnitId = testId
+  } catch (err) {
+    console.warn('AdMob banner: test fallback failed', err)
+  }
+}
+
 async function attachListeners(): Promise<void> {
   if (listeners.length > 0) return
   listeners = await Promise.all([
     AdMob.addListener(BannerAdPluginEvents.SizeChanged, (size: AdMobBannerSize) => {
       setBannerInset(size.height)
     }),
+    AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
+      void refreshBannerMargin()
+    }),
     AdMob.addListener(BannerAdPluginEvents.FailedToLoad, (err) => {
       console.warn('AdMob banner failed to load', err)
       setBannerInset(0)
+      void tryTestBannerAfterProductionNoFill()
     }),
   ])
 }
@@ -95,27 +137,33 @@ export async function startBannerAds(): Promise<void> {
   }
 
   running = true
-  console.info('AdMob banner: starting', { adUnitTail: adId.slice(-12) })
+  productionLoadFailed = false
+  activeAdUnitId = adId
+  console.info('AdMob banner: starting', {
+    adUnitTail: adId.slice(-12),
+    testMode: shouldUseTestAdUnits(),
+  })
 
   try {
-    await AdMob.initialize()
+    await attachListeners()
+
     const ok = await ensureConsent()
     if (!ok) {
       running = false
+      activeAdUnitId = null
+      await detachListeners()
       return
     }
 
-    await attachListeners()
-
-    await AdMob.showBanner({
-      adId,
-      adSize: BannerAdSize.ADAPTIVE_BANNER,
-      position: BannerAdPosition.BOTTOM_CENTER,
-      margin: bannerBottomMarginPx(),
+    await AdMob.initialize({
+      initializeForTesting: shouldUseTestAdUnits(),
     })
+
+    await presentBanner(adId)
   } catch (err) {
     console.warn('AdMob banner failed to start', err)
     running = false
+    activeAdUnitId = null
     setBannerInset(0)
     await detachListeners()
   }
@@ -131,21 +179,18 @@ export async function stopBannerAds(): Promise<void> {
   }
   await detachListeners()
   running = false
+  activeAdUnitId = null
+  productionLoadFailed = false
 }
 
 /** Call when bottom chrome changes (e.g. native tab bar appears) so banner is not covered. */
 export async function refreshBannerMargin(): Promise<void> {
   if (!running) return
-  const adId = bannerAdUnitId()
+  const adId = activeAdUnitId ?? bannerAdUnitId()
   if (!adId) return
   try {
     await AdMob.removeBanner()
-    await AdMob.showBanner({
-      adId,
-      adSize: BannerAdSize.ADAPTIVE_BANNER,
-      position: BannerAdPosition.BOTTOM_CENTER,
-      margin: bannerBottomMarginPx(),
-    })
+    await presentBanner(adId)
   } catch {
     // ignore
   }

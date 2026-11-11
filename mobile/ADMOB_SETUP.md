@@ -145,6 +145,9 @@ Then **new iOS TestFlight / Play** builds. Ads do not update via web-only deploy
 
 ### 10. Common pitfalls
 
+- **`initialize()` before UMP consent** — request consent first, then `initialize()` + `showBanner()` (see `bannerAds.ts`).
+- **Production unit, no fill** — new AdMob apps often show no banner until verified; leave `VITE_ADMOB_TEST_MODE` unset (Google test ads) until you see a banner, or use the app’s built-in test fallback when production fails.
+- **iOS native tab bar** — banner must sit above the Capawesome `UITabBar` (z-order patch runs in `postinstall` / `cap:sync`).
 - Using **ad unit** id in `Info.plist` / `strings.xml` (must be **app** id).
 - Shipping with Google’s **sample** app IDs in store builds.
 - Forgetting to set env vars on **Codemagic** so release builds still use test logic or empty units.

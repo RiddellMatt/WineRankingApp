@@ -30,12 +30,20 @@ export function shouldUseTestAdUnits(): boolean {
   return useTestAds
 }
 
+/** Google demo units — use when production has no fill during AdMob app setup. */
+export function googleTestBannerAdUnitId(): string | null {
+  const platform = Capacitor.getPlatform()
+  if (platform === 'ios') return TEST_BANNER_IOS
+  if (platform === 'android') return TEST_BANNER_ANDROID
+  return null
+}
+
 export function bannerAdUnitId(): string | null {
   const platform = Capacitor.getPlatform()
   if (platform !== 'ios' && platform !== 'android') return null
 
   if (useTestAds) {
-    return platform === 'ios' ? TEST_BANNER_IOS : TEST_BANNER_ANDROID
+    return googleTestBannerAdUnitId()
   }
 
   const fromEnv =
