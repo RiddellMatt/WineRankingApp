@@ -19,7 +19,9 @@ import {
   setNativeTabBarSelectHandler,
   syncNativeTabBar,
 } from './lib/nativeTabBar'
-import { adsEnabledForAccount } from './lib/adConfig'
+import { adsEnabledForAccount, shouldUseTestAdUnits } from './lib/adConfig'
+import { AdBannerProbe } from './components/AdBannerProbe'
+import { setBannerAdDebug } from './lib/bannerAdDebug'
 import { refreshBannerMargin, startBannerAds, stopBannerAds } from './lib/bannerAds'
 import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
@@ -273,6 +275,12 @@ export default function App() {
 
   useEffect(() => {
     if (!isNativeApp() || !mainAppShell || authGateScreen || !adsAllowed) {
+      if (isNativeApp() && shouldUseTestAdUnits()) {
+        setBannerAdDebug(
+          'gated',
+          authGateScreen ? 'sign-in required' : !mainAppShell ? 'app loading' : 'subscriber gate',
+        )
+      }
       void stopBannerAds()
       return
     }
@@ -1554,6 +1562,13 @@ export default function App() {
           Cloud sync disabled — add Supabase keys to enable accounts and friends.
         </p>
       )}
+
+      <AdBannerProbe
+        visible={mainAppShell && !authGateScreen && isNativeApp()}
+        blockedReason={
+          !adsAllowed ? `gating off (isPro=${String(profile?.isPro ?? pro)})` : undefined
+        }
+      />
     </div>
   )
 }

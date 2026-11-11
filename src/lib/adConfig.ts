@@ -68,6 +68,8 @@ export function adsEnabledForAccount(options: {
   profileIsPro: boolean | undefined
   localPro: boolean
 }): boolean {
+  // TestFlight / QA: always attempt ads when using Google test units (ignores stale Pro).
+  if (shouldUseTestAdUnits()) return true
   if (adsShowForPro()) return true
   if (options.signedIn) {
     if (!options.profileLoaded) return true

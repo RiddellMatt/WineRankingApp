@@ -32,6 +32,8 @@ workflows:
     scripts:
       - name: Install npm dependencies
         script: npm ci
+      - name: Apply AdMob iOS native patches
+        script: node scripts/patch-admob-ios-banner-z.mjs
       - name: Build mobile web bundle and sync Capacitor iOS
         script: npm run cap:sync
       - name: Set up code signing
