@@ -30,12 +30,20 @@ export function shouldUseTestAdUnits(): boolean {
   return useTestAds
 }
 
+/** Google demo units — use when production has no fill during AdMob app setup. */
+export function googleTestBannerAdUnitId(): string | null {
+  const platform = Capacitor.getPlatform()
+  if (platform === 'ios') return TEST_BANNER_IOS
+  if (platform === 'android') return TEST_BANNER_ANDROID
+  return null
+}
+
 export function bannerAdUnitId(): string | null {
   const platform = Capacitor.getPlatform()
   if (platform !== 'ios' && platform !== 'android') return null
 
   if (useTestAds) {
-    return platform === 'ios' ? TEST_BANNER_IOS : TEST_BANNER_ANDROID
+    return googleTestBannerAdUnitId()
   }
 
   const fromEnv =
@@ -48,4 +56,22 @@ export function bannerAdUnitId(): string | null {
 export function adsEnabledForUser(isPro: boolean): boolean {
   if (!isPro) return true
   return adsShowForPro()
+}
+
+/**
+ * Ads eligibility using server profile (not stale localStorage Pro).
+ * While profile is loading, treat signed-in users as free so banners can start.
+ */
+export function adsEnabledForAccount(options: {
+  signedIn: boolean
+  profileLoaded: boolean
+  profileIsPro: boolean | undefined
+  localPro: boolean
+}): boolean {
+  if (adsShowForPro()) return true
+  if (options.signedIn) {
+    if (!options.profileLoaded) return true
+    return !options.profileIsPro
+  }
+  return adsEnabledForUser(options.localPro)
 }
