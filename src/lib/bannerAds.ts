@@ -62,7 +62,8 @@ function bannerBottomMarginPx(): number {
   const tabBar = cssPx(style.getPropertyValue('--tab-bar-height')) || 3.55 * 16
   const safeBottom = cssPx(style.getPropertyValue('--safe-bottom'))
   if (root.classList.contains('native-ios-tab-bar')) {
-    return Math.max(100, Math.round(tabBar + safeBottom + 12))
+    // UIView banner sits on the full window; lift above native UITabBar (~49pt) + home indicator.
+    return Math.round(49 + safeBottom + 6)
   }
   if (root.classList.contains('native-app')) {
     return Math.round(tabBar + 12)

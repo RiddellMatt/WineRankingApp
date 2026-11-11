@@ -5910,8 +5910,9 @@ html.ad-banner-pending.show-banner-ad::after {
   z-index: 18;
 }
 
+/* Native UITabBar is outside the WebView — do not add --tab-bar-height in web chrome. */
 html.native-ios-tab-bar.ad-banner-pending.show-banner-ad::after {
-  bottom: calc(var(--tab-bar-height, 3.55rem) + var(--safe-bottom));
+  bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
 }
 
 .ad-banner-probe {
@@ -5919,7 +5920,7 @@ html.native-ios-tab-bar.ad-banner-pending.show-banner-ad::after {
   left: 0.35rem;
   right: 0.35rem;
   bottom: calc(var(--tab-bar-height, 3.55rem) + var(--safe-bottom) + var(--banner-ad-height, 0px));
-  z-index: 19;
+  z-index: 2147483000;
   padding: 0.2rem 0.45rem;
   font-size: 0.62rem;
   line-height: 1.25;
@@ -5932,5 +5933,7 @@ html.native-ios-tab-bar.ad-banner-pending.show-banner-ad::after {
 }
 
 html.native-ios-tab-bar .ad-banner-probe {
-  bottom: calc(var(--tab-bar-height, 3.55rem) + var(--safe-bottom) + var(--banner-ad-height, 0px) + 2px);
+  bottom: calc(
+    env(safe-area-inset-bottom, 0px) + var(--banner-ad-height, 0px) + 0.35rem
+  );
 }
