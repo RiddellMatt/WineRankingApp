@@ -15,7 +15,9 @@ import { isNativeApp } from './platform'
 let running = false
 let activeAdUnitId: string | null = null
 let productionLoadFailed = false
+let requestNonPersonalizedAds = false
 let listeners: PluginListenerHandle[] = []
+let refreshMarginTimer: ReturnType<typeof setTimeout> | null = null
 
 function setBannerInset(heightPx: number): void {
   const root = document.documentElement
@@ -40,7 +42,6 @@ function bannerBottomMarginPx(): number {
   const tabBar = cssPx(style.getPropertyValue('--tab-bar-height')) || 3.55 * 16
   const safeBottom = cssPx(style.getPropertyValue('--safe-bottom'))
   if (root.classList.contains('native-ios-tab-bar')) {
-    // UITabBar + home indicator; generous minimum avoids banner sitting under glass tab bar.
     return Math.max(100, Math.round(tabBar + safeBottom + 12))
   }
   if (root.classList.contains('native-app')) {
@@ -50,30 +51,35 @@ function bannerBottomMarginPx(): number {
 }
 
 function bannerOptions(adId: string): BannerAdOptions {
-  // Never set isTesting on iOS: native showBanner() swaps to a hard-coded *Android* test unit (plugin quirk).
-  // Pass the platform-correct adId from adConfig (Google demo or production) with isTesting: false.
   return {
     adId,
     adSize: BannerAdSize.ADAPTIVE_BANNER,
     position: BannerAdPosition.BOTTOM_CENTER,
     margin: bannerBottomMarginPx(),
     isTesting: false,
+    npa: requestNonPersonalizedAds,
   }
 }
 
 async function ensureConsent(): Promise<boolean> {
+  requestNonPersonalizedAds = false
   try {
     let consent = await AdMob.requestConsentInfo()
     if (consent.isConsentFormAvailable && consent.status === AdmobConsentStatus.REQUIRED) {
       consent = await AdMob.showConsentForm()
     }
     if (!consent.canRequestAds) {
-      console.warn('AdMob banner: consent blocked ads', {
+      console.warn('AdMob banner: consent blocked personalized ads', {
         status: consent.status,
         isConsentFormAvailable: consent.isConsentFormAvailable,
       })
+      if (shouldUseTestAdUnits()) {
+        requestNonPersonalizedAds = true
+        return true
+      }
+      return false
     }
-    return consent.canRequestAds
+    return true
   } catch (err) {
     console.warn('AdMob banner: consent check failed (continuing)', err)
     return true
@@ -108,9 +114,6 @@ async function attachListeners(): Promise<void> {
     AdMob.addListener(BannerAdPluginEvents.SizeChanged, (size: AdMobBannerSize) => {
       setBannerInset(size.height)
     }),
-    AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
-      void refreshBannerMargin()
-    }),
     AdMob.addListener(BannerAdPluginEvents.FailedToLoad, (err) => {
       console.warn('AdMob banner failed to load', err)
       setBannerInset(0)
@@ -122,6 +125,18 @@ async function attachListeners(): Promise<void> {
 async function detachListeners(): Promise<void> {
   await Promise.all(listeners.map((h) => h.remove()))
   listeners = []
+}
+
+function waitForTabBarLayout(): Promise<void> {
+  return new Promise((resolve) => {
+    if (Capacitor.getPlatform() !== 'ios') {
+      resolve()
+      return
+    }
+    requestAnimationFrame(() => {
+      window.setTimeout(resolve, 450)
+    })
+  })
 }
 
 /** Show adaptive bottom banner for signed-in free users on native builds. */
@@ -158,6 +173,7 @@ export async function startBannerAds(): Promise<void> {
       initializeForTesting: shouldUseTestAdUnits(),
     })
 
+    await waitForTabBarLayout()
     await presentBanner(adId)
   } catch (err) {
     console.warn('AdMob banner failed to start', err)
@@ -170,6 +186,10 @@ export async function startBannerAds(): Promise<void> {
 
 export async function stopBannerAds(): Promise<void> {
   if (!isNativeApp()) return
+  if (refreshMarginTimer) {
+    clearTimeout(refreshMarginTimer)
+    refreshMarginTimer = null
+  }
   setBannerInset(0)
   try {
     await AdMob.removeBanner()
@@ -180,6 +200,7 @@ export async function stopBannerAds(): Promise<void> {
   running = false
   activeAdUnitId = null
   productionLoadFailed = false
+  requestNonPersonalizedAds = false
 }
 
 /** Call when bottom chrome changes (e.g. native tab bar appears) so banner is not covered. */
@@ -187,10 +208,18 @@ export async function refreshBannerMargin(): Promise<void> {
   if (!running) return
   const adId = activeAdUnitId ?? bannerAdUnitId()
   if (!adId) return
-  try {
-    await AdMob.removeBanner()
-    await presentBanner(adId)
-  } catch {
-    // ignore
-  }
+
+  if (refreshMarginTimer) clearTimeout(refreshMarginTimer)
+  refreshMarginTimer = setTimeout(() => {
+    refreshMarginTimer = null
+    void (async () => {
+      if (!running) return
+      try {
+        await AdMob.removeBanner()
+        await presentBanner(adId)
+      } catch {
+        // ignore
+      }
+    })()
+  }, 350)
 }
