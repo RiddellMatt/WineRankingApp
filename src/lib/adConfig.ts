@@ -1,8 +1,9 @@
 import { Capacitor } from '@capacitor/core'
 
 /** Google sample banner units — safe for development; replace via env for production. */
-const TEST_BANNER_IOS = 'ca-app-pub-3940256089942544/2934735716'
-const TEST_BANNER_ANDROID = 'ca-app-pub-3940256089942544/6300978111'
+/** Must match https://developers.google.com/admob/ios/test-ads (publisher 3940256099942544). */
+const TEST_BANNER_IOS = 'ca-app-pub-3940256099942544/2934735716'
+const TEST_BANNER_ANDROID = 'ca-app-pub-3940256099942544/6300978111'
 
 /** Decanti production banner units (AdMob console). */
 const PRODUCTION_BANNER_IOS = 'ca-app-pub-5228268438882570/1899228305'
@@ -33,6 +34,13 @@ export function shouldUseTestAdUnits(): boolean {
 /** Shown on the TestFlight ad probe so testers know which unit class failed. */
 export function adUnitModeLabel(): 'test' | 'prod' {
   return useTestAds ? 'test' : 'prod'
+}
+
+/** Baked `VITE_ADMOB_TEST_MODE` from CI (undefined = default test). */
+export function bundledAdMobTestModeEnv(): string {
+  const raw = import.meta.env.VITE_ADMOB_TEST_MODE
+  if (raw === undefined || raw === '') return 'default→test'
+  return String(raw)
 }
 
 /** Google demo units — use when production has no fill during AdMob app setup. */
