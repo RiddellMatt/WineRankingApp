@@ -281,10 +281,8 @@ export default function App() {
       return
     }
     void startBannerAds()
-    return () => {
-      void stopBannerAds()
-    }
-  }, [mainAppShell, authGateScreen, adsAllowed, profileLoaded])
+    // Intentionally no cleanup — profileLoaded used to stop+restart and detach listeners mid-request.
+  }, [mainAppShell, authGateScreen, adsAllowed])
 
   const cellarProgressReady =
     cellarReady && (!cloudUser || profileLoaded) && friendCountLoaded
