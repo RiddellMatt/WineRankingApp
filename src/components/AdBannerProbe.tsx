@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useState } from 'react'
 import { shouldUseTestAdUnits } from '../lib/adConfig'
 import { getBannerAdDebugState, subscribeBannerAdDebug } from '../lib/bannerAdDebug'
@@ -20,9 +21,10 @@ export function AdBannerProbe({ visible, blockedReason }: AdBannerProbeProps) {
 
   const line = blockedReason ?? `${status.phase}${status.detail ? ` — ${status.detail}` : ''}`
 
-  return (
+  return createPortal(
     <div className="ad-banner-probe" role="status">
       {line}
-    </div>
+    </div>,
+    document.body,
   )
 }
