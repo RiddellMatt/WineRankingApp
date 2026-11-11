@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useState } from 'react'
-import { shouldUseTestAdUnits } from '../lib/adConfig'
+import { adUnitModeLabel, shouldUseTestAdUnits } from '../lib/adConfig'
 import { getBannerAdDebugState, subscribeBannerAdDebug } from '../lib/bannerAdDebug'
 import { isNativeApp } from '../lib/platform'
 
@@ -19,7 +19,10 @@ export function AdBannerProbe({ visible, blockedReason }: AdBannerProbeProps) {
 
   if (!isNativeApp() || !shouldUseTestAdUnits() || !visible) return null
 
-  const line = blockedReason ?? `${status.phase}${status.detail ? ` — ${status.detail}` : ''}`
+  const prefix = `[${adUnitModeLabel()}]`
+  const line =
+    blockedReason ??
+    `${prefix} ${status.phase}${status.detail ? ` — ${status.detail}` : ''}`
 
   return createPortal(
     <div className="ad-banner-probe" role="status">

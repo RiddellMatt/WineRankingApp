@@ -35,7 +35,12 @@ workflows:
       - name: Apply AdMob iOS native patches
         script: node scripts/patch-admob-ios-banner-z.mjs
       - name: Build mobile web bundle and sync Capacitor iOS
-        script: npm run cap:sync
+        script: |
+          npm run build:mobile
+          node scripts/patch-admob-ios-banner-z.mjs
+          node scripts/configure-admob-ios-app-id.mjs
+          npx cap sync
+          node scripts/configure-deeplinks.mjs
       - name: Set up code signing
         script: xcode-project use-profiles
       - name: Increment build number
