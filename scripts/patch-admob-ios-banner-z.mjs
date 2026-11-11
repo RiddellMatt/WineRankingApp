@@ -53,11 +53,18 @@ function patchBannerDefaultTestUnit() {
   if (!existsSync(pluginFile)) return
   let source = readFileSync(pluginFile, 'utf8')
   const androidDefault = 'getAdId(call, "ca-app-pub-3940256099942544/6300978111")'
-  const iosDefault = 'getAdId(call, "ca-app-pub-3940256089942544/2934735716")'
-  if (!source.includes(androidDefault) || source.includes(iosDefault)) return
-  source = source.replace(androidDefault, iosDefault)
-  writeFileSync(pluginFile, source)
-  console.log('[patch-admob-ios] Applied iOS banner test unit default')
+  const iosDefault = 'getAdId(call, "ca-app-pub-3940256099942544/2934735716")'
+  const legacyIos = 'getAdId(call, "ca-app-pub-3940256089942544/2934735716")'
+  if (source.includes(androidDefault) && !source.includes(iosDefault)) {
+    source = source.replace(androidDefault, iosDefault)
+  }
+  if (source.includes(legacyIos)) {
+    source = source.replaceAll(legacyIos, iosDefault)
+  }
+  if (source.includes(iosDefault)) {
+    writeFileSync(pluginFile, source)
+    console.log('[patch-admob-ios] Applied iOS banner test unit default')
+  }
 }
 
 function patchBannerReceiveAdSizing() {

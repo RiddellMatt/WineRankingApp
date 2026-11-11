@@ -170,6 +170,7 @@ The app automatically retries **Google test** banners after a production load fa
 - **Production unit, no fill** — new AdMob apps often show no banner until verified; leave `VITE_ADMOB_TEST_MODE` unset (Google test ads) until you see a banner, or use the app’s built-in test fallback when production fails.
 - **iOS native tab bar** — banner must sit above the Capawesome `UITabBar` (z-order patch runs in `postinstall` / `cap:sync`).
 - **`isTesting: true` on iOS** — the Capacitor AdMob plugin forces an Android test unit; use `isTesting: false` with the iOS Google demo ad unit id from `adConfig.ts`.
+- **Wrong Google demo publisher id** — iOS fixed banner must use `ca-app-pub-3940256099942544/2934735716` (see [Google iOS test ads](https://developers.google.com/admob/ios/test-ads)); the older `3940256089942544` prefix can return *Publisher data not found* even in “test mode”.
 - Using **ad unit** id in `Info.plist` / `strings.xml` (must be **app** id).
 - Shipping with Google’s **sample** app IDs in store builds.
 - Forgetting to set env vars on **Codemagic** so release builds still use test logic or empty units.
