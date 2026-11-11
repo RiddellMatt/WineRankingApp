@@ -94,15 +94,30 @@ function patchBannerReceiveAdSizing() {
             ])`
   if (source.includes(sizeTarget)) {
     source = source.replace(sizeTarget, sizeReplacement)
-    writeFileSync(bannerFile, source)
-    console.log('[patch-admob-ios] Applied banner receive sizing patch')
-  } else if (source.includes('guard let rootViewController')) {
-    writeFileSync(bannerFile, source)
-    console.log('[patch-admob-ios] Applied banner getRootVC guard')
   }
+
+  writeFileSync(bannerFile, source)
+  console.log('[patch-admob-ios] Applied banner receive sizing patch')
+}
+
+/** `if let` → `guard` patch used to leave a stray `}` that breaks Swift compile. */
+function repairBannerReceiveAdBrace() {
+  if (!existsSync(bannerFile)) return
+  let source = readFileSync(bannerFile, 'utf8')
+  const orphan = `            self.plugin?.notifyListeners(BannerAdPluginEvents.Loaded.rawValue, data: [:])
+
+        }
+    }`
+  const fixed = `        self.plugin?.notifyListeners(BannerAdPluginEvents.Loaded.rawValue, data: [:])
+    }`
+  if (!source.includes(orphan)) return
+  source = source.replace(orphan, fixed)
+  writeFileSync(bannerFile, source)
+  console.log('[patch-admob-ios] Repaired extraneous brace in bannerViewDidReceiveAd')
 }
 
 patchBannerZOrder()
 patchGetRootVC()
 patchBannerDefaultTestUnit()
 patchBannerReceiveAdSizing()
+repairBannerReceiveAdBrace()
