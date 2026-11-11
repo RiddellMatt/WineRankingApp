@@ -57,3 +57,21 @@ export function adsEnabledForUser(isPro: boolean): boolean {
   if (!isPro) return true
   return adsShowForPro()
 }
+
+/**
+ * Ads eligibility using server profile (not stale localStorage Pro).
+ * While profile is loading, treat signed-in users as free so banners can start.
+ */
+export function adsEnabledForAccount(options: {
+  signedIn: boolean
+  profileLoaded: boolean
+  profileIsPro: boolean | undefined
+  localPro: boolean
+}): boolean {
+  if (adsShowForPro()) return true
+  if (options.signedIn) {
+    if (!options.profileLoaded) return true
+    return !options.profileIsPro
+  }
+  return adsEnabledForUser(options.localPro)
+}

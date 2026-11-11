@@ -19,7 +19,7 @@ import {
   setNativeTabBarSelectHandler,
   syncNativeTabBar,
 } from './lib/nativeTabBar'
-import { adsEnabledForUser } from './lib/adConfig'
+import { adsEnabledForAccount } from './lib/adConfig'
 import { refreshBannerMargin, startBannerAds, stopBannerAds } from './lib/bannerAds'
 import { isNativeApp } from './lib/platform'
 import { useAuth } from './context/AuthContext'
@@ -233,6 +233,13 @@ export default function App() {
     !authLoading && (offlineMode || !configured || Boolean(user))
   const authGateScreen = configured && !offlineMode && !user
 
+  const adsAllowed = adsEnabledForAccount({
+    signedIn: Boolean(cloudUser),
+    profileLoaded,
+    profileIsPro: profile?.isPro,
+    localPro: pro,
+  })
+
   useEffect(() => {
     if (!isNativeIosTabBar()) return
     setNativeTabBarSelectHandler((id) => {
@@ -254,17 +261,15 @@ export default function App() {
       pro,
       selected: viewRef.current,
     }).then(() => {
-      if (adsEnabledForUser(pro) && mainAppShell && !authGateScreen) {
+      if (adsAllowed && mainAppShell && !authGateScreen) {
         void refreshBannerMargin()
       }
     })
-  }, [authLoading, mainAppShell, authGateScreen, cloudUser, pro])
+  }, [authLoading, mainAppShell, authGateScreen, cloudUser, pro, adsAllowed])
 
   useEffect(() => {
     void selectNativeTab(view)
   }, [view])
-
-  const adsAllowed = adsEnabledForUser(pro)
 
   useEffect(() => {
     if (!isNativeApp() || !mainAppShell || authGateScreen || !adsAllowed) {
@@ -275,12 +280,12 @@ export default function App() {
     return () => {
       void stopBannerAds()
     }
-  }, [mainAppShell, authGateScreen, adsAllowed])
+  }, [mainAppShell, authGateScreen, adsAllowed, profileLoaded])
 
   useEffect(() => {
     if (!isNativeApp() || !adsAllowed || !mainAppShell || authGateScreen) return
     void refreshBannerMargin()
-  }, [cloudUser, mainAppShell, authGateScreen, adsAllowed])
+  }, [cloudUser, mainAppShell, authGateScreen, adsAllowed, profileLoaded])
 
   const cellarProgressReady =
     cellarReady && (!cloudUser || profileLoaded) && friendCountLoaded

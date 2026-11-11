@@ -50,12 +50,14 @@ function bannerBottomMarginPx(): number {
 }
 
 function bannerOptions(adId: string): BannerAdOptions {
+  // Never set isTesting on iOS: native showBanner() swaps to a hard-coded *Android* test unit (plugin quirk).
+  // Pass the platform-correct adId from adConfig (Google demo or production) with isTesting: false.
   return {
     adId,
     adSize: BannerAdSize.ADAPTIVE_BANNER,
     position: BannerAdPosition.BOTTOM_CENTER,
     margin: bannerBottomMarginPx(),
-    isTesting: shouldUseTestAdUnits(),
+    isTesting: false,
   }
 }
 
@@ -93,10 +95,7 @@ async function tryTestBannerAfterProductionNoFill(): Promise<void> {
   )
   try {
     await AdMob.removeBanner()
-    await AdMob.showBanner({
-      ...bannerOptions(testId),
-      isTesting: true,
-    })
+    await presentBanner(testId)
     activeAdUnitId = testId
   } catch (err) {
     console.warn('AdMob banner: test fallback failed', err)
