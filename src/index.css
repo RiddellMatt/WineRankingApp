@@ -2560,6 +2560,44 @@ button.tasting-tag-pill-btn.active {
   flex-wrap: wrap;
 }
 
+/* ── Native launch bridge (Capacitor splash → app) ─────── */
+
+.app-launch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+  opacity: 1;
+  transition: opacity 0.48s ease;
+}
+
+.app-launch-overlay--exit {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-launch-logo {
+  width: min(46vw, 200px);
+  max-width: 72%;
+  height: auto;
+  animation: app-launch-logo-in 0.55s ease-out both;
+}
+
+@keyframes app-launch-logo-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* ── Modal / form ───────────────────────────────────── */
 
 .modal-backdrop {
