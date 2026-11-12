@@ -30,7 +30,10 @@ export function AppLaunchOverlay() {
       style={{ backgroundColor: THEME_META[theme] }}
       aria-hidden="true"
     >
-      <img className="app-launch-logo" src={logoSrc} alt="" decoding="async" />
+      <div className="app-launch-stack">
+        <img className="app-launch-logo" src={logoSrc} alt="" decoding="async" />
+        <p className="app-launch-wordmark">Decanti</p>
+      </div>
     </div>
   )
 }

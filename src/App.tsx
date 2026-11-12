@@ -11,7 +11,7 @@ import {
   startPushNotifications,
   stopPushNotifications,
 } from './lib/pushNotifications'
-import { hideNativeSplashOnce } from './lib/nativeSplash'
+import { hideNativeSplashOnce, onLaunchComplete } from './lib/nativeSplash'
 import {
   hideNativeTabBar,
   isNativeIosTabBar,
@@ -197,6 +197,7 @@ export default function App() {
   const [editing, setEditing] = useState<Wine | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileLoaded, setProfileLoaded] = useState(false)
+  const [launchComplete, setLaunchComplete] = useState(() => !isNativeApp())
   const [rankingSetupOpen, setRankingSetupOpen] = useState(false)
   const [rankingSetupBusy, setRankingSetupBusy] = useState(false)
   const [savingFriendWishlistKey, setSavingFriendWishlistKey] = useState<string | null>(null)
@@ -246,6 +247,8 @@ export default function App() {
     localPro: pro,
   })
 
+  useEffect(() => onLaunchComplete(() => setLaunchComplete(true)), [])
+
   useEffect(() => {
     if (!isNativeIosTabBar()) return
     setNativeTabBarSelectHandler((id) => {
@@ -257,7 +260,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!isNativeIosTabBar() || authLoading) return
+    if (!isNativeIosTabBar() || authLoading || !launchComplete) return
     if (!mainAppShell || authGateScreen) {
       void hideNativeTabBar()
       return
@@ -267,7 +270,7 @@ export default function App() {
       pro,
       selected: viewRef.current,
     })
-  }, [authLoading, mainAppShell, authGateScreen, cloudUser, pro])
+  }, [authLoading, launchComplete, mainAppShell, authGateScreen, cloudUser, pro])
 
   useEffect(() => {
     void selectNativeTab(view)

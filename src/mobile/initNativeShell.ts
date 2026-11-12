@@ -1,6 +1,6 @@
 import { App } from '@capacitor/app'
 import { getSupabase } from '../lib/supabase'
-import { hideNativeSplashOnce } from '../lib/nativeSplash'
+import { hideNativeSplashOnce, initLaunchEpoch } from '../lib/nativeSplash'
 import { isNativeApp } from '../lib/platform'
 import { initAppIcon } from '../lib/appIcon'
 import { loadStoredTheme, THEME_META } from '../lib/themes'
@@ -21,6 +21,7 @@ async function refreshSession(): Promise<void> {
 export async function initNativeShell(): Promise<void> {
   if (!isNativeApp()) return
 
+  initLaunchEpoch()
   document.documentElement.classList.add('native-app')
   document.body.classList.add('native-app')
 
@@ -53,5 +54,5 @@ export async function initNativeShell(): Promise<void> {
   // Safety net if auth never resolves (App hides splash when loading finishes).
   window.setTimeout(() => {
     void hideNativeSplashOnce()
-  }, 5000)
+  }, 8000)
 }
