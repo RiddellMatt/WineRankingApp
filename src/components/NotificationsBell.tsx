@@ -12,13 +12,16 @@ import {
   notificationMessage,
   type AppNotification,
 } from '../lib/notificationsDb'
+import { NOTIFICATIONS_REFRESH_EVENT } from '../lib/notificationsRefresh'
+import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
 
 interface Props {
   enabled: boolean
+  userId: string
   onNavigateFriends: (tab: 'feed' | 'manage') => void
 }
 
-export function NotificationsBell({ enabled, onNavigateFriends }: Props) {
+export function NotificationsBell({ enabled, userId, onNavigateFriends }: Props) {
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<AppNotification[]>([])
   const [unread, setUnread] = useState(0)
@@ -43,14 +46,40 @@ export function NotificationsBell({ enabled, onNavigateFriends }: Props) {
   useEffect(() => {
     if (!enabled) return
     refresh()
-    const interval = window.setInterval(refresh, 60_000)
+    const interval = window.setInterval(refresh, 30_000)
     const onFocus = () => refresh()
+    const onRefresh = () => refresh()
     window.addEventListener('focus', onFocus)
+    window.addEventListener(NOTIFICATIONS_REFRESH_EVENT, onRefresh)
+    document.addEventListener('visibilitychange', onFocus)
     return () => {
       window.clearInterval(interval)
       window.removeEventListener('focus', onFocus)
+      window.removeEventListener(NOTIFICATIONS_REFRESH_EVENT, onRefresh)
+      document.removeEventListener('visibilitychange', onFocus)
     }
   }, [enabled, refresh])
+
+  useEffect(() => {
+    if (!enabled || !userId || !isSupabaseConfigured) return
+    const supabase = getSupabase()
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${userId}`,
+        },
+        () => refresh(),
+      )
+      .subscribe()
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [enabled, userId, refresh])
 
   useEffect(() => {
     if (!open || !enabled) return

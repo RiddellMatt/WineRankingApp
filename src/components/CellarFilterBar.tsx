@@ -14,7 +14,7 @@ export interface PriceFilterRange {
   max: number
 }
 
-type FilterPanel = 'type' | 'price' | 'tags'
+type FilterPanel = 'type' | 'price' | 'tags' | 'favorites'
 
 interface Props {
   search: string
@@ -28,6 +28,9 @@ interface Props {
   onTagFilter: (tagId: string | null) => void
   tagOptions: TastingTagDef[]
   showTagFilter: boolean
+  favoriteFilter: boolean
+  onFavoriteFilterChange: (onlyFavorites: boolean) => void
+  showFavoriteFilter: boolean
   priceBounds: PriceBounds | null
   priceFilter: PriceFilterRange | null
   onPriceFilterChange: (range: PriceFilterRange | null) => void
@@ -54,6 +57,9 @@ export function CellarFilterBar({
   onTagFilter,
   tagOptions,
   showTagFilter,
+  favoriteFilter,
+  onFavoriteFilterChange,
+  showFavoriteFilter,
   priceBounds,
   priceFilter,
   onPriceFilterChange,
@@ -66,10 +72,12 @@ export function CellarFilterBar({
 
   const typeActive = typeFilter !== 'All'
   const tagsActive = tagFilter != null
+  const favoritesActive = favoriteFilter
   const priceActive = isPriceFilterActive(priceFilter, priceBounds)
 
   const typeSummary = typeFilter === 'All' ? 'Any' : typeFilter
   const tagSummary = tagFilter ? tastingTagLabel(tagFilter) : 'Any'
+  const favoritesSummary = favoriteFilter ? 'Only' : 'Any'
   const priceSummary = useMemo(() => {
     if (!priceActive || !priceFilter) return 'Any'
     if (priceFilter.min === priceFilter.max) return `$${priceFilter.min}`
@@ -165,6 +173,17 @@ export function CellarFilterBar({
           >
             <span className="cellar-filter-category-name">Tags</span>
             <span className="cellar-filter-category-value">{tagSummary}</span>
+          </button>
+        )}
+        {showFavoriteFilter && (
+          <button
+            type="button"
+            className={`cellar-filter-category ${openPanel === 'favorites' ? 'open' : ''} ${favoritesActive ? 'active' : ''}`}
+            aria-expanded={openPanel === 'favorites'}
+            onClick={() => togglePanel('favorites')}
+          >
+            <span className="cellar-filter-category-name">Favorites</span>
+            <span className="cellar-filter-category-value">{favoritesSummary}</span>
           </button>
         )}
       </div>
@@ -264,6 +283,35 @@ export function CellarFilterBar({
                   </button>
                 </li>
               ))}
+            </ul>
+          )}
+
+          {openPanel === 'favorites' && (
+            <ul className="cellar-filter-sheet-list">
+              <li>
+                <button
+                  type="button"
+                  className={`cellar-filter-sheet-option ${!favoriteFilter ? 'active' : ''}`}
+                  onClick={() => {
+                    onFavoriteFilterChange(false)
+                    setOpenPanel(null)
+                  }}
+                >
+                  All wines
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className={`cellar-filter-sheet-option ${favoriteFilter ? 'active' : ''}`}
+                  onClick={() => {
+                    onFavoriteFilterChange(true)
+                    setOpenPanel(null)
+                  }}
+                >
+                  Favorites only
+                </button>
+              </li>
             </ul>
           )}
         </div>

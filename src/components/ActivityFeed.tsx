@@ -9,6 +9,7 @@ import {
   actorLabel,
   formatActivityTime,
   milestoneHeadline,
+  milestoneIcon,
   type ActivityEvent,
   wineActivitySubtitle,
   wineActivityTitle,
@@ -16,6 +17,8 @@ import {
 import { compositeScore } from '../lib/ranking'
 import { isWishlist, wishlistIdentityKey } from '../lib/wishlist'
 import type { RankingPreference, Wine } from '../types'
+import type { BadgeTier } from '../lib/badges'
+import { BadgeMedal } from './BadgeMedal'
 
 interface Props {
   events: ActivityEvent[]
@@ -70,24 +73,47 @@ export function ActivityFeed({
 
         if (isMilestone) {
           const headline = milestoneHeadline(event)
+          const milestoneDetail =
+            event.type === 'badge_unlock'
+              ? event.milestone?.badgeTitle ?? headline
+              : headline
+          const icon = milestoneIcon(event)
+          const medalTier: BadgeTier =
+            event.type === 'badge_unlock'
+              ? ((event.milestone?.tier && event.milestone.tier !== 'locked'
+                  ? event.milestone.tier
+                  : 'bronze') as BadgeTier)
+              : 'gold'
           const canReact =
             reactionsEnabled && !isOwn && Boolean(onToggleReaction)
           const reactions = event.reactions
           const reactionBusy = togglingReactionKey === event.id
           return (
             <li className="activity-item activity-milestone" key={event.id}>
-              <Avatar
-                displayName={name}
-                email={event.actor.email}
-                avatarUrl={event.actor.avatarUrl}
-                seed={event.actor.id}
-                size="sm"
-              />
+              <div className="activity-milestone-leading">
+                <Avatar
+                  displayName={name}
+                  email={event.actor.email}
+                  avatarUrl={event.actor.avatarUrl}
+                  seed={event.actor.id}
+                  size="sm"
+                />
+                {icon && (
+                  <BadgeMedal
+                    icon={icon}
+                    tier={medalTier}
+                    size="sm"
+                    tierCaption={event.type === 'journey_complete' ? 'Done' : undefined}
+                  />
+                )}
+              </div>
               <div className="activity-body">
                 <p className="activity-line">
                   <strong>{name}</strong> {activityEventLabel(event.type)}
                 </p>
-                {headline && <p className="activity-sub activity-milestone-headline">{headline}</p>}
+                {milestoneDetail && (
+                  <p className="activity-sub activity-milestone-headline">{milestoneDetail}</p>
+                )}
                 <div className="activity-meta">
                   <span>{formatActivityTime(event.at)}</span>
                   {!isOwn && (

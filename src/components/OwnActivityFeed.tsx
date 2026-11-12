@@ -3,11 +3,12 @@ import {
   formatActivityTime,
   type ActivityEvent,
 } from '../lib/activityFeed'
-import { BADGE_DEFINITIONS, tierLabel, type BadgeTier } from '../lib/badges'
+import { BADGE_DEFINITIONS, type BadgeTier } from '../lib/badges'
 import { compositeScore } from '../lib/ranking'
 import { isWishlist } from '../lib/wishlist'
 import type { RankingPreference } from '../types'
 import { WineTypePill } from './WineTypePill'
+import { BadgeMedal } from './BadgeMedal'
 
 interface Props {
   events: ActivityEvent[]
@@ -39,29 +40,36 @@ export function OwnActivityFeed({ events, rankingPreference, emptyHint }: Props)
         if (isMilestone) {
           const ms = event.milestone
           const badgeLine =
-            event.type === 'badge_unlock' && ms?.badgeTitle
-              ? `${ms.badgeTitle}${ms.tier && ms.tier !== 'locked' ? ` · ${tierLabel(ms.tier as BadgeTier)}` : ''}`
-              : null
+            event.type === 'badge_unlock' && ms?.badgeTitle ? ms.badgeTitle : null
           const journeyLine =
             event.type === 'journey_complete' && ms?.journeyTitle ? ms.journeyTitle : null
           const prefix =
             event.type === 'badge_unlock' ? 'Earned badge' : activityEventLabel(event.type)
           const detail = badgeLine ?? journeyLine
           const icon = badgeIconForEvent(event) ?? ms?.journeyIcon
+          const tier =
+            event.type === 'badge_unlock'
+              ? ((ms?.tier && ms.tier !== 'locked' ? ms.tier : 'bronze') as BadgeTier)
+              : ('gold' as BadgeTier)
           return (
             <li className="own-activity-item own-activity-milestone" key={event.id}>
               <div className="own-activity-milestone-row">
                 {icon && (
-                  <span className="own-activity-badge-icon" aria-hidden="true">
-                    {icon}
-                  </span>
+                  <BadgeMedal
+                    icon={icon}
+                    tier={tier}
+                    size="sm"
+                    tierCaption={event.type === 'journey_complete' ? 'Done' : undefined}
+                  />
                 )}
-                <p className="own-activity-line">
-                  {prefix}
-                  {detail ? ` — ${detail}` : ''}
-                </p>
+                <div className="own-activity-milestone-copy">
+                  <p className="own-activity-line">
+                    {prefix}
+                    {detail ? ` — ${detail}` : ''}
+                  </p>
+                  <span className="own-activity-time">{formatActivityTime(event.at)}</span>
+                </div>
               </div>
-              <span className="own-activity-time">{formatActivityTime(event.at)}</span>
             </li>
           )
         }
@@ -74,18 +82,18 @@ export function OwnActivityFeed({ events, rankingPreference, emptyHint }: Props)
           actionPrefix = 'Rated'
         }
         return (
-          <li className="own-activity-item" key={event.id}>
-            <p className="own-activity-line own-activity-wine-line">
+          <li className="own-activity-item own-activity-wine" key={event.id}>
+            <p className="own-activity-line">
               {actionPrefix}{' '}
               <span className="own-activity-wine-title">{title}</span>
-              {wine.type?.trim() && (
-                <WineTypePill type={wine.type} />
-              )}
             </p>
             {event.wine?.winery?.trim() && (
               <p className="own-activity-sub">{event.wine.winery.trim()}</p>
             )}
-            <span className="own-activity-time">{formatActivityTime(event.at)}</span>
+            <div className="own-activity-footer">
+              <span className="own-activity-time">{formatActivityTime(event.at)}</span>
+              {wine.type?.trim() ? <WineTypePill type={wine.type} /> : null}
+            </div>
           </li>
         )
       })}

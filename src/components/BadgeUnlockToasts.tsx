@@ -1,21 +1,12 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import type { BadgeTier } from '../lib/badges'
-import { tierLabel } from '../lib/badges'
+import { BadgeMedal } from './BadgeMedal'
 import type { BadgeUnlock } from '../lib/badgeUnlocks'
 import { unlockDetail, unlockHeadline } from '../lib/badgeUnlocks'
 import type { JourneyDefinition } from '../lib/journeys'
 import { journeyCompleteMessage } from '../lib/journeys'
 
 const TOAST_MS = 4500
-
-const TIER_CLASS: Record<BadgeTier, string> = {
-  locked: 'badge-tier-locked',
-  bronze: 'badge-tier-bronze',
-  silver: 'badge-tier-silver',
-  gold: 'badge-tier-gold',
-  diamond: 'badge-tier-diamond',
-}
 
 export interface BadgeToastItem extends BadgeUnlock {
   toastId: string
@@ -88,12 +79,8 @@ function BadgeToast({
 
   return (
     <button type="button" className="badge-toast" onClick={() => onDismiss(item.toastId)}>
-      <span
-        className={`badge-toast-medal badge-medal ${TIER_CLASS[item.tier]}`}
-        aria-hidden="true"
-      >
-        <span className="badge-medal-icon">{item.icon}</span>
-        <span className="badge-medal-tier">{tierLabel(item.tier)}</span>
+      <span className="badge-toast-medal">
+        <BadgeMedal icon={item.icon} tier={item.tier} />
       </span>
       <span className="badge-toast-copy">
         <span className="badge-toast-title">{unlockHeadline(item)}</span>
@@ -117,9 +104,8 @@ function JourneyToast({
 
   return (
     <button type="button" className="badge-toast journey-toast" onClick={() => onDismiss(item.toastId)}>
-      <span className="badge-toast-medal badge-medal badge-tier-gold" aria-hidden="true">
-        <span className="badge-medal-icon">{item.icon}</span>
-        <span className="badge-medal-tier">Done</span>
+      <span className="badge-toast-medal">
+        <BadgeMedal icon={item.icon} tier="gold" tierCaption="Done" />
       </span>
       <span className="badge-toast-copy">
         <span className="badge-toast-title">{item.title} complete!</span>

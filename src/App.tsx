@@ -186,6 +186,7 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<WineType | 'All'>('All')
   const [tagFilter, setTagFilter] = useState<string | null>(null)
+  const [favoriteFilter, setFavoriteFilter] = useState(false)
   const [priceFilter, setPriceFilter] = useState<PriceFilterRange | null>(null)
   const [sortKey, setSortKey] = useState<SortKey>('rating')
   const [cellarSegment, setCellarSegment] = useState<CellarSegment>('tried')
@@ -790,6 +791,7 @@ export default function App() {
       if (typeFilter !== 'All' && w.type !== typeFilter) return false
       if (!wineMatchesPriceFilter(w, priceFilter, cellarPriceBounds)) return false
       if (cellarSegment === 'tried' && !wineMatchesTagFilter(w, tagFilter)) return false
+      if (cellarSegment === 'tried' && favoriteFilter && !isWineFavorite(w)) return false
       if (!q) return true
       const tagText = (w.tastingTags ?? []).map(tastingTagLabel).join(' ')
       return [w.name, w.winery, w.varietal, w.region, w.notes, w.purchasedAt, tagText]
@@ -806,6 +808,7 @@ export default function App() {
     search,
     typeFilter,
     tagFilter,
+    favoriteFilter,
     priceFilter,
     cellarPriceBounds,
     sortKey,
@@ -1116,6 +1119,7 @@ export default function App() {
             {cloudUser && view === 'friends' && !friendView && (
               <NotificationsBell
                 enabled
+                userId={cloudUser.id}
                 onNavigateFriends={(tab) => {
                   setFriendView(null)
                   setView('friends')
@@ -1328,6 +1332,9 @@ export default function App() {
                 onTagFilter={setTagFilter}
                 tagOptions={cellarTagFilters}
                 showTagFilter={cellarSegment === 'tried'}
+                favoriteFilter={favoriteFilter}
+                onFavoriteFilterChange={setFavoriteFilter}
+                showFavoriteFilter={cellarSegment === 'tried'}
                 priceBounds={cellarPriceBounds}
                 priceFilter={priceFilter}
                 onPriceFilterChange={setPriceFilter}
@@ -1375,9 +1382,12 @@ export default function App() {
                 <p>
                   {tagFilter
                     ? `No tried wines tagged “${tastingTagLabel(tagFilter)}”.`
-                    : 'No wines match your search or filters.'}
+                    : favoriteFilter
+                      ? 'No favorites match your search or filters.'
+                      : 'No wines match your search or filters.'}
                 </p>
                 {(tagFilter ||
+                  favoriteFilter ||
                   search.trim() ||
                   typeFilter !== 'All' ||
                   priceFilter != null) && (
@@ -1389,6 +1399,7 @@ export default function App() {
                         setSearch('')
                         setTypeFilter('All')
                         setTagFilter(null)
+                        setFavoriteFilter(false)
                         setPriceFilter(null)
                       }}
                     >

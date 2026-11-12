@@ -23,6 +23,7 @@ import {
   sendFriendRequest,
   type Friendship,
 } from '../lib/friendsDb'
+import { requestNotificationsRefresh } from '../lib/notificationsRefresh'
 import type { RankingPreference, Wine } from '../types'
 
 interface Props {
@@ -242,6 +243,7 @@ export function FriendsPanel({
           currentReaction: event.reactions?.myReaction ?? null,
         })
       }
+      requestNotificationsRefresh()
     } catch (e) {
       setActivity(previous)
       setError(String((e as Error).message ?? e))
