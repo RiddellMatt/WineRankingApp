@@ -1266,19 +1266,33 @@ a.icon-btn {
   font-size: 1rem;
 }
 
-.cellar-filter-categories {
+.cellar-filter-block {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.cellar-filter-heading {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+}
+
+.cellar-filter-categories {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
 }
 
 .cellar-filter-category {
-  flex: 1 1 calc(33.333% - 0.4rem);
-  min-width: 5.5rem;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.12rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
   padding: 0.55rem 0.7rem;
   border-radius: var(--radius);
   border: 1px solid var(--border);
@@ -1288,32 +1302,32 @@ a.icon-btn {
   transition: border-color 0.15s, background 0.15s;
 }
 
+.cellar-filter-category-placeholder {
+  visibility: hidden;
+  pointer-events: none;
+  border-color: transparent;
+  background: transparent;
+}
+
 .cellar-filter-category:hover,
 .cellar-filter-category.open {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
 
-.cellar-filter-category.active .cellar-filter-category-value {
-  color: #f6c9d4;
+.cellar-filter-category.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .cellar-filter-category-name {
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-faint);
-}
-
-.cellar-filter-category-value {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text);
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.cellar-filter-category.active .cellar-filter-category-name {
+  color: #f6c9d4;
 }
 
 .cellar-filter-sheet {
@@ -2904,13 +2918,14 @@ textarea {
 .insights-leaders-modal {
   display: flex;
   flex-direction: column;
-  max-width: 480px;
+  width: 100%;
+  max-width: 28rem;
   max-height: min(
-    88dvh,
-    calc(100dvh - var(--safe-top) - var(--safe-bottom) - 1.25rem)
+    85dvh,
+    calc(100dvh - var(--safe-top) - var(--safe-bottom) - 2.5rem)
   );
   overflow: hidden;
-  padding: 1.1rem 1.15rem 1rem;
+  padding: 0;
 }
 
 .insights-leaders-modal .modal-header,
@@ -2919,15 +2934,18 @@ textarea {
 }
 
 .insights-leaders-modal .modal-header {
-  z-index: 2;
-  padding-bottom: 0.45rem;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0;
+  padding: 1.25rem 1.25rem 0.85rem;
   border-bottom: 1px solid var(--border);
+  align-items: flex-start;
 }
 
 .insights-leaders-modal .modal-header h2 {
-  font-size: 1.15rem;
-  line-height: 1.25;
+  flex: 1;
+  min-width: 0;
+  font-size: 1.2rem;
+  line-height: 1.35;
+  padding-right: 0.35rem;
 }
 
 .insights-leaders-body {
@@ -2936,12 +2954,26 @@ textarea {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  margin-top: 0.15rem;
+  padding: 0.85rem 1.25rem 1rem;
+}
+
+.insights-leaders-modal .modal-actions {
+  margin-top: 0;
+  padding: 0.85rem 1.25rem 1.25rem;
+  border-top: 1px solid var(--border);
 }
 
 .modal-backdrop.insights-leaders-backdrop {
-  padding-top: max(0.5rem, calc(var(--safe-top) + 0.35rem));
-  align-items: flex-start;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
+  align-items: center;
+  padding-top: max(var(--modal-sheet-top-gap), calc(var(--safe-top) + 0.75rem));
+  padding-bottom: max(1rem, var(--safe-bottom));
+}
+
+html.app-scroll-locked.native-app .content {
+  overflow: hidden;
 }
 
 .stamp-wines-modal-icon {
@@ -4001,13 +4033,20 @@ textarea {
   gap: 0.35rem 0.5rem;
 }
 
-.activity-milestone-leading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.45rem;
-  flex-shrink: 0;
-  padding-top: 0.1rem;
+.activity-item.activity-milestone {
+  position: relative;
+}
+
+.activity-milestone-medal {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.65rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.activity-body--milestone {
+  padding-right: 2.85rem;
 }
 
 .own-activity-wine-title {
@@ -4041,6 +4080,12 @@ textarea {
 .own-activity-milestone .own-activity-time {
   display: block;
   margin-top: 0.2rem;
+}
+
+.modal-backdrop.badge-tiers-backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
 }
 
 .badge-tiers-modal {
@@ -5922,6 +5967,15 @@ html.native-app .content {
   -webkit-overflow-scrolling: touch;
 }
 
+html.show-banner-ad.native-app:not(.native-ios-tab-bar) .content {
+  padding-bottom: calc(
+    max(var(--banner-ad-height, 50px), 50px) + var(--tab-bar-height) + var(--safe-bottom) + 1rem
+  );
+  scroll-padding-bottom: calc(
+    max(var(--banner-ad-height, 50px), 50px) + var(--tab-bar-height) + var(--safe-bottom) + 1rem
+  );
+}
+
 html.native-app .header {
   padding-top: max(0.5rem, var(--safe-top));
   padding-bottom: 0.35rem;
@@ -6054,7 +6108,8 @@ html.native-app .modal-backdrop.wine-form-backdrop {
 }
 
 html.native-app .modal-backdrop.insights-leaders-backdrop {
-  padding-top: max(0.35rem, calc(var(--safe-top) + 0.25rem));
+  overflow: hidden;
+  padding-top: max(var(--modal-sheet-top-gap), calc(var(--safe-top) + 0.75rem));
 }
 
 /* iOS system UITabBar (@capawesome/capacitor-tab-bar) — Liquid Glass on iOS 26+ */
@@ -6068,16 +6123,11 @@ html.native-ios-tab-bar .content {
 }
 
 html.show-banner-ad.native-ios-tab-bar .content {
-  padding-bottom: calc(var(--banner-ad-height, 0px) + max(0.5rem, var(--safe-bottom)));
-  scroll-padding-bottom: calc(var(--banner-ad-height, 0px) + max(0.5rem, var(--safe-bottom)));
-}
-
-html.show-banner-ad.native-app:not(.native-ios-tab-bar) .content {
   padding-bottom: calc(
-    var(--banner-ad-height, 0px) + var(--tab-bar-height) + var(--safe-bottom) + 0.65rem
+    max(var(--banner-ad-height, 50px), 50px) + max(0.75rem, var(--safe-bottom)) + 0.35rem
   );
   scroll-padding-bottom: calc(
-    var(--banner-ad-height, 0px) + var(--tab-bar-height) + var(--safe-bottom) + 0.65rem
+    max(var(--banner-ad-height, 50px), 50px) + max(0.75rem, var(--safe-bottom)) + 0.35rem
   );
 }
 

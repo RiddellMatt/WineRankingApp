@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { formatActivityTime } from '../lib/activityFeed'
+import { lockAppScroll } from '../lib/lockAppScroll'
 import { compositeScore } from '../lib/ranking'
 import type { InsightsLeaderKind } from '../lib/insightsLeaders'
 import type { RankingPreference, Wine } from '../types'
@@ -16,16 +18,17 @@ interface Props {
 }
 
 export function InsightsLeadersModal({ kind, wines, rankingPreference, onClose }: Props) {
+  useEffect(() => lockAppScroll(), [])
+
   return (
     <div
       className="modal-backdrop insights-leaders-backdrop"
+      role="presentation"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="modal insights-leaders-modal" role="dialog" aria-labelledby="insights-leaders-title">
         <div className="modal-header insights-leaders-header">
-          <div className="modal-header-titles">
-            <h2 id="insights-leaders-title">Your top 3 · {TITLES[kind]}</h2>
-          </div>
+          <h2 id="insights-leaders-title">Your top 3 · {TITLES[kind]}</h2>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
             ✕
           </button>
