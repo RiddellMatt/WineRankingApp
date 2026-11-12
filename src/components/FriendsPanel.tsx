@@ -5,12 +5,14 @@ import {
   applyReactionToggle,
   attachReactionsToEvents,
   toggleActivityReaction,
+  toggleMilestoneReaction,
   type ReactionType,
 } from '../lib/activityReactions'
 import {
   fetchFriendActivity,
   ownRecentActivity,
   type ActivityEvent,
+  type WineActivityEventType,
 } from '../lib/activityFeed'
 import {
   fetchFriendships,
@@ -216,19 +218,30 @@ export function FriendsPanel({
   }
 
   async function handleToggleReaction(event: ActivityEvent, reaction: ReactionType) {
-    if (!event.wine || event.type === 'badge_unlock' || event.type === 'journey_complete') return
+    const isMilestone =
+      event.type === 'badge_unlock' || event.type === 'journey_complete'
+    if (!event.wine && !isMilestone) return
     setError('')
     const previous = activity
     setTogglingReactionKey(event.id)
     setActivity(applyReactionToggle(activity, event.id, reaction))
     try {
-      await toggleActivityReaction({
-        targetUserId: event.actor.id,
-        wineId: event.wine.id,
-        eventType: event.type,
-        reaction,
-        currentReaction: event.reactions?.myReaction ?? null,
-      })
+      if (isMilestone) {
+        await toggleMilestoneReaction({
+          targetUserId: event.actor.id,
+          milestoneEventId: event.id,
+          reaction,
+          currentReaction: event.reactions?.myReaction ?? null,
+        })
+      } else {
+        await toggleActivityReaction({
+          targetUserId: event.actor.id,
+          wineId: event.wine!.id,
+          eventType: event.type as WineActivityEventType,
+          reaction,
+          currentReaction: event.reactions?.myReaction ?? null,
+        })
+      }
     } catch (e) {
       setActivity(previous)
       setError(String((e as Error).message ?? e))

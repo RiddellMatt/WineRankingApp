@@ -69,6 +69,7 @@ import { useAppTheme } from './lib/useAppTheme'
 import { APP_NAME, APP_NAME_PRO, STORAGE_PREFIX } from './brand'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
 import { fetchFriendships } from './lib/friendsDb'
+import { fetchCompletedJourneysForUsers } from './lib/journeyDb'
 import {
   consumeCatchUpTestingFlag,
   evaluateBadgeProgressChange,
@@ -170,6 +171,7 @@ export default function App() {
 
   const [wines, setWines] = useState<Wine[]>(() => (offlineMode ? loadWines() : []))
   const [friendWines, setFriendWines] = useState<Wine[]>([])
+  const [friendCompletedJourneys, setFriendCompletedJourneys] = useState<Set<string>>(() => new Set())
   const [friendView, setFriendView] = useState<{
     id: string
     name: string
@@ -1061,8 +1063,12 @@ export default function App() {
   async function viewFriendCellar(friendId: string, friendName: string, avatarUrl?: string) {
     setCellarLoading(true)
     try {
-      const list = await fetchWines(friendId)
+      const [list, journeyMap] = await Promise.all([
+        fetchWines(friendId),
+        fetchCompletedJourneysForUsers([friendId]),
+      ])
       setFriendWines(list)
+      setFriendCompletedJourneys(journeyMap.get(friendId) ?? new Set())
       setFriendView({ id: friendId, name: friendName, avatarUrl })
       setView('friends')
     } catch (e) {
@@ -1171,6 +1177,7 @@ export default function App() {
               shareAttribution={`From ${friendView.name}'s cellar`}
               backButton={{ label: '← Back to friends', onClick: () => setFriendView(null) }}
               onSaveToWishlist={(wine) => handleSaveWishlistFromFriend(wine, friendView.name)}
+              completedJourneys={friendCompletedJourneys}
               isWishlistSaved={(wine) => isWishlistDuplicate(wines, wine)}
               wishlistSavingKey={savingFriendWishlistKey}
             />

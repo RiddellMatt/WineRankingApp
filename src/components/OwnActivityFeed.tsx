@@ -3,10 +3,11 @@ import {
   formatActivityTime,
   type ActivityEvent,
 } from '../lib/activityFeed'
-import { tierLabel, type BadgeTier } from '../lib/badges'
+import { BADGE_DEFINITIONS, tierLabel, type BadgeTier } from '../lib/badges'
 import { compositeScore } from '../lib/ranking'
 import { isWishlist } from '../lib/wishlist'
 import type { RankingPreference } from '../types'
+import { WineTypePill } from './WineTypePill'
 
 interface Props {
   events: ActivityEvent[]
@@ -14,17 +15,12 @@ interface Props {
   emptyHint: string
 }
 
-function wineLine(event: ActivityEvent, rankingPreference: RankingPreference): string {
-  const wine = event.wine!
-  const title = [wine.name, wine.vintage].filter(Boolean).join(' ')
-  if (event.type === 'saved_to_try') {
-    return `Saved ${title} to try`
-  }
-  const score = compositeScore(wine, rankingPreference)
-  if (!isWishlist(wine) && score > 0) {
-    return `Rated ${title} · ${score.toFixed(1)}`
-  }
-  return `Logged ${title}`
+function badgeIconForEvent(event: ActivityEvent): string | null {
+  const ms = event.milestone
+  if (ms?.badgeIcon) return ms.badgeIcon
+  const id = ms?.badgeId
+  if (!id) return null
+  return BADGE_DEFINITIONS.find((def) => def.id === id)?.icon ?? null
 }
 
 export function OwnActivityFeed({ events, rankingPreference, emptyHint }: Props) {
@@ -51,12 +47,12 @@ export function OwnActivityFeed({ events, rankingPreference, emptyHint }: Props)
           const prefix =
             event.type === 'badge_unlock' ? 'Earned badge' : activityEventLabel(event.type)
           const detail = badgeLine ?? journeyLine
-          const icon = ms?.badgeIcon ?? ms?.journeyIcon
+          const icon = badgeIconForEvent(event) ?? ms?.journeyIcon
           return (
             <li className="own-activity-item own-activity-milestone" key={event.id}>
               <div className="own-activity-milestone-row">
                 {icon && (
-                  <span className="own-activity-milestone-icon" aria-hidden="true">
+                  <span className="own-activity-badge-icon" aria-hidden="true">
                     {icon}
                   </span>
                 )}
@@ -69,9 +65,23 @@ export function OwnActivityFeed({ events, rankingPreference, emptyHint }: Props)
             </li>
           )
         }
+        const wine = event.wine!
+        const title = [wine.name, wine.vintage].filter(Boolean).join(' ')
+        let actionPrefix = 'Logged'
+        if (event.type === 'saved_to_try') {
+          actionPrefix = 'Saved to try'
+        } else if (!isWishlist(wine) && compositeScore(wine, rankingPreference) > 0) {
+          actionPrefix = 'Rated'
+        }
         return (
           <li className="own-activity-item" key={event.id}>
-            <p className="own-activity-line">{wineLine(event, rankingPreference)}</p>
+            <p className="own-activity-line own-activity-wine-line">
+              {actionPrefix}{' '}
+              <span className="own-activity-wine-title">{title}</span>
+              {wine.type?.trim() && (
+                <WineTypePill type={wine.type} />
+              )}
+            </p>
             {event.wine?.winery?.trim() && (
               <p className="own-activity-sub">{event.wine.winery.trim()}</p>
             )}

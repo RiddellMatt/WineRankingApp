@@ -12,7 +12,7 @@ function logoSrcForTheme(theme: ReturnType<typeof useAppTheme>): string | undefi
   return THEME_OPTIONS.find((option) => option.id === theme)?.logoSrc
 }
 
-/** Theme-aware Decanti mark — decanter for Cellar, wordmark logos for Navy/Daylight. */
+/** Theme-aware Decanti mark — wordmark on Cellar & Daylight (see theme logoSrc). */
 export function DecantiLogo({ className = '', context = 'header' }: Props) {
   const theme = useAppTheme()
   const logoSrc = logoSrcForTheme(theme)
@@ -29,8 +29,7 @@ export function DecantiLogo({ className = '', context = 'header' }: Props) {
   }
 
   const size = context === 'auth' ? 56 : 44
-  const markClass =
-    context === 'auth' ? 'auth-brand-mark' : 'brand-mark-header'
+  const markClass = context === 'auth' ? 'auth-brand-mark' : 'brand-mark-header'
 
   return (
     <BrandMark
@@ -41,5 +40,5 @@ export function DecantiLogo({ className = '', context = 'header' }: Props) {
 }
 
 export function usesThemeWordmarkLogo(theme: ReturnType<typeof useAppTheme>): boolean {
-  return theme === 'navy' || theme === 'light'
+  return theme === 'classic' || theme === 'light'
 }

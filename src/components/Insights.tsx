@@ -139,7 +139,7 @@ export function Insights({ wines, rankingPreference }: Props) {
 
         <section className="insight-card insight-card-type">
           <h3>Cellar mix</h3>
-          <p className="insight-card-hint">By wine type — count and average score.</p>
+          <p className="insight-card-hint">By wine type — bottle counts.</p>
           <TypeMixDonut data={insights.byType} total={typeTotal} />
         </section>
       </div>

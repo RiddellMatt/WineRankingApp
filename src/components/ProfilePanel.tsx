@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Avatar } from './Avatar'
 import { BadgeGrid } from './BadgeGrid'
+import { BadgeTiersModal } from './BadgeTiersModal'
 import { OwnActivityFeed } from './OwnActivityFeed'
 import { WinePassport } from './WinePassport'
 import { mergeOwnActivity } from '../lib/activityFeed'
@@ -41,6 +42,7 @@ export function ProfilePanel({
   const [tab, setTab] = useState<ProfileTab>('activity')
   const [friendCount, setFriendCount] = useState(0)
   const [milestoneRows, setMilestoneRows] = useState<ActivityEventRow[]>([])
+  const [tiersOpen, setTiersOpen] = useState(false)
 
   const displayName =
     profile.displayName?.trim() || profile.email?.split('@')[0] || email?.split('@')[0] || 'Wine lover'
@@ -159,9 +161,13 @@ export function ProfilePanel({
       {tab === 'badges' && (
         <section className="profile-tab-panel">
           <p className="friends-hint">
-            Earn metallic tiers as you log wines, explore origins, and connect with friends.
+            Earn metallic tiers as you log wines, explore origins, and connect with friends.{' '}
+            <button type="button" className="link-btn" onClick={() => setTiersOpen(true)}>
+              How badge tiers work
+            </button>
           </p>
           <BadgeGrid badges={badges} />
+          {tiersOpen && <BadgeTiersModal onClose={() => setTiersOpen(false)} />}
           {badgeTestingEnabled && (
             <button
               type="button"

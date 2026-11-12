@@ -36,7 +36,6 @@ export function TypeMixDonut({ data, total }: { data: GroupDatum[]; total: numbe
     })
 
   const gradient = stops.length > 0 ? `conic-gradient(from -90deg, ${stops.join(', ')})` : undefined
-  const lead = data[0]
 
   return (
     <div className="type-mix-chart">
@@ -49,7 +48,6 @@ export function TypeMixDonut({ data, total }: { data: GroupDatum[]; total: numbe
         <div className="type-mix-donut-hole">
           <span className="type-mix-total">{total}</span>
           <span className="type-mix-total-label">bottles</span>
-          {lead && <span className="type-mix-lead">Mostly {lead.label}</span>}
         </div>
       </div>
       <ul className="type-mix-legend">
