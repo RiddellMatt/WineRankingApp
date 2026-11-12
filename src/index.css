@@ -1621,6 +1621,7 @@ a.icon-btn {
 .wine-main {
   flex: 1;
   min-width: 0;
+  padding-right: 2.5rem;
 }
 
 .wine-title-row {
@@ -1629,6 +1630,7 @@ a.icon-btn {
   gap: 0.6rem;
   flex-wrap: wrap;
   min-width: 0;
+  padding-right: 2.75rem;
 }
 
 .wine-name {
@@ -3984,11 +3986,32 @@ textarea {
   margin: 0 0 0.35rem;
 }
 
-.own-activity-wine-line {
+.own-activity-footer {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 0.35rem 0.5rem;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.activity-milestone-leading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.activity-milestone-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .own-activity-wine-title {

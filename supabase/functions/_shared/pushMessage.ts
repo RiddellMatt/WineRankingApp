@@ -46,7 +46,7 @@ export function shouldSendPushForType(
       return prefs.reactions !== false
     case 'friend_badge_unlock':
     case 'friend_journey_complete':
-      return prefs.friend_milestones === true
+      return prefs.friend_milestones !== false
     default:
       return false
   }

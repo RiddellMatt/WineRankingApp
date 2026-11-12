@@ -74,18 +74,18 @@ export function OwnActivityFeed({ events, rankingPreference, emptyHint }: Props)
           actionPrefix = 'Rated'
         }
         return (
-          <li className="own-activity-item" key={event.id}>
-            <p className="own-activity-line own-activity-wine-line">
+          <li className="own-activity-item own-activity-wine" key={event.id}>
+            <p className="own-activity-line">
               {actionPrefix}{' '}
               <span className="own-activity-wine-title">{title}</span>
-              {wine.type?.trim() && (
-                <WineTypePill type={wine.type} />
-              )}
             </p>
             {event.wine?.winery?.trim() && (
               <p className="own-activity-sub">{event.wine.winery.trim()}</p>
             )}
-            <span className="own-activity-time">{formatActivityTime(event.at)}</span>
+            <div className="own-activity-footer">
+              <span className="own-activity-time">{formatActivityTime(event.at)}</span>
+              {wine.type?.trim() ? <WineTypePill type={wine.type} /> : null}
+            </div>
           </li>
         )
       })}

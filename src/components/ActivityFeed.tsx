@@ -9,6 +9,7 @@ import {
   actorLabel,
   formatActivityTime,
   milestoneHeadline,
+  milestoneIcon,
   type ActivityEvent,
   wineActivitySubtitle,
   wineActivityTitle,
@@ -70,19 +71,27 @@ export function ActivityFeed({
 
         if (isMilestone) {
           const headline = milestoneHeadline(event)
+          const icon = milestoneIcon(event)
           const canReact =
             reactionsEnabled && !isOwn && Boolean(onToggleReaction)
           const reactions = event.reactions
           const reactionBusy = togglingReactionKey === event.id
           return (
             <li className="activity-item activity-milestone" key={event.id}>
-              <Avatar
-                displayName={name}
-                email={event.actor.email}
-                avatarUrl={event.actor.avatarUrl}
-                seed={event.actor.id}
-                size="sm"
-              />
+              <div className="activity-milestone-leading">
+                <Avatar
+                  displayName={name}
+                  email={event.actor.email}
+                  avatarUrl={event.actor.avatarUrl}
+                  seed={event.actor.id}
+                  size="sm"
+                />
+                {icon && (
+                  <span className="activity-milestone-badge" aria-hidden="true">
+                    {icon}
+                  </span>
+                )}
+              </div>
               <div className="activity-body">
                 <p className="activity-line">
                   <strong>{name}</strong> {activityEventLabel(event.type)}

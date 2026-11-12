@@ -32,8 +32,7 @@ function buildTabs(signedIn: boolean, pro: boolean): Tab[] {
     {
       id: 'insights',
       title: 'Stats',
-      systemImage: 'chart.bar.fill',
-      badge: pro ? undefined : '🔒',
+      systemImage: pro ? 'chart.bar.fill' : 'lock.fill',
     },
     { id: 'account', title: 'Profile', systemImage: 'person.fill' },
   )

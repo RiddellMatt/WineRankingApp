@@ -5,7 +5,7 @@ import { wineFromRow } from './wineDb'
 import { getSupabase } from './supabase'
 import { fetchProfilesByIds } from './profileDb'
 import { isWishlist } from './wishlist'
-import type { BadgeTier } from './badges'
+import { BADGE_DEFINITIONS, tierLabel, type BadgeTier } from './badges'
 import type { Wine } from '../types'
 
 export type WineActivityEventType = 'logged' | 'saved_to_try'
@@ -245,18 +245,33 @@ export function actorLabel(actor: FriendProfile, viewerId: string): string {
   return friendDisplayLabel(actor)
 }
 
+export function milestoneIcon(event: ActivityEvent): string | null {
+  const ms = event.milestone
+  if (!ms) return null
+  if (event.type === 'badge_unlock') {
+    if (ms.badgeIcon) return ms.badgeIcon
+    const id = ms.badgeId
+    if (!id) return null
+    return BADGE_DEFINITIONS.find((def) => def.id === id)?.icon ?? null
+  }
+  if (event.type === 'journey_complete') {
+    return ms.journeyIcon ?? null
+  }
+  return null
+}
+
 export function milestoneHeadline(event: ActivityEvent): string | null {
   if (!event.milestone) return null
   if (event.type === 'badge_unlock') {
-    const { badgeTitle, tier, badgeIcon } = event.milestone
+    const { badgeTitle, tier } = event.milestone
     if (!badgeTitle) return null
-    const tierLabel = tier && tier !== 'locked' ? ` · ${tier.charAt(0).toUpperCase()}${tier.slice(1)}` : ''
-    return `${badgeIcon ?? '🏅'} ${badgeTitle}${tierLabel}`
+    const tierSuffix =
+      tier && tier !== 'locked' ? ` · ${tierLabel(tier as BadgeTier)}` : ''
+    return `${badgeTitle}${tierSuffix}`
   }
   if (event.type === 'journey_complete') {
-    const { journeyTitle, journeyIcon } = event.milestone
-    if (!journeyTitle) return null
-    return `${journeyIcon ?? '🧭'} ${journeyTitle}`
+    const { journeyTitle } = event.milestone
+    return journeyTitle ?? null
   }
   return null
 }

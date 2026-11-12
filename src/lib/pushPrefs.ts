@@ -13,7 +13,7 @@ export const DEFAULT_PUSH_PREFS: PushNotificationPrefs = {
   friend_requests: true,
   friend_accepted: true,
   reactions: true,
-  friend_milestones: false,
+  friend_milestones: true,
 }
 
 function normalizePrefs(raw: unknown): PushNotificationPrefs {
@@ -24,7 +24,7 @@ function normalizePrefs(raw: unknown): PushNotificationPrefs {
     friend_requests: o.friend_requests !== false,
     friend_accepted: o.friend_accepted !== false,
     reactions: o.reactions !== false,
-    friend_milestones: o.friend_milestones === true,
+    friend_milestones: o.friend_milestones !== false,
   }
 }
 

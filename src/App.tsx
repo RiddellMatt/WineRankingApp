@@ -1116,6 +1116,7 @@ export default function App() {
             {cloudUser && view === 'friends' && !friendView && (
               <NotificationsBell
                 enabled
+                userId={cloudUser.id}
                 onNavigateFriends={(tab) => {
                   setFriendView(null)
                   setView('friends')
