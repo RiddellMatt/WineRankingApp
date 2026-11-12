@@ -45,6 +45,40 @@ function isMissingReactionsTable(error: PostgrestError | null): boolean {
   )
 }
 
+function isMissingMilestoneReactionsTable(error: PostgrestError | null): boolean {
+  if (!error) return false
+  return (
+    error.code === '42P01' ||
+    error.code === 'PGRST205' ||
+    /activity_milestone_reactions/i.test(error.message ?? '')
+  )
+}
+
+interface MilestoneReactionRow {
+  id: string
+  reactor_id: string
+  target_user_id: string
+  milestone_event_id: string
+  reaction_type: ReactionType
+}
+
+function aggregateMilestoneReactions(
+  rows: MilestoneReactionRow[],
+  viewerId: string,
+): Map<string, EventReactions> {
+  const byEvent = new Map<string, EventReactions>()
+  for (const row of rows) {
+    const key = row.milestone_event_id
+    const entry = byEvent.get(key) ?? emptyEventReactions()
+    entry.counts[row.reaction_type] += 1
+    if (row.reactor_id === viewerId) {
+      entry.myReaction = row.reaction_type
+    }
+    byEvent.set(key, entry)
+  }
+  return byEvent
+}
+
 export function reactionEventKey(
   targetUserId: string,
   wineId: string,
@@ -79,27 +113,60 @@ export async function attachReactionsToEvents(
 ): Promise<ActivityEvent[]> {
   if (events.length === 0) return events
 
+  let byWine = new Map<string, EventReactions>()
   const wineEvents = events.filter((event) => event.wine)
-  if (wineEvents.length === 0) return events
+  if (wineEvents.length > 0) {
+    const wineIds = [...new Set(wineEvents.map((event) => event.wine!.id))]
+    const { data, error } = await getSupabase()
+      .from('activity_reactions')
+      .select('*')
+      .in('target_wine_id', wineIds)
 
-  const wineIds = [...new Set(wineEvents.map((event) => event.wine!.id))]
-  const { data, error } = await getSupabase()
-    .from('activity_reactions')
-    .select('*')
-    .in('target_wine_id', wineIds)
-
-  if (error) {
-    if (isMissingReactionsTable(error)) return events
-    throw error
+    if (error) {
+      if (!isMissingReactionsTable(error)) throw error
+    } else {
+      byWine = aggregateReactions((data ?? []) as ActivityReactionRow[], viewerId)
+    }
   }
 
-  const byEvent = aggregateReactions((data ?? []) as ActivityReactionRow[], viewerId)
-  return events.map((event) => {
-    if (!event.wine) return event
-    return {
-      ...event,
-      reactions: byEvent.get(event.id) ?? emptyEventReactions(),
+  let byMilestone = new Map<string, EventReactions>()
+  const milestoneEvents = events.filter(
+    (e) => e.type === 'badge_unlock' || e.type === 'journey_complete',
+  )
+  if (milestoneEvents.length > 0) {
+    const ids = milestoneEvents.map((e) => e.id)
+    const { data, error } = await getSupabase()
+      .from('activity_milestone_reactions')
+      .select('*')
+      .in('milestone_event_id', ids)
+
+    if (error) {
+      if (!isMissingMilestoneReactionsTable(error)) throw error
+    } else {
+      byMilestone = aggregateMilestoneReactions(
+        (data ?? []) as MilestoneReactionRow[],
+        viewerId,
+      )
     }
+  }
+
+  return events.map((event) => {
+    if (event.wine) {
+      return {
+        ...event,
+        reactions: byWine.get(
+          reactionEventKey(event.actor.id, event.wine.id, event.type as WineActivityEventType),
+        ) ??
+          emptyEventReactions(),
+      }
+    }
+    if (event.type === 'badge_unlock' || event.type === 'journey_complete') {
+      return {
+        ...event,
+        reactions: byMilestone.get(event.id) ?? emptyEventReactions(),
+      }
+    }
+    return event
   })
 }
 
@@ -109,6 +176,46 @@ export interface ToggleReactionInput {
   eventType: WineActivityEventType
   reaction: ReactionType
   currentReaction: ReactionType | null
+}
+
+export interface ToggleMilestoneReactionInput {
+  targetUserId: string
+  milestoneEventId: string
+  reaction: ReactionType
+  currentReaction: ReactionType | null
+}
+
+export async function toggleMilestoneReaction(
+  input: ToggleMilestoneReactionInput,
+): Promise<ReactionType | null> {
+  const {
+    data: { user },
+  } = await getSupabase().auth.getUser()
+  if (!user) throw new Error('Not signed in')
+
+  const supabase = getSupabase()
+
+  if (input.currentReaction === input.reaction) {
+    const { error } = await supabase
+      .from('activity_milestone_reactions')
+      .delete()
+      .eq('reactor_id', user.id)
+      .eq('milestone_event_id', input.milestoneEventId)
+    if (error) throw error
+    return null
+  }
+
+  const { error } = await supabase.from('activity_milestone_reactions').upsert(
+    {
+      reactor_id: user.id,
+      target_user_id: input.targetUserId,
+      milestone_event_id: input.milestoneEventId,
+      reaction_type: input.reaction,
+    },
+    { onConflict: 'reactor_id,milestone_event_id' },
+  )
+  if (error) throw error
+  return input.reaction
 }
 
 export async function toggleActivityReaction(input: ToggleReactionInput): Promise<ReactionType | null> {

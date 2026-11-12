@@ -70,6 +70,10 @@ export function ActivityFeed({
 
         if (isMilestone) {
           const headline = milestoneHeadline(event)
+          const canReact =
+            reactionsEnabled && !isOwn && Boolean(onToggleReaction)
+          const reactions = event.reactions
+          const reactionBusy = togglingReactionKey === event.id
           return (
             <li className="activity-item activity-milestone" key={event.id}>
               <Avatar
@@ -102,6 +106,33 @@ export function ActivityFeed({
                     </button>
                   )}
                 </div>
+                {canReact && (
+                  <div className="activity-reactions" role="group" aria-label="React to this milestone">
+                    {ACTIVITY_REACTIONS.map(({ type, emoji, label }) => {
+                      const count = reactions?.counts[type] ?? 0
+                      const active = reactions?.myReaction === type
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          className={`activity-reaction-btn ${active ? 'active' : ''}`}
+                          disabled={reactionBusy}
+                          aria-pressed={active}
+                          aria-label={`${label}${count > 0 ? `, ${count}` : ''}`}
+                          title={label}
+                          onClick={() => onToggleReaction!(event, type)}
+                        >
+                          <span className="activity-reaction-emoji" aria-hidden="true">
+                            {emoji}
+                          </span>
+                          {count > 0 && (
+                            <span className="activity-reaction-count">{count}</span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </li>
           )

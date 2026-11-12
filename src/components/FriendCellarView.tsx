@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { Avatar } from './Avatar'
+import { ProfileLevelBar } from './ProfileLevelBar'
 import { WineCard } from './WineCard'
+import { computePlayerLevel } from '../lib/playerLevel'
 import { compareByRank } from '../lib/ranking'
 import { triedWines, wishlistIdentityKey } from '../lib/wishlist'
 import type { RankingPreference, Wine } from '../types'
@@ -22,6 +24,8 @@ export interface FriendCellarViewProps {
   isWishlistSaved?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
   wishlistSavingKey?: string | null
   emptyMessage?: string
+  completedJourneys?: ReadonlySet<string>
+  friendCount?: number
 }
 
 export function FriendCellarView({
@@ -37,6 +41,8 @@ export function FriendCellarView({
   isWishlistSaved,
   wishlistSavingKey = null,
   emptyMessage = "They haven't logged any wines yet.",
+  completedJourneys = new Set(),
+  friendCount = 0,
 }: FriendCellarViewProps) {
   const rankById = useMemo(() => {
     const tried = triedWines(wines)
@@ -47,6 +53,10 @@ export function FriendCellarView({
   const tried = triedWines(wines)
   const sorted = sortWinesByRating(tried, rankingPreference)
   const possessive = displayName.endsWith('s') ? `${displayName}'` : `${displayName}'s`
+  const playerLevel = useMemo(
+    () => computePlayerLevel({ wines, friendCount, completedJourneys }),
+    [wines, friendCount, completedJourneys],
+  )
 
   return (
     <>
@@ -63,7 +73,10 @@ export function FriendCellarView({
           seed={userId}
           size="lg"
         />
-        <h2 className="friend-cellar-title">{possessive} cellar</h2>
+        <div className="friend-cellar-identity">
+          <h2 className="friend-cellar-title">{possessive} cellar</h2>
+          <ProfileLevelBar level={playerLevel} compact />
+        </div>
       </div>
       {tried.length === 0 ? (
         <section className="empty">

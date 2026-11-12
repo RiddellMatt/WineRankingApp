@@ -1,7 +1,7 @@
 import { STORAGE_PREFIX } from '../brand'
 import { isNativeApp } from './platform'
 
-export type AppTheme = 'classic' | 'navy' | 'light'
+export type AppTheme = 'classic' | 'light'
 
 export const THEME_STORAGE_KEY = `${STORAGE_PREFIX}.theme`
 export const THEME_CHANGE_EVENT = 'decanti:theme-change'
@@ -22,14 +22,7 @@ export const THEME_OPTIONS: {
     description: 'Deep burgundy with gold accents',
     swatches: ['#12080c', '#c41e3a', '#e8b04b'],
     previewSrc: `${brandBase}/theme-preview-classic.svg`,
-  },
-  {
-    id: 'navy',
-    label: 'Navy',
-    description: 'Logo navy with champagne gold accents',
-    swatches: ['#1a3674', '#d4af6a', '#ffffff'],
-    previewSrc: `${brandBase}/logo-navy.png`,
-    logoSrc: `${brandBase}/logo-navy.png`,
+    logoSrc: `${brandBase}/logo-light.png`,
   },
   {
     id: 'light',
@@ -43,17 +36,17 @@ export const THEME_OPTIONS: {
 
 export const THEME_META: Record<AppTheme, string> = {
   classic: '#12080c',
-  navy: '#1a3674',
   light: '#ffffff',
 }
 
 export function isAppTheme(value: string | null | undefined): value is AppTheme {
-  return value === 'classic' || value === 'navy' || value === 'light'
+  return value === 'classic' || value === 'light'
 }
 
 export function loadStoredTheme(): AppTheme {
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY)
+    if (stored === 'navy') return 'classic'
     if (isAppTheme(stored)) return stored
   } catch {
     // ignore

@@ -7,6 +7,7 @@ import { StarDisplay } from './StarRating'
 import { TasteDisplay } from './TasteProfile'
 import { ShareWineButton } from './ShareWineButton'
 import { tastingTagLabel } from '../lib/tastingTags'
+import { WineTypePill } from './WineTypePill'
 import { IconGlobe, IconHeart, IconMapPin, IconPencil, IconTrash } from './icons/UiIcons'
 
 interface Props {
@@ -23,16 +24,6 @@ interface Props {
   shareAttribution?: string
   activeTagFilter?: string | null
   onTagFilter?: (tagId: string) => void
-}
-
-const TYPE_CLASS: Record<string, string> = {
-  Red: 'type-red',
-  White: 'type-white',
-  'Rosé': 'type-rose',
-  Sparkling: 'type-sparkling',
-  Orange: 'type-orange',
-  Dessert: 'type-dessert',
-  Fortified: 'type-fortified',
 }
 
 export function WineCard({
@@ -55,28 +46,13 @@ export function WineCard({
   const score = compositeScore(wine, rankingPreference)
   const favorited = isWineFavorite(wine)
 
-  // Show the wine's own profile when it has one; otherwise fall back to the
-  // reference profile for its varietal/type so stats are always available.
   const reference = lookupTaste(wine.varietal, wine.name, wine.type)
   const ownTaste = hasTaste(wine.taste)
   const taste = ownTaste ? wine.taste : reference.taste
   const isTypical = !ownTaste || wine.tasteSource === 'typical'
 
   return (
-    <li
-      id={`wine-card-${wine.id}`}
-      className={`wine-card ${readOnly ? '' : 'clickable'}`}
-      onClick={readOnly ? undefined : onEdit}
-      onKeyDown={
-        readOnly
-          ? undefined
-          : (e) => {
-              if (e.key === 'Enter' && e.target === e.currentTarget) onEdit()
-            }
-      }
-      tabIndex={readOnly ? undefined : 0}
-      aria-label={readOnly ? undefined : `Edit ${wine.name}`}
-    >
+    <li id={`wine-card-${wine.id}`} className="wine-card">
       <div className={`rank-badge ${medal}`}>{rank}</div>
 
       {!readOnly && onToggleFavorite && (
@@ -94,13 +70,29 @@ export function WineCard({
         </button>
       )}
 
+      {readOnly && onSaveToWishlist && (
+        <button
+          type="button"
+          className={`wine-favorite-btn wine-wishlist-save-btn ${wishlistSaved ? 'active' : ''}`}
+          aria-label={wishlistSaved ? 'Saved to try' : `Save ${wine.name} to try`}
+          title={wishlistSaved ? 'Saved to try' : 'Save to try'}
+          disabled={wishlistSaved || wishlistSaving}
+          onClick={(e) => {
+            e.stopPropagation()
+            onSaveToWishlist()
+          }}
+        >
+          <IconHeart className="wine-favorite-icon" size={20} filled={wishlistSaved} />
+        </button>
+      )}
+
       <div className="wine-main">
         <div className="wine-title-row">
           <h3 className="wine-name">
             {wine.name}
             {wine.vintage && <span className="wine-vintage"> {wine.vintage}</span>}
           </h3>
-          <span className={`type-pill ${TYPE_CLASS[wine.type] ?? ''}`}>{wine.type}</span>
+          <WineTypePill type={wine.type} />
         </div>
         {wine.winery && <p className="wine-winery">{wine.winery}</p>}
         {meta && <p className="wine-meta">{meta}</p>}
@@ -148,7 +140,7 @@ export function WineCard({
         </div>
       </div>
 
-      <div className="wine-side" onClick={readOnly ? undefined : (e) => e.stopPropagation()}>
+      <div className="wine-side">
         <div className="wine-rating">
           <StarDisplay value={score} />
           <span className="rating-number">{score.toFixed(1)}</span>
@@ -159,59 +151,36 @@ export function WineCard({
           )}
         </div>
         {wine.price != null && <span className="wine-price">${wine.price.toFixed(0)}</span>}
-        {readOnly && onSaveToWishlist ? (
+        {readOnly ? (
           <div className="wine-readonly-actions">
-            <ShareWineButton
-              wine={wine}
-              score={score}
-              attribution={shareAttribution}
-            />
-            <button
-              type="button"
-              className={`btn ghost small wine-save-wishlist-btn ${wishlistSaved ? 'saved' : ''}`}
-              disabled={wishlistSaved || wishlistSaving}
-              onClick={(e) => {
-                e.stopPropagation()
-                onSaveToWishlist()
-              }}
-            >
-              {wishlistSaved ? (
-                'Saved to try ✓'
-              ) : wishlistSaving ? (
-                'Saving…'
-              ) : (
-                <>
-                  <IconHeart className="wine-wishlist-icon" /> Save to try
-                </>
-              )}
-            </button>
+            <ShareWineButton wine={wine} score={score} attribution={shareAttribution} />
           </div>
-        ) : !readOnly ? (
+        ) : (
           <div className="wine-actions">
-          <ShareWineButton wine={wine} score={score} />
-          <button className="icon-btn" onClick={onEdit} aria-label={`Edit ${wine.name}`} title="Edit">
-            <IconPencil />
-          </button>
-          <button
-            className="icon-btn danger"
-            onClick={onDelete}
-            aria-label={`Delete ${wine.name}`}
-            title="Delete"
-          >
-            <IconTrash />
-          </button>
-          <a
-            className="icon-btn"
-            href={shopUrl(wine)}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Shop for ${wine.name}`}
-            title="Find this wine online"
-          >
-            <IconGlobe />
-          </a>
-        </div>
-        ) : null}
+            <ShareWineButton wine={wine} score={score} />
+            <button className="icon-btn" onClick={onEdit} aria-label={`Edit ${wine.name}`} title="Edit">
+              <IconPencil />
+            </button>
+            <button
+              className="icon-btn danger"
+              onClick={onDelete}
+              aria-label={`Delete ${wine.name}`}
+              title="Delete"
+            >
+              <IconTrash />
+            </button>
+            <a
+              className="icon-btn"
+              href={shopUrl(wine)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Shop for ${wine.name}`}
+              title="Find this wine online"
+            >
+              <IconGlobe />
+            </a>
+          </div>
+        )}
       </div>
     </li>
   )
