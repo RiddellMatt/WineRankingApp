@@ -1266,19 +1266,33 @@ a.icon-btn {
   font-size: 1rem;
 }
 
-.cellar-filter-categories {
+.cellar-filter-block {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.cellar-filter-heading {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+}
+
+.cellar-filter-categories {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
 }
 
 .cellar-filter-category {
-  flex: 1 1 calc(33.333% - 0.4rem);
-  min-width: 5.5rem;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.12rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
   padding: 0.55rem 0.7rem;
   border-radius: var(--radius);
   border: 1px solid var(--border);
@@ -1288,32 +1302,32 @@ a.icon-btn {
   transition: border-color 0.15s, background 0.15s;
 }
 
+.cellar-filter-category-placeholder {
+  visibility: hidden;
+  pointer-events: none;
+  border-color: transparent;
+  background: transparent;
+}
+
 .cellar-filter-category:hover,
 .cellar-filter-category.open {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
 
-.cellar-filter-category.active .cellar-filter-category-value {
-  color: #f6c9d4;
+.cellar-filter-category.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .cellar-filter-category-name {
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-faint);
-}
-
-.cellar-filter-category-value {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text);
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.cellar-filter-category.active .cellar-filter-category-name {
+  color: #f6c9d4;
 }
 
 .cellar-filter-sheet {
@@ -4001,13 +4015,20 @@ textarea {
   gap: 0.35rem 0.5rem;
 }
 
-.activity-milestone-leading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.45rem;
-  flex-shrink: 0;
-  padding-top: 0.1rem;
+.activity-item.activity-milestone {
+  position: relative;
+}
+
+.activity-milestone-medal {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.65rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.activity-body--milestone {
+  padding-right: 2.85rem;
 }
 
 .own-activity-wine-title {
