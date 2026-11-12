@@ -29,14 +29,27 @@ let loadWatchdogTimer: ReturnType<typeof setTimeout> | null = null
 let nativeBannerSized = false
 const PENDING_SLOT_PX = 50
 
+function syncBannerContentPad(heightPx: number): void {
+  const root = document.documentElement
+  if (heightPx <= 0) {
+    root.style.removeProperty('--banner-content-pad')
+    return
+  }
+  const margin = bannerBottomMarginPx()
+  const pad = Math.ceil(heightPx + margin + 20)
+  root.style.setProperty('--banner-content-pad', `${pad}px`)
+}
+
 function setBannerInset(heightPx: number): void {
   const root = document.documentElement
   if (heightPx > 0) {
     root.style.setProperty('--banner-ad-height', `${heightPx}px`)
+    syncBannerContentPad(heightPx)
     root.classList.add('show-banner-ad')
     root.classList.remove('ad-banner-pending')
   } else {
     root.style.removeProperty('--banner-ad-height')
+    root.style.removeProperty('--banner-content-pad')
     root.classList.remove('show-banner-ad')
     root.classList.remove('ad-banner-pending')
   }
@@ -46,6 +59,7 @@ function setPendingAdSlot(): void {
   const root = document.documentElement
   root.classList.add('show-banner-ad', 'ad-banner-pending')
   root.style.setProperty('--banner-ad-height', `${PENDING_SLOT_PX}px`)
+  syncBannerContentPad(PENDING_SLOT_PX)
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {

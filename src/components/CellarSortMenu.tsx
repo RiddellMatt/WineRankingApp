@@ -35,21 +35,29 @@ export function CellarSortMenu({ value, options, onChange, layout = 'compact' }:
   }, [open])
 
   const activeLabel = options.find((o) => o.key === value)?.label ?? 'Rating'
+  const isBar = layout === 'bar'
 
   return (
     <div
-      className={`cellar-sort-menu ${layout === 'bar' ? 'cellar-sort-menu--bar' : ''}`}
+      className={`cellar-sort-menu ${isBar ? 'cellar-sort-menu--bar' : ''}`}
       ref={rootRef}
     >
       <button
         type="button"
-        className={`cellar-sort-trigger ${layout === 'bar' ? 'cellar-sort-trigger--bar' : ''} ${open ? 'open' : ''}`}
+        className={`cellar-sort-trigger ${isBar ? 'cellar-sort-trigger--bar cellar-filter-category' : ''} ${open ? 'open' : ''} ${isBar && value !== 'rating' ? 'active' : ''}`}
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-label={isBar ? `Sort by, ${activeLabel}` : undefined}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="cellar-sort-trigger-label">Sort by</span>
-        <span className="cellar-sort-trigger-value">{activeLabel}</span>
+        {isBar ? (
+          <span className="cellar-filter-category-name">Sort</span>
+        ) : (
+          <>
+            <span className="cellar-sort-trigger-label">Sort by</span>
+            <span className="cellar-sort-trigger-value">{activeLabel}</span>
+          </>
+        )}
       </button>
       {open && (
         <div

@@ -1235,6 +1235,10 @@ a.icon-btn {
   flex-shrink: 1;
 }
 
+.cellar-sort-menu--bar .cellar-sort-popover--sheet {
+  margin-top: 0.35rem;
+}
+
 .cellar-sort-trigger--bar {
   width: 100%;
   flex-direction: row;
@@ -1266,11 +1270,23 @@ a.icon-btn {
   font-size: 1rem;
 }
 
+.cellar-tool-block,
 .cellar-filter-block {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
   width: 100%;
+}
+
+.cellar-search-input {
+  width: 100%;
+}
+
+.cellar-field-hint {
+  margin: -0.15rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--text-faint);
 }
 
 .cellar-filter-heading {
@@ -3928,6 +3944,11 @@ html.app-scroll-locked.native-app .content {
   flex-direction: column;
   gap: 1.25rem;
   max-width: 520px;
+  padding-bottom: 0.5rem;
+}
+
+html.show-banner-ad .account-panel {
+  padding-bottom: 0.25rem;
 }
 
 .account-hero {
@@ -6007,10 +6028,16 @@ html.native-app .content {
 
 html.show-banner-ad.native-app:not(.native-ios-tab-bar) .content {
   padding-bottom: calc(
-    max(var(--banner-ad-height, 50px), 50px) + var(--tab-bar-height) + var(--safe-bottom) + 1rem
+    var(
+        --banner-content-pad,
+        calc(max(var(--banner-ad-height, 50px), 50px) + var(--tab-bar-height) + 1rem)
+      ) + var(--safe-bottom) + 0.5rem
   );
   scroll-padding-bottom: calc(
-    max(var(--banner-ad-height, 50px), 50px) + var(--tab-bar-height) + var(--safe-bottom) + 1rem
+    var(
+        --banner-content-pad,
+        calc(max(var(--banner-ad-height, 50px), 50px) + var(--tab-bar-height) + 1rem)
+      ) + var(--safe-bottom) + 0.5rem
   );
 }
 
@@ -6162,10 +6189,16 @@ html.native-ios-tab-bar .content {
 
 html.show-banner-ad.native-ios-tab-bar .content {
   padding-bottom: calc(
-    max(var(--banner-ad-height, 50px), 50px) + max(0.75rem, var(--safe-bottom)) + 0.35rem
+    var(
+        --banner-content-pad,
+        calc(max(var(--banner-ad-height, 50px), 50px) + 3.75rem)
+      ) + max(0.5rem, var(--safe-bottom))
   );
   scroll-padding-bottom: calc(
-    max(var(--banner-ad-height, 50px), 50px) + max(0.75rem, var(--safe-bottom)) + 0.35rem
+    var(
+        --banner-content-pad,
+        calc(max(var(--banner-ad-height, 50px), 50px) + 3.75rem)
+      ) + max(0.5rem, var(--safe-bottom))
   );
 }
 
