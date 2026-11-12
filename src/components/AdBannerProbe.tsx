@@ -2,9 +2,9 @@ import { createPortal } from 'react-dom'
 import { useEffect, useState } from 'react'
 import {
   adUnitModeLabel,
+  adsDebugProbeEnabled,
   bannerAdUnitId,
   bundledAdMobTestModeEnv,
-  shouldUseTestAdUnits,
 } from '../lib/adConfig'
 import { getBannerAdDebugState, subscribeBannerAdDebug } from '../lib/bannerAdDebug'
 import { isNativeApp } from '../lib/platform'
@@ -22,7 +22,7 @@ export function AdBannerProbe({ visible, blockedReason }: AdBannerProbeProps) {
     return subscribeBannerAdDebug(() => setStatus(getBannerAdDebugState()))
   }, [])
 
-  if (!isNativeApp() || !shouldUseTestAdUnits() || !visible) return null
+  if (!isNativeApp() || !adsDebugProbeEnabled() || !visible) return null
 
   const unitTail = bannerAdUnitId()?.slice(-12) ?? 'no-unit'
   const prefix = `[${adUnitModeLabel()} env=${bundledAdMobTestModeEnv()} …${unitTail}]`

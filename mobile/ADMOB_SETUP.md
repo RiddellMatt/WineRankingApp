@@ -35,6 +35,10 @@ Leave this **unset** for App Store / Play releases you ship to paying subscriber
 
 With test mode default on, you still see **Google “Test Ad”** creatives — not your revenue yet.
 
+### Debug probe (QA only)
+
+The on-screen `[test env=…]` chip is controlled by **`VITE_ADMOB_DEBUG_PROBE=true`**. Leave it **unset** for App Store release candidates (see `mobile/RELEASE_CHECKLIST.md`). Test ad mode alone does **not** show the probe anymore.
+
 ---
 
 ## Walkthrough: revenue-generating ads
