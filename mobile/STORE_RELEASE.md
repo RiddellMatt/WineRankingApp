@@ -2,6 +2,8 @@
 
 Decanti ships as a **native mobile app** (iOS + Android) using **Capacitor** to wrap the existing React UI. Supabase remains the backend.
 
+Before a store submission, run through **[RELEASE_CHECKLIST.md](./RELEASE_CHECKLIST.md)** (Phase 1: ads, Pro, env vars).
+
 ## Prerequisites
 
 | Tool | iOS | Android |

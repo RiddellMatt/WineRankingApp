@@ -33,7 +33,7 @@ function buildTabs(signedIn: boolean, pro: boolean): Tab[] {
       id: 'insights',
       title: 'Stats',
       systemImage: 'chart.bar.fill',
-      badge: pro ? undefined : 'PRO',
+      badge: pro ? undefined : '🔒',
     },
     { id: 'account', title: 'Profile', systemImage: 'person.fill' },
   )

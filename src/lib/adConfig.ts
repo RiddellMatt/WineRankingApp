@@ -27,6 +27,11 @@ export function adsShowForPro(): boolean {
   return envFlag('VITE_ADMOB_SHOW_FOR_PRO')
 }
 
+/** TestFlight QA chip only — off in App Store release builds. */
+export function adsDebugProbeEnabled(): boolean {
+  return envFlag('VITE_ADMOB_DEBUG_PROBE')
+}
+
 export function shouldUseTestAdUnits(): boolean {
   return useTestAds
 }

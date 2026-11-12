@@ -19,7 +19,7 @@ import {
   setNativeTabBarSelectHandler,
   syncNativeTabBar,
 } from './lib/nativeTabBar'
-import { adsEnabledForAccount, shouldUseTestAdUnits } from './lib/adConfig'
+import { adsDebugProbeEnabled, adsEnabledForAccount } from './lib/adConfig'
 import { AdBannerProbe } from './components/AdBannerProbe'
 import { setBannerAdDebug } from './lib/bannerAdDebug'
 import { startBannerAds, stopBannerAds } from './lib/bannerAds'
@@ -42,6 +42,7 @@ import {
   IconBarChart,
   IconChatBubble,
   IconCellarList,
+  IconLock,
   IconPlus,
   IconUser,
 } from './components/icons/UiIcons'
@@ -271,7 +272,7 @@ export default function App() {
 
   useEffect(() => {
     if (!isNativeApp() || !mainAppShell || authGateScreen || !adsAllowed) {
-      if (isNativeApp() && shouldUseTestAdUnits()) {
+      if (isNativeApp() && adsDebugProbeEnabled()) {
         setBannerAdDebug(
           'gated',
           authGateScreen ? 'sign-in required' : !mainAppShell ? 'app loading' : 'subscriber gate',
@@ -1483,7 +1484,7 @@ export default function App() {
         <button
           type="button"
           className={`tab tab-icon ${view === 'insights' ? 'active' : ''}`}
-          aria-label="Stats"
+          aria-label={pro ? 'Stats' : 'Stats (Pro feature)'}
           aria-current={view === 'insights' ? 'page' : undefined}
           onClick={() => {
             setFriendView(null)
@@ -1491,7 +1492,11 @@ export default function App() {
           }}
         >
           <IconBarChart className="tab-icon-svg" size={22} />
-          {!pro && <span className="pro-badge tab-pro-badge">PRO</span>}
+          {!pro && (
+            <span className="tab-lock-badge" title="Decanti Pro">
+              <IconLock className="tab-lock-icon" size={10} />
+            </span>
+          )}
         </button>
         <button
           type="button"

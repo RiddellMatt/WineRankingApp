@@ -435,9 +435,9 @@ export function AccountPanel({
           <p className="account-plan-detail">
             {pro
               ? signedIn
-                ? 'Unlimited wines, Insights, export, and AI menu scan on your account.'
-                : 'Unlimited wines, Insights, and export on this device.'
-              : `${wineCount} / ${FREE_WINE_LIMIT} wines · Insights and export locked`}
+                ? 'Unlimited wines, Stats, export, AI menu scan, and no banner ads on your account.'
+                : 'Unlimited wines, Stats, export, and no banner ads on this device.'
+              : `${wineCount} / ${FREE_WINE_LIMIT} wines · Stats and export locked · banner ads`}
           </p>
           {!pro && signedIn && (
             <p className="account-hint">

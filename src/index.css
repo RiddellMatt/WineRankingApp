@@ -574,6 +574,27 @@ textarea::placeholder {
   padding: 0.1rem 0.25rem;
 }
 
+.tab-lock-badge {
+  position: absolute;
+  top: 0.05rem;
+  right: 0.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-elevated) 88%, var(--text));
+  color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+  pointer-events: none;
+}
+
+.tab-lock-icon {
+  display: block;
+  opacity: 0.95;
+}
+
 .tab-fab {
   flex: 1.15 1 0;
   align-self: flex-end;
