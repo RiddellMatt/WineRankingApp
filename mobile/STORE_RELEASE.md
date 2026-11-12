@@ -91,10 +91,11 @@ Source icon: `scripts/icon-source.svg`
 Generate store assets (optional):
 
 ```bash
-npm install -D @capacitor/assets
-npx capacitor-assets generate --iconBackgroundColor '#16090d' --splashBackgroundColor '#16090d'
+npm run icons:splash
 npm run cap:sync
 ```
+
+(Regenerates burgundy + Decanti wordmark splash for iOS `Splash.imageset` and Android `drawable/*/splash.png`.)
 
 ## 6. iOS App Store checklist
 
