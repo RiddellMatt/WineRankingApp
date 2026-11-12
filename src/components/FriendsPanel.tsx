@@ -93,6 +93,7 @@ export function FriendsPanel({
 }: Props) {
   const [tab, setTab] = useState<FriendsTab>('feed')
   const [friendships, setFriendships] = useState<Friendship[]>([])
+  const [friendshipsLoaded, setFriendshipsLoaded] = useState(false)
   const [activity, setActivity] = useState<ActivityEvent[]>([])
   const [activityLoading, setActivityLoading] = useState(false)
   const [togglingReactionKey, setTogglingReactionKey] = useState<string | null>(null)
@@ -106,6 +107,7 @@ export function FriendsPanel({
     setFriendships(rows)
     const count = rows.filter((f) => f.status === 'accepted').length
     onFriendshipsChanged?.(count)
+    setFriendshipsLoaded(true)
   }, [userId, onFriendshipsChanged])
 
   useEffect(() => {
@@ -131,12 +133,19 @@ export function FriendsPanel({
   )
 
   const loadActivity = useCallback(async () => {
+    if (!friendshipsLoaded) {
+      setActivity([])
+      setActivityLoading(true)
+      return
+    }
     if (friendIds.length === 0) {
+      setActivityLoading(false)
       setActivity(
         ownRecentActivity(userId, userDisplayName, userEmail, userAvatarUrl, wines, 10),
       )
       return
     }
+    setActivity([])
     setActivityLoading(true)
     try {
       const events = await fetchFriendActivity(friendIds, 30)
@@ -148,7 +157,15 @@ export function FriendsPanel({
     } finally {
       setActivityLoading(false)
     }
-  }, [friendIds, userId, userDisplayName, userEmail, userAvatarUrl, wines])
+  }, [
+    friendshipsLoaded,
+    friendIds,
+    userId,
+    userDisplayName,
+    userEmail,
+    userAvatarUrl,
+    wines,
+  ])
 
   useEffect(() => {
     loadActivity().catch(() => {

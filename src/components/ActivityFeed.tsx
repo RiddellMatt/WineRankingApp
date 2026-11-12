@@ -90,24 +90,24 @@ export function ActivityFeed({
           const reactionBusy = togglingReactionKey === event.id
           return (
             <li className="activity-item activity-milestone" key={event.id}>
-              <div className="activity-milestone-leading">
-                <Avatar
-                  displayName={name}
-                  email={event.actor.email}
-                  avatarUrl={event.actor.avatarUrl}
-                  seed={event.actor.id}
-                  size="sm"
-                />
-                {icon && (
+              {icon && (
+                <div className="activity-milestone-medal" aria-hidden="true">
                   <BadgeMedal
                     icon={icon}
                     tier={medalTier}
                     size="sm"
                     tierCaption={event.type === 'journey_complete' ? 'Done' : undefined}
                   />
-                )}
-              </div>
-              <div className="activity-body">
+                </div>
+              )}
+              <Avatar
+                displayName={name}
+                email={event.actor.email}
+                avatarUrl={event.actor.avatarUrl}
+                seed={event.actor.id}
+                size="sm"
+              />
+              <div className="activity-body activity-body--milestone">
                 <p className="activity-line">
                   <strong>{name}</strong> {activityEventLabel(event.type)}
                 </p>

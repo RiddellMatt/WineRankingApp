@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { WINE_TYPES, type SortKey, type WineType, type Wine } from '../types'
 import type { TastingTagDef } from '../lib/tastingTags'
 import { tastingTagLabel } from '../lib/tastingTags'
@@ -75,15 +75,6 @@ export function CellarFilterBar({
   const favoritesActive = favoriteFilter
   const priceActive = isPriceFilterActive(priceFilter, priceBounds)
 
-  const typeSummary = typeFilter === 'All' ? 'Any' : typeFilter
-  const tagSummary = tagFilter ? tastingTagLabel(tagFilter) : 'Any'
-  const favoritesSummary = favoriteFilter ? 'Only' : 'Any'
-  const priceSummary = useMemo(() => {
-    if (!priceActive || !priceFilter) return 'Any'
-    if (priceFilter.min === priceFilter.max) return `$${priceFilter.min}`
-    return `$${priceFilter.min}–$${priceFilter.max}`
-  }, [priceActive, priceFilter])
-
   const priceLo = priceFilter?.min ?? priceBounds?.min ?? 0
   const priceHi = priceFilter?.max ?? priceBounds?.max ?? 0
 
@@ -143,49 +134,68 @@ export function CellarFilterBar({
         layout="bar"
       />
 
-      <div className="cellar-filter-categories" role="toolbar" aria-label="Filter cellar">
-        <button
-          type="button"
-          className={`cellar-filter-category ${openPanel === 'type' ? 'open' : ''} ${typeActive ? 'active' : ''}`}
-          aria-expanded={openPanel === 'type'}
-          onClick={() => togglePanel('type')}
-        >
-          <span className="cellar-filter-category-name">Type</span>
-          <span className="cellar-filter-category-value">{typeSummary}</span>
-        </button>
-        {priceBounds && (
+      <div className="cellar-filter-block">
+        <h3 className="cellar-filter-heading">Filter by</h3>
+        <div className="cellar-filter-categories" role="toolbar" aria-label="Filter cellar">
           <button
             type="button"
-            className={`cellar-filter-category ${openPanel === 'price' ? 'open' : ''} ${priceActive ? 'active' : ''}`}
-            aria-expanded={openPanel === 'price'}
-            onClick={() => togglePanel('price')}
+            className={`cellar-filter-category ${openPanel === 'type' ? 'open' : ''} ${typeActive ? 'active' : ''}`}
+            aria-expanded={openPanel === 'type'}
+            aria-label={
+              typeActive ? `Type filter, ${typeFilter}` : 'Type filter'
+            }
+            onClick={() => togglePanel('type')}
           >
-            <span className="cellar-filter-category-name">Price</span>
-            <span className="cellar-filter-category-value">{priceSummary}</span>
+            <span className="cellar-filter-category-name">Type</span>
           </button>
-        )}
-        {showTagFilter && tagOptions.length > 0 && (
-          <button
-            type="button"
-            className={`cellar-filter-category ${openPanel === 'tags' ? 'open' : ''} ${tagsActive ? 'active' : ''}`}
-            aria-expanded={openPanel === 'tags'}
-            onClick={() => togglePanel('tags')}
-          >
-            <span className="cellar-filter-category-name">Tags</span>
-            <span className="cellar-filter-category-value">{tagSummary}</span>
-          </button>
-        )}
-        {showFavoriteFilter && (
-          <button
-            type="button"
-            className={`cellar-filter-category ${openPanel === 'favorites' ? 'open' : ''} ${favoritesActive ? 'active' : ''}`}
-            aria-expanded={openPanel === 'favorites'}
-            onClick={() => togglePanel('favorites')}
-          >
-            <span className="cellar-filter-category-name">Favorites</span>
-            <span className="cellar-filter-category-value">{favoritesSummary}</span>
-          </button>
-        )}
+          {priceBounds ? (
+            <button
+              type="button"
+              className={`cellar-filter-category ${openPanel === 'price' ? 'open' : ''} ${priceActive ? 'active' : ''}`}
+              aria-expanded={openPanel === 'price'}
+              aria-label={
+                priceActive && priceFilter
+                  ? `Price filter, $${priceFilter.min} to $${priceFilter.max}`
+                  : 'Price filter'
+              }
+              onClick={() => togglePanel('price')}
+            >
+              <span className="cellar-filter-category-name">Price</span>
+            </button>
+          ) : (
+            <span className="cellar-filter-category cellar-filter-category-placeholder" aria-hidden="true" />
+          )}
+          {showTagFilter && tagOptions.length > 0 ? (
+            <button
+              type="button"
+              className={`cellar-filter-category ${openPanel === 'tags' ? 'open' : ''} ${tagsActive ? 'active' : ''}`}
+              aria-expanded={openPanel === 'tags'}
+              aria-label={
+                tagsActive && tagFilter
+                  ? `Tags filter, ${tastingTagLabel(tagFilter)}`
+                  : 'Tags filter'
+              }
+              onClick={() => togglePanel('tags')}
+            >
+              <span className="cellar-filter-category-name">Tags</span>
+            </button>
+          ) : (
+            <span className="cellar-filter-category cellar-filter-category-placeholder" aria-hidden="true" />
+          )}
+          {showFavoriteFilter ? (
+            <button
+              type="button"
+              className={`cellar-filter-category ${openPanel === 'favorites' ? 'open' : ''} ${favoritesActive ? 'active' : ''}`}
+              aria-expanded={openPanel === 'favorites'}
+              aria-label={favoritesActive ? 'Favorites filter, favorites only' : 'Favorites filter'}
+              onClick={() => togglePanel('favorites')}
+            >
+              <span className="cellar-filter-category-name">Favorites</span>
+            </button>
+          ) : (
+            <span className="cellar-filter-category cellar-filter-category-placeholder" aria-hidden="true" />
+          )}
+        </div>
       </div>
 
       {openPanel && (
@@ -297,7 +307,7 @@ export function CellarFilterBar({
                     setOpenPanel(null)
                   }}
                 >
-                  All wines
+                  All
                 </button>
               </li>
               <li>
@@ -309,7 +319,7 @@ export function CellarFilterBar({
                     setOpenPanel(null)
                   }}
                 >
-                  Favorites only
+                  Favorites Only
                 </button>
               </li>
             </ul>
