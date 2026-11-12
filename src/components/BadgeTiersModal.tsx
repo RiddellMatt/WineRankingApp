@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { BADGE_DEFINITIONS, tierLabel, type BadgeTier } from '../lib/badges'
+import { lockAppScroll } from '../lib/lockAppScroll'
 
 const TIERS: BadgeTier[] = ['bronze', 'silver', 'gold', 'diamond']
 
@@ -7,9 +9,11 @@ interface Props {
 }
 
 export function BadgeTiersModal({ onClose }: Props) {
+  useEffect(() => lockAppScroll(), [])
+
   return (
     <div
-      className="modal-backdrop"
+      className="modal-backdrop badge-tiers-backdrop"
       role="presentation"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
