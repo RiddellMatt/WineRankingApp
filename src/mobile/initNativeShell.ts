@@ -54,5 +54,5 @@ export async function initNativeShell(): Promise<void> {
   // Safety net if auth never resolves (App hides splash when loading finishes).
   window.setTimeout(() => {
     void hideNativeSplashOnce()
-  }, 8000)
+  }, 12000)
 }
