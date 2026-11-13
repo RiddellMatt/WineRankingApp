@@ -41,7 +41,7 @@ export function ProfilePublicPreview({
   return (
     <div className="profile-public-preview">
       <div className="profile-preview-toolbar">
-        <p className="profile-preview-hint">This is how friends see your profile and cellar.</p>
+        <p className="profile-preview-hint">Friends see this view.</p>
         <button type="button" className="btn primary small" onClick={onEditProfile}>
           Edit profile
         </button>

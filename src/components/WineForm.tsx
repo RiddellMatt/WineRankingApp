@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { LABEL_SCAN_CONFIG } from '../config'
 import { aiLabelToScanResult, LabelScanError, scanLabelWithAi } from '../lib/labelScanApi'
 import { applyCompositeRating, compositeScore } from '../lib/ranking'
 import { suggestRegions } from '../lib/regionSuggestions'
@@ -221,7 +220,7 @@ export function WineForm({
     } else {
       setScanState('done')
       const source = mode === 'ai' ? 'AI label scan' : 'label scan'
-      setScanSummary(`Filled in ${found.join(', ')} from ${source}. Double-check before saving.`)
+      setScanSummary(`Updated ${found.join(', ')} from ${source}.`)
     }
   }
 
@@ -251,7 +250,7 @@ export function WineForm({
         }
         if (err.code === 'quota_exceeded') {
           setScanState('failed')
-          setScanSummary(`You've used all ${LABEL_SCAN_CONFIG.monthlyLimit} AI label scans this month.`)
+          setScanSummary('No AI label scans left this month.')
           return
         }
         if (err.code === 'pro_required' || err.code === 'auth_required') {
@@ -263,7 +262,7 @@ export function WineForm({
         return
       }
       setScanState('failed')
-      setScanSummary('AI label scan failed. Try again or use a different photo.')
+      setScanSummary('Label scan failed. Try another photo.')
     }
   }
 
@@ -287,7 +286,7 @@ export function WineForm({
       return
     }
     if (!wishlistForm && ratingEnjoyment === 0) {
-      setError('Rate how much you enjoyed it — that is the whole point!')
+      setError('Add an enjoyment rating.')
       return
     }
     const wine = applyCompositeRating(
@@ -350,7 +349,7 @@ export function WineForm({
       className="modal-backdrop wine-form-backdrop"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <ScanPourOverlay open={aiScanning} message="AI is reading your label…" />
+      <ScanPourOverlay open={aiScanning} message="Reading label…" />
       <form className="modal wine-form-modal" onSubmit={handleSubmit}>
         <div className="modal-header">
           <div className="modal-header-titles">
@@ -417,25 +416,17 @@ export function WineForm({
           <div className="form-ratings">
           <div className="form-rating">
             <label>Enjoyment</label>
-            <p className="form-rating-hint">How much did you like drinking this?</p>
+            <p className="form-rating-hint">How much did you like it?</p>
             <StarInput value={ratingEnjoyment} onChange={setRatingEnjoyment} />
           </div>
           <div className="form-rating">
             <label>Value</label>
-            <p className="form-rating-hint">
-              Worth it for what you paid? Optional — you can add price later.
-            </p>
+            <p className="form-rating-hint">Worth the price? Optional.</p>
             <StarInput value={ratingValue} onChange={setRatingValue} />
           </div>
           {ratingEnjoyment > 0 && (
             <p className="rank-preview">
               Your rank: <strong>{previewRank.toFixed(1)}</strong>
-              {ratingValue > 0 && (
-                <span className="rank-preview-detail">
-                  {' '}
-                  (enjoyment {ratingEnjoyment.toFixed(1)} · value {ratingValue.toFixed(1)})
-                </span>
-              )}
             </p>
           )}
         </div>

@@ -60,7 +60,7 @@ export function TasteInput({ taste, wineType, onChange }: InputProps) {
                 }
                 onChange={(e) => onChange({ ...taste, [a.key]: Number(e.target.value) })}
               />
-              {!isSet && <span className="taste-unset-hint">drag to set</span>}
+              {!isSet && <span className="taste-unset-hint">slide to set</span>}
             </div>
             <span className={`taste-end right ${isSet && value >= 50 ? 'strong' : ''}`}>
               {a.right}

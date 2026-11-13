@@ -13,9 +13,7 @@ export function RankingPreferenceModal({ onChoose, busy = false }: Props) {
         <div className="modal-header">
           <h2 id="ranking-onboarding-title">Personalize your rankings</h2>
         </div>
-        <p className="ranking-onboarding-lead">
-          When comparing wines in your cellar, what matters more to you?
-        </p>
+        <p className="ranking-onboarding-lead">What matters most when you rank wines?</p>
         <div className="ranking-preference-list">
           {RANKING_PREFERENCE_OPTIONS.map((option) => (
             <button

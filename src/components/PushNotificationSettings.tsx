@@ -48,10 +48,7 @@ export function PushNotificationSettings({ userId, signedIn, cloudConfigured }: 
   return (
     <section className="account-section push-settings" aria-labelledby="push-settings-title">
       <h3 id="push-settings-title">Push notifications</h3>
-      <p className="account-hint">
-        iOS and Android only. Uses the same events as the Social bell — tune what reaches your
-        lock screen.
-      </p>
+      <p className="account-hint">Choose what reaches your lock screen.</p>
       {loading && <p className="auth-info">Loading…</p>}
       {error && <p className="form-error">{error}</p>}
       {saved && !error && <p className="auth-info">Saved.</p>}

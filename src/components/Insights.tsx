@@ -91,7 +91,7 @@ export function Insights({ wines, rankingPreference }: Props) {
 
   return (
     <div className="insights">
-      <p className="insights-lead">Based on {wines.length} wines in your cellar.</p>
+      <p className="insights-lead">{wines.length} wines in your cellar.</p>
 
       <section className="stats">
         <div className="stat">
@@ -113,7 +113,6 @@ export function Insights({ wines, rankingPreference }: Props) {
             {insights.bestValue &&
               `(${compositeScore(insights.bestValue, rankingPreference).toFixed(1)}★ at $${insights.bestValue.price?.toFixed(0)})`}
           </span>
-          <span className="stat-tap-hint">Top 3</span>
         </button>
         <button
           type="button"
@@ -126,20 +125,17 @@ export function Insights({ wines, rankingPreference }: Props) {
             {insights.splurge &&
               `($${insights.splurge.price?.toFixed(0)} · ${compositeScore(insights.splurge, rankingPreference).toFixed(1)}★)`}
           </span>
-          <span className="stat-tap-hint">Top 3</span>
         </button>
       </section>
 
       <div className="insight-hero">
         <section className="insight-card insight-card-ratings">
           <h3>Your ratings</h3>
-          <p className="insight-card-hint">How your bottles spread across scores.</p>
           <RatingColumnChart histogram={insights.histogram} maxValue={maxHist} />
         </section>
 
         <section className="insight-card insight-card-type">
           <h3>Cellar mix</h3>
-          <p className="insight-card-hint">By wine type — bottle counts.</p>
           <TypeMixDonut data={insights.byType} total={typeTotal} />
         </section>
       </div>
@@ -147,20 +143,18 @@ export function Insights({ wines, rankingPreference }: Props) {
       <div className="insight-grid insight-grid-breakdowns">
         <section className="insight-card">
           <h3>Places</h3>
-          <p className="insight-card-hint">Top regions by bottles logged.</p>
           <RankedBreakdown
             title="Top regions"
             data={insights.byRegion}
-            emptyHint="Add regions when you log wines to see where you drink."
+            emptyHint="Add regions when you log wines."
           />
         </section>
         <section className="insight-card">
           <h3>Grapes</h3>
-          <p className="insight-card-hint">Most tried varietals.</p>
           <RankedBreakdown
             title="Top varietals"
             data={insights.byVarietal}
-            emptyHint="Varietals appear as you fill them in on each wine."
+            emptyHint="Add varietals when you log wines."
           />
         </section>
       </div>

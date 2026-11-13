@@ -25,10 +25,7 @@ export function BadgeTiersModal({ onClose }: Props) {
           </button>
         </div>
         <div className="badge-tiers-body">
-          <p>
-            Each badge has four earnable tiers. Log progress toward the goal to unlock the next
-            metallic tier.
-          </p>
+          <p>Four tiers per badge — log progress to level up.</p>
           <ul className="badge-tiers-legend">
             {TIERS.map((tier) => (
               <li key={tier} className={`badge-tiers-row badge-tier-${tier}`}>
@@ -36,13 +33,10 @@ export function BadgeTiersModal({ onClose }: Props) {
               </li>
             ))}
           </ul>
-          <p className="badge-tiers-note">Goals (same for every badge):</p>
-          <ul className="badge-tiers-examples">
-            <li>
-              Bronze {STANDARD_BADGE_THRESHOLDS[0]}, silver {STANDARD_BADGE_THRESHOLDS[1]}, gold{' '}
-              {STANDARD_BADGE_THRESHOLDS[2]}, diamond {STANDARD_BADGE_THRESHOLDS[3]}
-            </li>
-          </ul>
+          <p className="badge-tiers-note">
+            Goals: {STANDARD_BADGE_THRESHOLDS[0]} / {STANDARD_BADGE_THRESHOLDS[1]} /{' '}
+            {STANDARD_BADGE_THRESHOLDS[2]} / {STANDARD_BADGE_THRESHOLDS[3]} (bronze → diamond)
+          </p>
         </div>
       </div>
     </div>

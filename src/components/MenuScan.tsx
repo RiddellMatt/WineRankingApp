@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { MENU_SCAN_CONFIG } from '../config'
 import { isWishlistDuplicate, menuMatchToWishlist } from '../lib/wishlist'
 import { matchMenu, matchParsedMenuWines, type MenuMatch } from '../menuMatch'
 import { MenuScanError, scanMenuWithAi } from '../lib/menuScanApi'
@@ -83,21 +82,21 @@ export function MenuScan({
           onUpgrade()
           setState({
             phase: 'failed',
-            message: 'AI menu scan is a Pro feature. Upgrade in Account to unlock it.',
+            message: 'Menu scan is a Pro feature. Upgrade in Account.',
           })
           return
         }
         if (err.code === 'auth_required') {
           setState({
             phase: 'failed',
-            message: 'Sign in to use AI menu scan.',
+            message: 'Sign in to use menu scan.',
           })
           return
         }
         if (err.code === 'quota_exceeded') {
           setState({
             phase: 'failed',
-            message: `You've used all ${MENU_SCAN_CONFIG.monthlyLimit} AI menu scans this month.`,
+            message: 'No AI menu scans left this month.',
           })
           return
         }
@@ -110,7 +109,7 @@ export function MenuScan({
       }
       setState({
         phase: 'failed',
-        message: 'AI scan failed. Try again or use a different photo.',
+        message: 'Menu scan failed. Try another photo.',
       })
     }
   }
@@ -165,31 +164,25 @@ export function MenuScan({
 
   return (
     <div className="menu-scan">
-      <ScanPourOverlay open={aiScanning} message="AI sommelier is reading your menu…" />
+      <ScanPourOverlay open={aiScanning} message="Reading menu…" />
       <section className="menu-scan-hero">
         <h2 className="menu-scan-section-title">Scan a menu</h2>
         <p className="menu-scan-section-lead">Point your camera at the wine list</p>
         {aiAvailable ? (
-          <p>
-            Pro AI reads the menu photo directly — even two-column lists — then ranks every wine
-            against your cellar using your ratings, favorite varietals, and go-to regions.
-          </p>
+          <p>Photo the wine list — we&apos;ll rank picks against your cellar.</p>
         ) : (
           <p>
-            Photograph a restaurant menu and I&apos;ll rank it against your cellar — using your own
-            ratings, favorite varietals, and go-to regions.
+            Snap the list to see what matches your taste.
             {!pro && (
               <>
                 {' '}
                 <button type="button" className="link-btn" onClick={onUpgrade}>
-                  Upgrade to Pro
+                  Upgrade
                 </button>{' '}
-                for sharper AI menu reading ({MENU_SCAN_CONFIG.monthlyLimit}/month).
+                for AI menu scan.
               </>
             )}
-            {pro && !signedIn && (
-              <> Sign in to unlock AI menu scan on this account.</>
-            )}
+            {pro && !signedIn && <> Sign in to use AI menu scan.</>}
           </p>
         )}
         {aiAvailable && state.phase === 'results' && state.remaining != null && (
@@ -198,10 +191,7 @@ export function MenuScan({
           </p>
         )}
         {ratedCount === 0 && (
-          <p className="menu-scan-warning">
-            Your cellar is empty, so recommendations will be generic. Rate a few wines first for
-            personal picks.
-          </p>
+          <p className="menu-scan-warning">Rate a few wines first for picks tailored to you.</p>
         )}
         {!aiAvailable && pro && signedIn && (
           <p className="menu-scan-note">Using on-device OCR — connect Supabase for AI menu scan.</p>

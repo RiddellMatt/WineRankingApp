@@ -57,8 +57,8 @@ export function AppIconPicker() {
       {nativeSupported === false && (
         <p className="account-hint">
           {isNativeApp()
-            ? 'Home screen icon switching requires a current app build with alternate icons configured.'
-            : 'Install the Decanti app to change your home screen icon. In the browser, only the tab icon updates.'}
+            ? 'Requires an app update with alternate icons enabled.'
+            : 'Use the Decanti app to change your home screen icon.'}
         </p>
       )}
     </div>

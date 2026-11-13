@@ -231,7 +231,6 @@ export function CellarFilterBar({
             <div className="cellar-filter-price">
               <p className="cellar-filter-price-readout">
                 ${priceLo} – ${priceHi}
-                {!priceActive && <span className="cellar-filter-price-hint"> (full range)</span>}
               </p>
               <label className="cellar-filter-range-label" htmlFor={priceLoId}>
                 Minimum
