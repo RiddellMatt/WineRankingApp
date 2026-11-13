@@ -4177,12 +4177,30 @@ html.show-banner-ad .account-panel {
 }
 
 .badge-tiers-row {
-  padding: 0.25rem 0.65rem;
+  padding: 0.3rem 0.75rem;
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.badge-tiers-row .badge-tiers-name {
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+
+.badge-tiers-row.badge-tier-silver .badge-tiers-name,
+.badge-tiers-row.badge-tier-gold .badge-tiers-name {
+  color: #1c1408;
+  text-shadow: none;
+}
+
+.badge-tiers-row.badge-tier-diamond .badge-tiers-name {
+  color: #0a2a38;
+  text-shadow: none;
 }
 
 .badge-tiers-examples {
@@ -5345,23 +5363,23 @@ html.show-banner-ad .account-panel {
 }
 
 .badge-tier-locked {
-  background: linear-gradient(145deg, #6b6b6b, #3a3a3a);
+  background: #5a5a5a;
 }
 
 .badge-tier-bronze {
-  background: linear-gradient(145deg, #e8a86b, #9c5c28 45%, #cd7f32 70%, #6b3e12);
+  background: #b8652a;
 }
 
 .badge-tier-silver {
-  background: linear-gradient(145deg, #f0f0f0, #9aa0a6 40%, #d8dde3 65%, #70757a);
+  background: #aeb4bc;
 }
 
 .badge-tier-gold {
-  background: linear-gradient(145deg, #ffe98a, #c9a227 42%, #ffd700 68%, #9a7b0a);
+  background: #d4b429;
 }
 
 .badge-tier-diamond {
-  background: linear-gradient(145deg, #e8fdff, #7ec8e3 35%, #b9f2ff 55%, #5eb7d4 75%, #2a6f87);
+  background: #6eb8d4;
 }
 
 .badge-copy {
