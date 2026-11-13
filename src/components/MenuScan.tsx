@@ -4,6 +4,7 @@ import { isWishlistDuplicate, menuMatchToWishlist } from '../lib/wishlist'
 import { matchMenu, matchParsedMenuWines, type MenuMatch } from '../menuMatch'
 import { MenuScanError, scanMenuWithAi } from '../lib/menuScanApi'
 import type { RankingPreference, Wine } from '../types'
+import { ScanPourOverlay } from './ScanPourOverlay'
 
 interface Props {
   wines: Wine[]
@@ -129,10 +130,12 @@ export function MenuScan({
     }
   }
 
+  const aiScanning = state.phase === 'scanning' && state.mode === 'ai'
+
   const scanningLabel =
     state.phase === 'scanning'
       ? state.mode === 'ai'
-        ? 'AI sommelier is reading your menu…'
+        ? 'Scanning…'
         : `Reading menu… ${state.pct}%`
       : null
 
@@ -162,6 +165,7 @@ export function MenuScan({
 
   return (
     <div className="menu-scan">
+      <ScanPourOverlay open={aiScanning} message="AI sommelier is reading your menu…" />
       <section className="menu-scan-hero">
         <h2 className="menu-scan-section-title">Scan a menu</h2>
         <p className="menu-scan-section-lead">Point your camera at the wine list</p>

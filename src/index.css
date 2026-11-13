@@ -2589,6 +2589,112 @@ button.tasting-tag-pill-btn.active {
   flex-wrap: wrap;
 }
 
+/* ── AI scan pour overlay (label + menu) ─────────────── */
+
+.scan-pour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    calc(1rem + env(safe-area-inset-top, 0px))
+    1.25rem
+    calc(1rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(10, 4, 6, 0.82);
+  pointer-events: all;
+  touch-action: none;
+}
+
+.scan-pour-overlay-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 18rem;
+  text-align: center;
+}
+
+.scan-pour-glass {
+  display: block;
+  filter: drop-shadow(0 8px 22px rgba(0, 0, 0, 0.35));
+}
+
+.scan-pour-glass-body {
+  opacity: 0.92;
+}
+
+.scan-pour-wine-fill {
+  fill: #9c2848;
+  animation: scan-pour-fill 2.4s ease-in-out infinite;
+  transform: translateZ(0);
+}
+
+.scan-pour-stream {
+  fill: #b62c4a;
+  transform-origin: 32px 0;
+  animation: scan-pour-stream 2.4s ease-in-out infinite;
+  transform: translateZ(0);
+}
+
+.scan-pour-message {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f7eef1;
+  line-height: 1.4;
+}
+
+@keyframes scan-pour-fill {
+  0%,
+  12% {
+    clip-path: inset(100% 0 0 0);
+  }
+
+  55% {
+    clip-path: inset(38% 0 0 0);
+  }
+
+  78%,
+  100% {
+    clip-path: inset(100% 0 0 0);
+  }
+}
+
+@keyframes scan-pour-stream {
+  0%,
+  10% {
+    opacity: 0;
+    transform: scaleY(0.15) translateZ(0);
+  }
+
+  22%,
+  62% {
+    opacity: 0.92;
+    transform: scaleY(1) translateZ(0);
+  }
+
+  76%,
+  100% {
+    opacity: 0;
+    transform: scaleY(0.1) translateZ(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scan-pour-wine-fill {
+    animation: none;
+    clip-path: inset(48% 0 0 0);
+  }
+
+  .scan-pour-stream {
+    animation: none;
+    opacity: 0.35;
+    transform: scaleY(0.65) translateZ(0);
+  }
+}
+
 /* ── Native launch bridge (Capacitor splash → app) ─────── */
 
 .app-launch-overlay {

@@ -16,6 +16,7 @@ import { TasteInput } from './TasteProfile'
 import { TastingTagsInput } from './TastingTagsInput'
 import { VarietalSelect } from './VarietalSelect'
 import { RegionPicker } from './RegionPicker'
+import { ScanPourOverlay } from './ScanPourOverlay'
 
 interface Props {
   initial: Wine | null
@@ -342,11 +343,14 @@ export function WineForm({
         ? 'Add to wishlist'
         : 'Add to cellar'
 
+  const aiScanning = scanState === 'scanning' && scanMode === 'ai'
+
   return (
     <div
       className="modal-backdrop wine-form-backdrop"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
+      <ScanPourOverlay open={aiScanning} message="AI is reading your label…" />
       <form className="modal wine-form-modal" onSubmit={handleSubmit}>
         <div className="modal-header">
           <div className="modal-header-titles">
@@ -384,7 +388,7 @@ export function WineForm({
             >
               {scanState === 'scanning'
                 ? scanMode === 'ai'
-                  ? 'AI is reading your label…'
+                  ? 'Scanning…'
                   : `Reading label… ${scanPct}%`
                 : aiAvailable
                   ? '📷 Scan label (AI)'
