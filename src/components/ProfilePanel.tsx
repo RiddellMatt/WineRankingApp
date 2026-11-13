@@ -149,11 +149,10 @@ export function ProfilePanel({
 
       {tab === 'activity' && (
         <section className="profile-tab-panel">
-          <p className="friends-hint">Your recent ratings, saves, and milestones.</p>
           <OwnActivityFeed
             events={activity}
             rankingPreference={rankingPreference}
-            emptyHint="Rate or save wines in Scan — they'll show up here."
+            emptyHint="Log or save wines in Scan to see activity here."
           />
         </section>
       )}
@@ -161,7 +160,7 @@ export function ProfilePanel({
       {tab === 'badges' && (
         <section className="profile-tab-panel">
           <p className="friends-hint">
-            Earn metallic tiers as you log wines, explore origins, and connect with friends.{' '}
+            Earn tiers as you log wines and explore.{' '}
             <button type="button" className="link-btn" onClick={() => setTiersOpen(true)}>
               How badge tiers work
             </button>
@@ -182,9 +181,6 @@ export function ProfilePanel({
 
       {tab === 'passport' && (
         <section className="profile-tab-panel">
-          <p className="friends-hint">
-            Your wine atlas — monthly challenge, active journey, stamps, and friend standings.
-          </p>
           <WinePassport
             userId={profile.id}
             wines={wines}

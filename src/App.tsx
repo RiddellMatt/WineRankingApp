@@ -504,7 +504,7 @@ export default function App() {
         const local = loadWines()
         if (!cancelled && cloud.length === 0 && local.length > 0) {
           const upload = window.confirm(
-            `Upload ${local.length} wine${local.length === 1 ? '' : 's'} from this device to your account?`,
+            `Upload ${local.length} wine${local.length === 1 ? '' : 's'} to your account?`,
           )
           if (upload) {
             const uploaded = await bulkUpsertWines(cloudUser.id, local)

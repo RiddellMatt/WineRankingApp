@@ -181,8 +181,8 @@ export function FriendsPanel({
 
   const feedEmptyHint =
     friendIds.length === 0
-      ? 'Add a friend to see what they’re drinking — or log a wine to see your own activity here.'
-      : 'Your friends haven’t logged or saved any wines yet.'
+      ? 'Add a friend or log a wine to see activity here.'
+      : 'No friend activity yet.'
 
   async function handleAddFriend() {
     setError('')
@@ -294,8 +294,7 @@ export function FriendsPanel({
         <section className="friends-section">
           <h2>Recent activity</h2>
           <p className="friends-hint">
-            Logs and want-to-try saves from your friends
-            {friendIds.length === 0 ? ' (showing yours until you add friends)' : ''}.
+            {friendIds.length === 0 ? 'Your activity until you add friends.' : 'Friend activity and saves.'}
           </p>
           <ActivityFeed
             events={activity}
@@ -316,9 +315,7 @@ export function FriendsPanel({
         <>
           <section className="friends-add">
             <h2>Add a friend</h2>
-            <p className="friends-hint">
-              Enter their account email — they must have signed up too.
-            </p>
+            <p className="friends-hint">Invite with their Decanti sign-in email.</p>
             <div className="friends-add-row">
               <input
                 type="email"

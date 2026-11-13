@@ -193,7 +193,7 @@ export function WinePassport({
           <span className="empty-icon" aria-hidden="true">
             🌍
           </span>
-          <p>Log a few wines to open your atlas — countries appear as stamps, journeys earn region seals.</p>
+          <p>Log wines to collect country stamps and journey seals.</p>
         </section>
       </div>
     )
@@ -234,17 +234,14 @@ export function WinePassport({
         <ActiveJourneyCard journey={activeJourney} />
       ) : (
         <section className="passport-card passport-all-journeys-done">
-          <p className="passport-empty">All current journeys complete — new regions coming in future updates.</p>
+          <p className="passport-empty">All journeys complete for now.</p>
         </section>
       )}
 
       <section className="passport-card passport-stamps-card" aria-labelledby="passport-stamps-title">
         <h3 id="passport-stamps-title">Your stamps</h3>
-        <p className="passport-journeys-intro">
-          Countries from wines you&apos;ve tried; journey seals when you finish a regional trail.
-        </p>
         {stamps.length === 0 ? (
-          <p className="passport-empty">Add regions to your wines to collect country stamps.</p>
+          <p className="passport-empty">Add regions to collect stamps.</p>
         ) : (
           <ol className="passport-stamp-grid">
             {stamps.map((stamp) => (
@@ -266,7 +263,7 @@ export function WinePassport({
           ) : social ? (
             <p className={`passport-social-message ${social.youLead ? 'leads' : ''}`}>{social.message}</p>
           ) : (
-            <p className="passport-empty">You're tied with friends across passport stats.</p>
+            <p className="passport-empty">You&apos;re tied with friends.</p>
           )}
           {error && <p className="form-error">{error}</p>}
           <ul className="passport-friend-avatars">
@@ -300,12 +297,12 @@ export function WinePassport({
           <PassportBars
             title="Wine origins"
             data={passport.countries}
-            emptyHint="Add regions to your wines to track countries of origin."
+            emptyHint="Add regions when you log wines."
           />
           <PassportBars
             title="Where you drank it"
             data={passport.drinkLocations}
-            emptyHint='Use “Where you drank it” when logging.'
+            emptyHint='Add “Where you drank it” on each wine.'
           />
           {passport.regions.length > 0 && (
             <PassportBars title="Top regions" data={passport.regions} emptyHint="" />

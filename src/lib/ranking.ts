@@ -9,17 +9,17 @@ export const RANKING_PREFERENCE_OPTIONS: {
   {
     value: 'taste_first',
     title: 'Great taste',
-    description: 'Your rankings weight enjoyment 60% and value 40%.',
+    description: 'Enjoyment counts most.',
   },
   {
     value: 'balanced',
     title: 'Both equally',
-    description: 'Enjoyment and value each count 50%.',
+    description: 'Enjoyment and value weigh the same.',
   },
   {
     value: 'value_first',
     title: 'Great value',
-    description: 'Your rankings weight value 60% and enjoyment 40%.',
+    description: 'Value counts most.',
   },
 ]
 

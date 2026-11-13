@@ -164,7 +164,7 @@ export function AuthScreen() {
         <button type="button" className="btn ghost auth-offline" onClick={continueOffline}>
           Continue without an account
         </button>
-        <p className="auth-offline-note">Offline mode keeps data on this device only — no friends sync.</p>
+        <p className="auth-offline-note">Data stays on this device until you sign in.</p>
       </div>
     </div>
   )

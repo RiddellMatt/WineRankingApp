@@ -1,0 +1,386 @@
+{
+  "version": 2,
+  "description": "Copy cleanup candidates. Verdicts live in the Decanti Copy Review canvas (persisted state). Implement only items the user approved.",
+  "scope": {
+    "routineUi": "Strings users see in normal production app flows (e.g. iOS TestFlight with cloud configured). Review these.",
+    "devOnly": "Hidden behind dev / github.io / debug flags — keep code; not in copy review.",
+    "misconfigured": "Only when Supabase, checkout, or IAP setup is missing — not in routine iOS review."
+  },
+  "categories": {
+    "testing": "Testing / QA visible in product",
+    "deployment": "Builder or deployment jargon",
+    "verbose": "Over-explains or repetitive",
+    "borderline": "Informative but maybe trim"
+  },
+  "items": [
+    {
+      "id": "A1",
+      "visibility": "dev-only",
+      "category": "testing",
+      "page": "Profile → Badges",
+      "location": "src/components/ProfilePanel.tsx (~177)",
+      "current": "Reset badge progress (testing)",
+      "noteIfApproved": "Remove from store builds or rename; keep dev-only gate."
+    },
+    {
+      "id": "A2",
+      "visibility": "dev-only",
+      "category": "testing",
+      "page": "Profile → Badges (confirm)",
+      "location": "src/components/ProfilePanel.tsx (~94–95)",
+      "current": "Reset all earned badge tiers? The page will reload and unlock toasts may appear again for tiers you already qualify for.",
+      "noteIfApproved": "Shorten to user-facing reset warning without QA toast detail."
+    },
+    {
+      "id": "A3",
+      "visibility": "dev-only",
+      "category": "testing",
+      "page": "Global (native QA)",
+      "location": "src/components/AdBannerProbe.tsx + App.tsx (~1593–1597)",
+      "current": "Ad debug chip: unit env, phase, gating off (isPro=…)",
+      "noteIfApproved": "Ensure probe never shows in App Store builds; no user-facing text if left on in QA."
+    },
+    {
+      "id": "A4",
+      "visibility": "misconfigured",
+      "category": "testing",
+      "page": "Account → Subscribe (errors)",
+      "location": "src/lib/revenueCatErrors.ts (multiple returns)",
+      "current": "Long RevenueCat / Codemagic / VITE_* / App Store Connect checklist errors",
+      "noteIfApproved": "Replace with short user errors; move ops detail to logs only."
+    },
+    {
+      "id": "A5",
+      "visibility": "misconfigured",
+      "category": "testing",
+      "page": "Account → Subscribe (IAP hint)",
+      "location": "src/lib/revenueCat.ts (~128–130)",
+      "current": "Could not load decanti_pro_monthly… RevenueCat… Test Store… Yearly/Lifetime packages…",
+      "noteIfApproved": "User-friendly “subscriptions unavailable” + support path."
+    },
+    {
+      "id": "A6",
+      "visibility": "misconfigured",
+      "category": "testing",
+      "page": "Account → after purchase",
+      "location": "src/lib/revenueCat.ts (~176–178)",
+      "current": "Account sync failed… add REVENUECAT_PROJECT_ID in Supabase…",
+      "noteIfApproved": "Remove Supabase secret instructions from success toast."
+    },
+    {
+      "id": "B1",
+      "category": "deployment",
+      "page": "App footer",
+      "location": "src/App.tsx (~1587–1590)",
+      "current": "Cloud sync disabled — add Supabase keys to enable accounts and friends.",
+      "noteIfApproved": "Product language: sign-in / cloud unavailable.",
+      "visibility": "misconfigured"
+    },
+    {
+      "id": "B2",
+      "category": "deployment",
+      "page": "Scan → Menu",
+      "location": "src/components/MenuScan.tsx (~207)",
+      "current": "Using on-device OCR — connect Supabase for AI menu scan.",
+      "noteIfApproved": "Explain AI requires sign-in, not Supabase.",
+      "visibility": "misconfigured"
+    },
+    {
+      "id": "B3",
+      "category": "deployment",
+      "page": "Account → Cloud sync",
+      "location": "src/components/AccountPanel.tsx (~420)",
+      "current": "Accounts and friends require Supabase configuration on this deployment.",
+      "noteIfApproved": "Generic unavailable message.",
+      "visibility": "misconfigured"
+    },
+    {
+      "id": "B4",
+      "category": "deployment",
+      "page": "Account → Subscription",
+      "location": "src/components/AccountPanel.tsx (~517–520)",
+      "current": "Checkout is not configured on this deployment yet.",
+      "noteIfApproved": "“Subscriptions aren’t available in this app version.”",
+      "visibility": "misconfigured"
+    },
+    {
+      "id": "B5",
+      "category": "deployment",
+      "page": "Sign-in",
+      "location": "src/lib/supabaseConfig.ts (~58–76)",
+      "current": "configError strings: .env.local, cap:sync, GitHub Pages, anon key",
+      "noteIfApproved": "Single friendly “sign-in unavailable” for production users.",
+      "visibility": "misconfigured"
+    },
+    {
+      "id": "B6",
+      "category": "deployment",
+      "page": "Sign-in (errors)",
+      "location": "src/lib/supabaseConfig.ts (~84, 88–96)",
+      "current": "VITE_SUPABASE_ANON_KEY; long Google/PKCE force-close instructions",
+      "noteIfApproved": "Trim auth errors; keep actionable user steps only.",
+      "visibility": "misconfigured"
+    },
+    {
+      "id": "C1",
+      "category": "verbose",
+      "page": "Scan → Menu (Pro)",
+      "location": "src/components/MenuScan.tsx (~173–176)",
+      "current": "Pro AI reads the menu photo directly — even two-column lists — then ranks…",
+      "noteIfApproved": "One short sentence on what menu scan does.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C2",
+      "category": "verbose",
+      "page": "Scan → Menu (free)",
+      "location": "src/components/MenuScan.tsx (~178–188)",
+      "current": "Photograph a restaurant menu… Upgrade to Pro for sharper AI (30/month).",
+      "noteIfApproved": "Tighter pitch + upgrade link.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C3",
+      "category": "verbose",
+      "page": "Scan → Menu",
+      "location": "src/components/MenuScan.tsx (~201–204)",
+      "current": "Your cellar is empty, so recommendations will be generic…",
+      "noteIfApproved": "Shorter nudge to rate wines first.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C4",
+      "category": "verbose",
+      "page": "AI scan overlay",
+      "location": "ScanPourOverlay via MenuScan / WineForm",
+      "current": "AI sommelier is reading your menu… / AI is reading your label…",
+      "noteIfApproved": "Simpler loading line (e.g. “Reading menu…” / “Reading label…”).",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C5",
+      "category": "verbose",
+      "page": "Add wine → scan result",
+      "location": "src/components/WineForm.tsx (~224)",
+      "current": "Filled in … from AI label scan. Double-check before saving.",
+      "noteIfApproved": "Confirm fields filled; drop “Double-check” lecture tone.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C6",
+      "category": "verbose",
+      "page": "Scan hub",
+      "location": "src/components/ScanHub.tsx (~31–32)",
+      "current": "Choose cellar or wishlist, then enter details or scan a label.",
+      "noteIfApproved": "Optional trim; flow is obvious from buttons.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C7",
+      "category": "verbose",
+      "page": "Profile → Badges",
+      "location": "src/components/ProfilePanel.tsx (~163–167)",
+      "current": "Earn metallic tiers as you log wines… How badge tiers work",
+      "noteIfApproved": "Shorter intro; consider dropping “metallic”.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C8",
+      "category": "verbose",
+      "page": "Badge tiers modal",
+      "location": "src/components/BadgeTiersModal.tsx (~28–44)",
+      "current": "Each badge has four earnable tiers… numeric goals list",
+      "noteIfApproved": "Compress rules + goals into less tutorial copy.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C9",
+      "category": "verbose",
+      "page": "Profile → Activity / Passport hints",
+      "location": "src/components/ProfilePanel.tsx (~152, 185–186)",
+      "current": "Your recent ratings… / Your wine atlas — monthly challenge…",
+      "noteIfApproved": "Remove or shorten tab hints.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C10",
+      "category": "verbose",
+      "page": "Profile preview",
+      "location": "src/components/ProfilePublicPreview.tsx (~44)",
+      "current": "This is how friends see your profile and cellar.",
+      "noteIfApproved": "Shorten or remove meta line.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C11",
+      "category": "verbose",
+      "page": "Social → Feed",
+      "location": "src/components/FriendsPanel.tsx (~296–298)",
+      "current": "Logs and want-to-try saves… (showing yours until you add friends).",
+      "noteIfApproved": "Simpler feed description.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C12",
+      "category": "verbose",
+      "page": "Social → Add friend",
+      "location": "src/components/FriendsPanel.tsx (~319–320)",
+      "current": "Enter their account email — they must have signed up too.",
+      "noteIfApproved": "One line: invite by email.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C13",
+      "category": "verbose",
+      "page": "Social → Feed empty",
+      "location": "src/components/FriendsPanel.tsx (~182–185)",
+      "current": "feedEmptyHint two variants",
+      "noteIfApproved": "Tighter empty states.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C14",
+      "category": "verbose",
+      "page": "Account (section hints)",
+      "location": "src/components/AccountPanel.tsx (~353, 362, 376, 382, 388–389)",
+      "current": "Multiple account-hint lines under profile, email, theme, icon, ranking",
+      "noteIfApproved": "Drop redundant hints; rely on labels.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C15",
+      "category": "verbose",
+      "page": "Account → Plan detail",
+      "location": "src/components/AccountPanel.tsx (~435–440)",
+      "current": "Free/Pro dense line: counts, locks, ads",
+      "noteIfApproved": "Scannable plan summary.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C16",
+      "category": "verbose",
+      "page": "Account → Pro features list",
+      "location": "src/components/AccountPanel.tsx (~24–28)",
+      "current": "PRO_FEATURES bullets incl. AI menu scan (30/month)",
+      "noteIfApproved": "Benefit-led bullets without quota in list.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C17",
+      "category": "verbose",
+      "page": "Ranking (onboarding + account)",
+      "location": "RankingPreferenceModal + ranking.ts options",
+      "current": "Duplicate question; 60%/40% weight copy",
+      "noteIfApproved": "Shorter titles; hide percentages or move to tooltip.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C18",
+      "category": "verbose",
+      "page": "Account → Push",
+      "location": "src/components/PushNotificationSettings.tsx (~51–53)",
+      "current": "iOS and Android only. Uses the same events as the Social bell…",
+      "noteIfApproved": "One line what notifications cover.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C19",
+      "category": "verbose",
+      "page": "Account → App icon",
+      "location": "src/components/AppIconPicker.tsx (~57–61)",
+      "current": "Alternate icons require build / browser vs native",
+      "noteIfApproved": "Short native-only note or hide when unsupported.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C20",
+      "category": "verbose",
+      "page": "Add wine form",
+      "location": "src/components/WineForm.tsx (~420, 425–427, 431–437)",
+      "current": "Rating hints + rank preview enjoyment/value breakdown",
+      "noteIfApproved": "Trim hints; simplify rank preview.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C21",
+      "category": "verbose",
+      "page": "Add wine form (validation)",
+      "location": "src/components/WineForm.tsx (~290)",
+      "current": "Rate how much you enjoyed it — that is the whole point!",
+      "noteIfApproved": "Neutral required-field message.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C22",
+      "category": "verbose",
+      "page": "Taste profile",
+      "location": "src/components/TasteProfile.tsx (~63)",
+      "current": "drag to set",
+      "noteIfApproved": "Clearer or icon-only affordance.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C23",
+      "category": "verbose",
+      "page": "Tasting tags",
+      "location": "src/components/TastingTagsInput.tsx (~58)",
+      "current": "Flavor notes only.",
+      "noteIfApproved": "Remove if redundant with label.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C24",
+      "category": "verbose",
+      "page": "Stats",
+      "location": "src/components/Insights.tsx (~94, 136, 142, 150, 159)",
+      "current": "Lead + card hints (Top 3, distribution explanations)",
+      "noteIfApproved": "Reduce caption noise on charts.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C25",
+      "category": "verbose",
+      "page": "Passport",
+      "location": "src/components/WinePassport.tsx (intro + empty states)",
+      "current": "Multiple instructional paragraphs",
+      "noteIfApproved": "Fewer empty-state essays.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "C26",
+      "category": "verbose",
+      "page": "Cellar filters",
+      "location": "src/components/CellarFilterBar.tsx (~234)",
+      "current": "(full range)",
+      "noteIfApproved": "Remove parenthetical or use icon state.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "D1",
+      "category": "borderline",
+      "page": "Sign-in",
+      "location": "src/components/AuthScreen.tsx (~167)",
+      "current": "Offline mode keeps data on this device only — no friends sync.",
+      "noteIfApproved": "Optional shorten.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "D2",
+      "category": "borderline",
+      "page": "Menu / label scan gates",
+      "location": "MenuScan.tsx / WineForm quota & Pro messages",
+      "current": "Pro required, sign-in, monthly limit errors",
+      "noteIfApproved": "Consistent shorter templates.",
+      "visibility": "routine-ui"
+    },
+    {
+      "id": "D3",
+      "category": "borderline",
+      "page": "First sign-in upload",
+      "location": "src/App.tsx (~506–507)",
+      "current": "Upload N wines from this device to your account?",
+      "noteIfApproved": "Fine as-is or slightly shorter.",
+      "visibility": "routine-ui"
+    }
+  ]
+}

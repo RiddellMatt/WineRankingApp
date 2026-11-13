@@ -23,9 +23,9 @@ import { PushNotificationSettings } from './PushNotificationSettings'
 
 const PRO_FEATURES = [
   'Unlimited wines',
-  'Insights dashboard',
-  'Export & import your cellar',
-  'AI menu scan (30/month)',
+  'Stats dashboard',
+  'Export & import cellar',
+  'AI menu & label scan',
 ] as const
 
 interface Props {
@@ -350,7 +350,6 @@ export function AccountPanel({
                 required
               />
             </label>
-            <p className="account-hint">Shown on friend requests and shared cellars.</p>
             <button type="submit" className="btn primary small" disabled={profileBusy}>
               {profileBusy ? 'Saving…' : 'Save name'}
             </button>
@@ -359,7 +358,6 @@ export function AccountPanel({
             <span>Email</span>
             <input value={resolvedEmail} readOnly />
           </label>
-          <p className="account-hint">Used for sign-in and finding friends.</p>
         </section>
       )}
 
@@ -373,21 +371,16 @@ export function AccountPanel({
 
       <section className="account-section">
         <h3>Appearance</h3>
-        <p className="account-hint">Choose a color theme inspired by the Decanti logo.</p>
         <ThemePicker />
       </section>
 
       <section className="account-section">
         <h3>App icon</h3>
-        <p className="account-hint">Pick the home screen icon for Decanti (white is the default).</p>
         <AppIconPicker />
       </section>
 
       <section className="account-section">
         <h3>Ranking style</h3>
-        <p className="account-hint">
-          When comparing wines in your cellar, what should matter more — taste or value?
-        </p>
         <div className="ranking-preference-list account-ranking-list">
           {RANKING_PREFERENCE_OPTIONS.map((option) => (
             <button
@@ -435,17 +428,15 @@ export function AccountPanel({
           <p className="account-plan-detail">
             {pro
               ? signedIn
-                ? 'Unlimited wines, Stats, export, AI menu scan, and no banner ads on your account.'
-                : 'Unlimited wines, Stats, export, and no banner ads on this device.'
-              : `${wineCount} / ${FREE_WINE_LIMIT} wines · Stats and export locked · banner ads`}
+                ? 'Unlimited wines, Stats, export, AI scan, no ads.'
+                : 'Unlimited wines, Stats, export, no ads on this device.'
+              : `${wineCount} of ${FREE_WINE_LIMIT} wines · Stats & export on Pro`}
           </p>
           {!pro && signedIn && (
-            <p className="account-hint">
-              Subscribe to unlock Pro on your account — syncs across devices.
-            </p>
+            <p className="account-hint">Subscribe to sync Pro across devices.</p>
           )}
           {!pro && !signedIn && (
-            <p className="account-hint">Sign in to subscribe and sync Pro across devices.</p>
+            <p className="account-hint">Sign in to subscribe.</p>
           )}
         </div>
 
