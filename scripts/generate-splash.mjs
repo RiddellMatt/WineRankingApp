@@ -1,5 +1,5 @@
 /**
- * Native splash: white background + Decanti glass mark only.
+ * Native splash: white background + Decanti wine glass (app icon art).
  */
 import sharp from 'sharp'
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs'
@@ -7,10 +7,19 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const markPath = join(root, 'public/brand/decanti-mark.svg')
+const glassSrc = join(root, 'resources/app-icons/white-source.jpg')
+const markPath = join(root, 'public/brand/decanti-glass.png')
 
 const SPLASH_BG = '#ffffff'
-const MARK_WIDTH_RATIO = 0.2
+const MARK_WIDTH_RATIO = 0.22
+
+async function ensureGlassAsset() {
+  await sharp(glassSrc)
+    .rotate()
+    .resize(512, 512, { fit: 'contain', background: SPLASH_BG })
+    .png()
+    .toFile(markPath)
+}
 
 const iosSplashDir = join(root, 'ios/App/App/Assets.xcassets/Splash.imageset')
 
@@ -74,6 +83,7 @@ async function writeAndroid() {
   }
 }
 
+await ensureGlassAsset()
 await writeIos()
 await writeAndroid()
-console.log('Decanti splash assets written (white + glass mark).')
+console.log('Decanti splash assets written (white + wine glass).')
