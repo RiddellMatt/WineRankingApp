@@ -15,6 +15,7 @@ interface Props {
 
 export function CellarSortMenu({ value, options, onChange, layout = 'compact' }: Props) {
   const [open, setOpen] = useState(false)
+  const [sortPicked, setSortPicked] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export function CellarSortMenu({ value, options, onChange, layout = 'compact' }:
 
   const activeLabel = options.find((o) => o.key === value)?.label ?? 'Rating'
   const isBar = layout === 'bar'
+  const barLabel = sortPicked ? activeLabel : 'Category'
 
   return (
     <div
@@ -44,14 +46,14 @@ export function CellarSortMenu({ value, options, onChange, layout = 'compact' }:
     >
       <button
         type="button"
-        className={`cellar-sort-trigger ${isBar ? 'cellar-sort-trigger--bar cellar-filter-category' : ''} ${open ? 'open' : ''} ${isBar && value !== 'rating' ? 'active' : ''}`}
+        className={`cellar-sort-trigger ${isBar ? 'cellar-sort-trigger--bar cellar-filter-category' : ''} ${open ? 'open' : ''} ${isBar && sortPicked ? 'active' : ''}`}
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label={isBar ? `Sort by, ${activeLabel}` : undefined}
+        aria-label={isBar ? `Sort by, ${barLabel}` : undefined}
         onClick={() => setOpen((v) => !v)}
       >
         {isBar ? (
-          <span className="cellar-filter-category-name">Sort</span>
+          <span className="cellar-filter-category-name">{barLabel}</span>
         ) : (
           <>
             <span className="cellar-sort-trigger-label">Sort by</span>
@@ -73,6 +75,7 @@ export function CellarSortMenu({ value, options, onChange, layout = 'compact' }:
               aria-selected={value === o.key}
               className={`cellar-sort-option ${value === o.key ? 'active' : ''}`}
               onClick={() => {
+                setSortPicked(true)
                 onChange(o.key)
                 setOpen(false)
               }}

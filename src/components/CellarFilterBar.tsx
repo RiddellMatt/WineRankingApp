@@ -113,31 +113,33 @@ export function CellarFilterBar({
 
   return (
     <section className="toolbar cellar-toolbar" ref={barRef}>
-      <div className="cellar-tool-block">
-        <h3 className="cellar-filter-heading">Search</h3>
-        <input
-          className="search cellar-search-input"
-          type="search"
-          placeholder="Search name, winery, region, tags…"
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              ;(e.currentTarget as HTMLInputElement).blur()
-            }
-          }}
-        />
-      </div>
+      <div className="cellar-tool-row">
+        <div className="cellar-tool-block cellar-tool-block-half">
+          <h3 className="cellar-filter-heading">Search</h3>
+          <input
+            className="search cellar-search-input"
+            type="search"
+            placeholder="Search name, winery, region, tags…"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                ;(e.currentTarget as HTMLInputElement).blur()
+              }
+            }}
+          />
+        </div>
 
-      <div className="cellar-tool-block">
-        <h3 className="cellar-filter-heading">Sort by</h3>
-        <CellarSortMenu
-          value={sortKey}
-          options={sortOptions}
-          onChange={onSortChange}
-          layout="bar"
-        />
+        <div className="cellar-tool-block cellar-tool-block-half">
+          <h3 className="cellar-filter-heading">Sort by</h3>
+          <CellarSortMenu
+            value={sortKey}
+            options={sortOptions}
+            onChange={onSortChange}
+            layout="bar"
+          />
+        </div>
       </div>
 
       <div className="cellar-filter-block">

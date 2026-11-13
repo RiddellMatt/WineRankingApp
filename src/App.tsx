@@ -277,11 +277,23 @@ export default function App() {
   }, [view])
 
   useEffect(() => {
-    if (!isNativeApp() || !mainAppShell || authGateScreen || !adsAllowed) {
+    if (
+      !isNativeApp() ||
+      !launchComplete ||
+      !mainAppShell ||
+      authGateScreen ||
+      !adsAllowed
+    ) {
       if (isNativeApp() && adsDebugProbeEnabled()) {
         setBannerAdDebug(
           'gated',
-          authGateScreen ? 'sign-in required' : !mainAppShell ? 'app loading' : 'subscriber gate',
+          !launchComplete
+            ? 'launch sequence'
+            : authGateScreen
+              ? 'sign-in required'
+              : !mainAppShell
+                ? 'app loading'
+                : 'subscriber gate',
         )
       }
       void stopBannerAds()
@@ -289,7 +301,7 @@ export default function App() {
     }
     void startBannerAds()
     // Intentionally no cleanup — profileLoaded used to stop+restart and detach listeners mid-request.
-  }, [mainAppShell, authGateScreen, adsAllowed])
+  }, [launchComplete, mainAppShell, authGateScreen, adsAllowed])
 
   const cellarProgressReady =
     cellarReady && (!cloudUser || profileLoaded) && friendCountLoaded

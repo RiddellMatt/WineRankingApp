@@ -95,7 +95,7 @@ npm run icons:splash
 npm run cap:sync
 ```
 
-(Regenerates burgundy + Decanti wordmark splash for iOS `Splash.imageset` and Android `drawable/*/splash.png`.)
+(Regenerates white splash + Decanti glass mark for iOS `Splash.imageset` and Android `drawable/*/splash.png`.)
 
 ## 6. iOS App Store checklist
 

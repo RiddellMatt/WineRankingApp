@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BADGE_DEFINITIONS, tierLabel, type BadgeTier } from '../lib/badges'
+import { STANDARD_BADGE_THRESHOLDS, tierLabel, type BadgeTier } from '../lib/badges'
 import { lockAppScroll } from '../lib/lockAppScroll'
 
 const TIERS: BadgeTier[] = ['bronze', 'silver', 'gold', 'diamond']
@@ -36,14 +36,12 @@ export function BadgeTiersModal({ onClose }: Props) {
               </li>
             ))}
           </ul>
-          <p className="badge-tiers-note">Example goals (per badge):</p>
+          <p className="badge-tiers-note">Goals (same for every badge):</p>
           <ul className="badge-tiers-examples">
-            {BADGE_DEFINITIONS.slice(0, 3).map((def) => (
-              <li key={def.id}>
-                <strong>{def.title}</strong> — bronze {def.thresholds[0]}, silver{' '}
-                {def.thresholds[1]}, gold {def.thresholds[2]}, diamond {def.thresholds[3]}
-              </li>
-            ))}
+            <li>
+              Bronze {STANDARD_BADGE_THRESHOLDS[0]}, silver {STANDARD_BADGE_THRESHOLDS[1]}, gold{' '}
+              {STANDARD_BADGE_THRESHOLDS[2]}, diamond {STANDARD_BADGE_THRESHOLDS[3]}
+            </li>
           </ul>
         </div>
       </div>
