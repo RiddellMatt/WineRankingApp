@@ -242,7 +242,9 @@ textarea::placeholder {
 
 .brand-mark {
   flex-shrink: 0;
-  filter: drop-shadow(0 4px 12px rgba(232, 176, 75, 0.25));
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12));
 }
 
 .brand-mark-header {
@@ -2616,26 +2618,54 @@ button.tasting-tag-pill-btn.active {
   text-align: center;
 }
 
-.scan-pour-glass {
+.scan-pour-glass-stage {
+  position: relative;
+  width: 8.75rem;
+  height: 8.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scan-pour-glass-img {
   display: block;
-  filter: drop-shadow(0 8px 22px rgba(0, 0, 0, 0.35));
+  width: 8.75rem;
+  height: auto;
+  transform: rotate(-38deg) translateZ(0);
+  animation: scan-glass-swirl 2.6s ease-in-out infinite;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.28));
 }
 
-.scan-pour-glass-body {
-  opacity: 0.92;
-}
-
-.scan-pour-wine-fill {
-  fill: #9c2848;
-  animation: scan-pour-fill 2.4s ease-in-out infinite;
+.scan-pour-splash {
+  position: absolute;
+  border-radius: 50%;
+  background: #a35447;
+  opacity: 0;
   transform: translateZ(0);
 }
 
-.scan-pour-stream {
-  fill: #b62c4a;
-  transform-origin: 32px 0;
-  animation: scan-pour-stream 2.4s ease-in-out infinite;
-  transform: translateZ(0);
+.scan-pour-splash-a {
+  width: 0.45rem;
+  height: 0.3rem;
+  top: 1.15rem;
+  right: 2.15rem;
+  animation: scan-splash-a 2.6s ease-in-out infinite;
+}
+
+.scan-pour-splash-b {
+  width: 0.35rem;
+  height: 0.25rem;
+  top: 0.95rem;
+  right: 2.65rem;
+  animation: scan-splash-b 2.6s ease-in-out 0.15s infinite;
+}
+
+.scan-pour-splash-c {
+  width: 0.3rem;
+  height: 0.22rem;
+  top: 1.25rem;
+  right: 2.55rem;
+  animation: scan-splash-c 2.6s ease-in-out 0.28s infinite;
 }
 
 .scan-pour-message {
@@ -2646,52 +2676,75 @@ button.tasting-tag-pill-btn.active {
   line-height: 1.4;
 }
 
-@keyframes scan-pour-fill {
+@keyframes scan-glass-swirl {
   0%,
-  12% {
-    clip-path: inset(100% 0 0 0);
-  }
-
-  55% {
-    clip-path: inset(38% 0 0 0);
-  }
-
-  78%,
   100% {
-    clip-path: inset(100% 0 0 0);
+    transform: rotate(-38deg) scale(1) translateZ(0);
+  }
+
+  45% {
+    transform: rotate(-34deg) scale(1.04) translateZ(0);
+  }
+
+  70% {
+    transform: rotate(-40deg) scale(1.01) translateZ(0);
   }
 }
 
-@keyframes scan-pour-stream {
+@keyframes scan-splash-a {
   0%,
-  10% {
-    opacity: 0;
-    transform: scaleY(0.15) translateZ(0);
-  }
-
-  22%,
-  62% {
-    opacity: 0.92;
-    transform: scaleY(1) translateZ(0);
-  }
-
-  76%,
+  18%,
   100% {
     opacity: 0;
-    transform: scaleY(0.1) translateZ(0);
+    transform: translate(0, 6px) translateZ(0);
+  }
+
+  40%,
+  62% {
+    opacity: 0.92;
+    transform: translate(0, 0) translateZ(0);
+  }
+}
+
+@keyframes scan-splash-b {
+  0%,
+  20%,
+  100% {
+    opacity: 0;
+    transform: translate(0, 5px) translateZ(0);
+  }
+
+  42%,
+  58% {
+    opacity: 0.85;
+    transform: translate(-2px, -1px) translateZ(0);
+  }
+}
+
+@keyframes scan-splash-c {
+  0%,
+  22%,
+  100% {
+    opacity: 0;
+    transform: translate(0, 4px) translateZ(0);
+  }
+
+  44%,
+  56% {
+    opacity: 0.75;
+    transform: translate(2px, 0) translateZ(0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scan-pour-wine-fill {
+  .scan-pour-glass-img {
     animation: none;
-    clip-path: inset(48% 0 0 0);
+    transform: rotate(-38deg) translateZ(0);
   }
 
-  .scan-pour-stream {
-    animation: none;
-    opacity: 0.35;
-    transform: scaleY(0.65) translateZ(0);
+  .scan-pour-splash {
+    animation: none !important;
+    opacity: 0.55;
   }
 }
 
