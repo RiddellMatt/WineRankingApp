@@ -6,6 +6,9 @@ import { APP_NAME } from '../brand'
 
 export type BadgeTier = 'locked' | 'bronze' | 'silver' | 'gold' | 'diamond'
 
+/** Shared tier goals for every badge (bronze → diamond). */
+export const STANDARD_BADGE_THRESHOLDS: [number, number, number, number] = [10, 25, 50, 100]
+
 export interface BadgeDefinition {
   id: string
   title: string
@@ -39,42 +42,42 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     title: 'First Pour',
     description: 'Log wines to your cellar',
     icon: '🍷',
-    thresholds: [1, 5, 25, 100],
+    thresholds: STANDARD_BADGE_THRESHOLDS,
   },
   {
     id: 'explorer',
     title: 'Globetrotter',
     description: 'Try wines from different countries',
     icon: '🌍',
-    thresholds: [3, 5, 10, 20],
+    thresholds: STANDARD_BADGE_THRESHOLDS,
   },
   {
     id: 'curator',
     title: 'Curator',
     description: 'Build your want-to-try list',
     icon: '📋',
-    thresholds: [1, 5, 10, 25],
+    thresholds: STANDARD_BADGE_THRESHOLDS,
   },
   {
     id: 'traveler',
     title: 'Traveler',
     description: 'Log where you drank it — cities & trips count',
     icon: '✈️',
-    thresholds: [2, 5, 10, 20],
+    thresholds: STANDARD_BADGE_THRESHOLDS,
   },
   {
     id: 'social',
     title: 'Social',
     description: `Connect with friends on ${APP_NAME}`,
     icon: '👥',
-    thresholds: [1, 3, 5, 10],
+    thresholds: STANDARD_BADGE_THRESHOLDS,
   },
   {
     id: 'pathfinder',
     title: 'Pathfinder',
     description: 'Complete passport journeys',
     icon: '🧭',
-    thresholds: [1, 3, 5, 10],
+    thresholds: STANDARD_BADGE_THRESHOLDS,
   },
 ]
 

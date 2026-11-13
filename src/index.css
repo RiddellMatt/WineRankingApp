@@ -1270,12 +1270,25 @@ a.icon-btn {
   font-size: 1rem;
 }
 
+.cellar-tool-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+  width: 100%;
+  align-items: end;
+}
+
 .cellar-tool-block,
 .cellar-filter-block {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
   width: 100%;
+  min-width: 0;
+}
+
+.cellar-tool-block-half {
+  min-width: 0;
 }
 
 .cellar-search-input {
