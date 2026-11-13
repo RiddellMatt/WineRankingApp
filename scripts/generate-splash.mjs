@@ -1,5 +1,5 @@
 /**
- * Replaces default Capacitor splash assets with Decanti branding (#12080c + wordmark).
+ * Native splash: white background + Decanti glass mark only.
  */
 import sharp from 'sharp'
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs'
@@ -7,10 +7,10 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const logoPath = join(root, 'public/brand/logo-light.png')
+const markPath = join(root, 'public/brand/decanti-mark.svg')
 
-const SPLASH_BG = '#12080c'
-const LOGO_WIDTH_RATIO = 0.42
+const SPLASH_BG = '#ffffff'
+const MARK_WIDTH_RATIO = 0.2
 
 const iosSplashDir = join(root, 'ios/App/App/Assets.xcassets/Splash.imageset')
 
@@ -29,17 +29,17 @@ const androidTargets = [
 ]
 
 async function composeSplash(width, height) {
-  const logoWidth = Math.round(Math.min(width, height) * LOGO_WIDTH_RATIO)
-  const logo = await sharp(logoPath)
-    .resize(logoWidth, logoWidth, { fit: 'inside', withoutEnlargement: true })
+  const markWidth = Math.round(Math.min(width, height) * MARK_WIDTH_RATIO)
+  const mark = await sharp(markPath)
+    .resize(markWidth, markWidth, { fit: 'inside' })
     .png()
     .toBuffer()
 
-  const meta = await sharp(logo).metadata()
-  const logoW = meta.width ?? logoWidth
-  const logoH = meta.height ?? logoWidth
-  const left = Math.round((width - logoW) / 2)
-  const top = Math.round((height - logoH) / 2)
+  const meta = await sharp(mark).metadata()
+  const markW = meta.width ?? markWidth
+  const markH = meta.height ?? markWidth
+  const left = Math.round((width - markW) / 2)
+  const top = Math.round((height - markH) / 2)
 
   return sharp({
     create: {
@@ -49,7 +49,7 @@ async function composeSplash(width, height) {
       background: SPLASH_BG,
     },
   })
-    .composite([{ input: logo, left, top }])
+    .composite([{ input: mark, left, top }])
     .png()
     .toBuffer()
 }
@@ -76,4 +76,4 @@ async function writeAndroid() {
 
 await writeIos()
 await writeAndroid()
-console.log('Decanti splash assets written (iOS Splash.imageset + Android drawable/*).')
+console.log('Decanti splash assets written (white + glass mark).')

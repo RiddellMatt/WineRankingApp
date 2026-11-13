@@ -50,7 +50,7 @@ export function ActivityFeed({
   togglingReactionKey = null,
 }: Props) {
   if (loading) {
-    return <p className="auth-info activity-loading">Loading activity…</p>
+    return null
   }
 
   if (events.length === 0) {

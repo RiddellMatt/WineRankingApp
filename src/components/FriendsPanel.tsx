@@ -145,7 +145,6 @@ export function FriendsPanel({
       )
       return
     }
-    setActivity([])
     setActivityLoading(true)
     try {
       const events = await fetchFriendActivity(friendIds, 30)

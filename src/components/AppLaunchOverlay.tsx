@@ -1,7 +1,9 @@
 import { useLayoutEffect, useState } from 'react'
-import { loadStoredTheme, THEME_META, THEME_OPTIONS } from '../lib/themes'
 import { isNativeApp } from '../lib/platform'
 import { registerLaunchOverlay, type LaunchOverlayPhase } from '../lib/nativeSplash'
+import { BrandMark } from './BrandMark'
+
+const LAUNCH_BG = '#ffffff'
 
 export function AppLaunchOverlay() {
   const [phase, setPhase] = useState<LaunchOverlayPhase>(() =>
@@ -19,21 +21,13 @@ export function AppLaunchOverlay() {
 
   if (phase === 'done') return null
 
-  const theme = loadStoredTheme()
-  const logoSrc =
-    THEME_OPTIONS.find((option) => option.id === theme)?.logoSrc ??
-    `${import.meta.env.BASE_URL}brand/logo-light.png`
-
   return (
     <div
-      className={`app-launch-overlay ${phase === 'exiting' ? 'app-launch-overlay--exit' : ''}`}
-      style={{ backgroundColor: THEME_META[theme] }}
+      className={`app-launch-overlay app-launch-overlay--light ${phase === 'exiting' ? 'app-launch-overlay--exit' : ''}`}
+      style={{ backgroundColor: LAUNCH_BG }}
       aria-hidden="true"
     >
-      <div className="app-launch-stack">
-        <img className="app-launch-logo" src={logoSrc} alt="" decoding="async" />
-        <p className="app-launch-wordmark">Decanti</p>
-      </div>
+      <BrandMark className="app-launch-mark" size={88} />
     </div>
   )
 }
