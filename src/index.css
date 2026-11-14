@@ -2604,68 +2604,127 @@ button.tasting-tag-pill-btn.active {
     calc(1rem + env(safe-area-inset-top, 0px))
     1.25rem
     calc(1rem + env(safe-area-inset-bottom, 0px));
-  background: rgba(10, 4, 6, 0.82);
   pointer-events: all;
   touch-action: none;
+  overflow: hidden;
+}
+
+.scan-pour-preview {
+  position: absolute;
+  inset: -12px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: blur(14px) saturate(0.85);
+  transform: scale(1.06);
+  opacity: 0.55;
+}
+
+.scan-pour-sweep-beam {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  height: 42%;
+  top: -50%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 240, 235, 0.06) 35%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 240, 235, 0.06) 65%,
+    transparent 100%
+  );
+  animation: scan-pour-sweep 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.scan-pour-overlay-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 4, 6, 0.78);
+  pointer-events: none;
 }
 
 .scan-pour-overlay-card {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  max-width: 18rem;
+  gap: 1.1rem;
+  max-width: 20rem;
   text-align: center;
 }
 
-.scan-pour-glass-stage {
+.scan-pour-ring-wrap {
   position: relative;
-  width: 8.75rem;
-  height: 8.75rem;
+  width: 7.5rem;
+  height: 7.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+.scan-pour-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.scan-pour-ring-track {
+  fill: none;
+  stroke: rgba(247, 238, 241, 0.12);
+  stroke-width: 3;
+}
+
+.scan-pour-ring-progress {
+  fill: none;
+  stroke: #c46858;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.35s ease;
+}
+
+.scan-pour-ring-indeterminate {
+  stroke-dasharray: 72 268;
+  animation: scan-pour-ring-dash 1.25s ease-in-out infinite;
+  transition: none;
+}
+
+.scan-pour-glass-stage {
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scan-pour-liquid {
+  position: absolute;
+  bottom: 0.85rem;
+  left: 50%;
+  width: 2.1rem;
+  margin-left: -1.05rem;
+  height: 0;
+  border-radius: 40% 40% 12% 12% / 30% 30% 18% 18%;
+  background: linear-gradient(165deg, #b85f52 0%, #8f4238 55%, #6d2f28 100%);
+  box-shadow: 0 0 12px rgba(163, 84, 71, 0.45);
+  animation: scan-wine-rise 3.2s ease-in-out infinite;
+  z-index: 0;
+}
+
 .scan-pour-glass-img {
+  position: relative;
+  z-index: 1;
   display: block;
-  width: 8.75rem;
+  width: 5.5rem;
   height: auto;
   transform: rotate(-38deg) translateZ(0);
-  animation: scan-glass-swirl 2.6s ease-in-out infinite;
-  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.28));
-}
-
-.scan-pour-splash {
-  position: absolute;
-  border-radius: 50%;
-  background: #a35447;
-  opacity: 0;
-  transform: translateZ(0);
-}
-
-.scan-pour-splash-a {
-  width: 0.45rem;
-  height: 0.3rem;
-  top: 1.15rem;
-  right: 2.15rem;
-  animation: scan-splash-a 2.6s ease-in-out infinite;
-}
-
-.scan-pour-splash-b {
-  width: 0.35rem;
-  height: 0.25rem;
-  top: 0.95rem;
-  right: 2.65rem;
-  animation: scan-splash-b 2.6s ease-in-out 0.15s infinite;
-}
-
-.scan-pour-splash-c {
-  width: 0.3rem;
-  height: 0.22rem;
-  top: 1.25rem;
-  right: 2.55rem;
-  animation: scan-splash-c 2.6s ease-in-out 0.28s infinite;
+  animation: scan-glass-swirl 3.2s ease-in-out infinite;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.32));
 }
 
 .scan-pour-message {
@@ -2674,6 +2733,50 @@ button.tasting-tag-pill-btn.active {
   font-weight: 600;
   color: #f7eef1;
   line-height: 1.4;
+  animation: scan-pour-message-in 0.45s ease both;
+}
+
+@keyframes scan-pour-sweep {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  88% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(220%);
+    opacity: 0;
+  }
+}
+
+@keyframes scan-wine-rise {
+  0%,
+  8% {
+    height: 0.35rem;
+    opacity: 0.85;
+  }
+
+  45% {
+    height: 2.35rem;
+    opacity: 1;
+  }
+
+  70% {
+    height: 2.55rem;
+    opacity: 1;
+  }
+
+  100% {
+    height: 0.5rem;
+    opacity: 0.9;
+  }
 }
 
 @keyframes scan-glass-swirl {
@@ -2682,57 +2785,30 @@ button.tasting-tag-pill-btn.active {
     transform: rotate(-38deg) scale(1) translateZ(0);
   }
 
-  45% {
-    transform: rotate(-34deg) scale(1.04) translateZ(0);
-  }
-
-  70% {
-    transform: rotate(-40deg) scale(1.01) translateZ(0);
+  50% {
+    transform: rotate(-34deg) scale(1.03) translateZ(0);
   }
 }
 
-@keyframes scan-splash-a {
-  0%,
-  18%,
-  100% {
-    opacity: 0;
-    transform: translate(0, 6px) translateZ(0);
+@keyframes scan-pour-ring-dash {
+  0% {
+    stroke-dashoffset: 0;
   }
 
-  40%,
-  62% {
-    opacity: 0.92;
-    transform: translate(0, 0) translateZ(0);
+  100% {
+    stroke-dashoffset: -340;
   }
 }
 
-@keyframes scan-splash-b {
-  0%,
-  20%,
-  100% {
+@keyframes scan-pour-message-in {
+  from {
     opacity: 0;
-    transform: translate(0, 5px) translateZ(0);
+    transform: translateY(4px);
   }
 
-  42%,
-  58% {
-    opacity: 0.85;
-    transform: translate(-2px, -1px) translateZ(0);
-  }
-}
-
-@keyframes scan-splash-c {
-  0%,
-  22%,
-  100% {
-    opacity: 0;
-    transform: translate(0, 4px) translateZ(0);
-  }
-
-  44%,
-  56% {
-    opacity: 0.75;
-    transform: translate(2px, 0) translateZ(0);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -2742,9 +2818,23 @@ button.tasting-tag-pill-btn.active {
     transform: rotate(-38deg) translateZ(0);
   }
 
-  .scan-pour-splash {
-    animation: none !important;
-    opacity: 0.55;
+  .scan-pour-liquid {
+    animation: none;
+    height: 1.75rem;
+  }
+
+  .scan-pour-sweep-beam {
+    animation: none;
+    opacity: 0.35;
+    top: 30%;
+  }
+
+  .scan-pour-ring-indeterminate {
+    animation: none;
+  }
+
+  .scan-pour-message {
+    animation: none;
   }
 }
 
