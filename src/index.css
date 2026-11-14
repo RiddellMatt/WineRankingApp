@@ -2658,8 +2658,8 @@ button.tasting-tag-pill-btn.active {
 
 .scan-pour-ring-wrap {
   position: relative;
-  width: 7.5rem;
-  height: 7.5rem;
+  width: 9.25rem;
+  height: 9.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2693,38 +2693,30 @@ button.tasting-tag-pill-btn.active {
   transition: none;
 }
 
-.scan-pour-glass-stage {
-  position: relative;
-  width: 5.5rem;
-  height: 5.5rem;
+.scan-pour-glass-tilt {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 7.25rem;
+  height: 8.25rem;
+  transform: rotate(-24deg) translateZ(0);
+  animation: scan-glass-swirl 3.6s ease-in-out infinite;
+  filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.42));
 }
 
-.scan-pour-liquid {
-  position: absolute;
-  bottom: 0.85rem;
-  left: 50%;
-  width: 2.1rem;
-  margin-left: -1.05rem;
-  height: 0;
-  border-radius: 40% 40% 12% 12% / 30% 30% 18% 18%;
-  background: linear-gradient(165deg, #b85f52 0%, #8f4238 55%, #6d2f28 100%);
-  box-shadow: 0 0 12px rgba(163, 84, 71, 0.45);
-  animation: scan-wine-rise 3.2s ease-in-out infinite;
-  z-index: 0;
-}
-
-.scan-pour-glass-img {
-  position: relative;
-  z-index: 1;
+.scan-pour-glass-svg {
   display: block;
-  width: 5.5rem;
+  width: 7.25rem;
   height: auto;
-  transform: rotate(-38deg) translateZ(0);
-  animation: scan-glass-swirl 3.2s ease-in-out infinite;
-  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.32));
+  overflow: visible;
+}
+
+.scan-pour-svg-glow {
+  animation: scan-pour-glow-pulse 3.5s ease-in-out infinite;
+}
+
+.scan-pour-svg-outline {
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.25));
 }
 
 .scan-pour-message {
@@ -2756,37 +2748,36 @@ button.tasting-tag-pill-btn.active {
   }
 }
 
-@keyframes scan-wine-rise {
+@keyframes scan-pour-glow-pulse {
   0%,
-  8% {
-    height: 0.35rem;
-    opacity: 0.85;
-  }
-
-  45% {
-    height: 2.35rem;
-    opacity: 1;
-  }
-
-  70% {
-    height: 2.55rem;
-    opacity: 1;
-  }
-
   100% {
-    height: 0.5rem;
-    opacity: 0.9;
+    opacity: 0.45;
+    transform: scale(0.92);
+  }
+
+  45%,
+  65% {
+    opacity: 1;
+    transform: scale(1.08);
   }
 }
 
 @keyframes scan-glass-swirl {
   0%,
   100% {
-    transform: rotate(-38deg) scale(1) translateZ(0);
+    transform: rotate(-28deg) scale(1) translateZ(0);
   }
 
-  50% {
-    transform: rotate(-34deg) scale(1.03) translateZ(0);
+  35% {
+    transform: rotate(-18deg) scale(1.02) translateZ(0);
+  }
+
+  55% {
+    transform: rotate(-22deg) scale(1.05) translateZ(0);
+  }
+
+  75% {
+    transform: rotate(-32deg) scale(1.02) translateZ(0);
   }
 }
 
@@ -2813,14 +2804,9 @@ button.tasting-tag-pill-btn.active {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scan-pour-glass-img {
+  .scan-pour-glass-tilt {
     animation: none;
     transform: rotate(-38deg) translateZ(0);
-  }
-
-  .scan-pour-liquid {
-    animation: none;
-    height: 1.75rem;
   }
 
   .scan-pour-sweep-beam {
