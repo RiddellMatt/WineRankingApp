@@ -51,6 +51,7 @@ import { FriendsPanel } from './components/FriendsPanel'
 import { NotificationsBell } from './components/NotificationsBell'
 import { FriendCellarView } from './components/FriendCellarView'
 import { ProfileScreen, type ProfileScreenMode } from './components/ProfileScreen'
+import { SETTINGS_SECTION_TITLES, type AccountSettingsSection } from './components/accountSettings'
 import {
   BadgeUnlockToasts,
   createBadgeToastItems,
@@ -189,6 +190,8 @@ export default function App() {
   const [view, setView] = useState<View>('cellar')
   const [accountHighlight, setAccountHighlight] = useState(false)
   const [profileMode, setProfileMode] = useState<ProfileScreenMode>('preview')
+  const [profileSettingsSection, setProfileSettingsSection] =
+    useState<AccountSettingsSection>('menu')
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<WineType | 'All'>('All')
   const [tagFilter, setTagFilter] = useState<string | null>(null)
@@ -230,9 +233,11 @@ export default function App() {
 
   const headerPageTitle = useMemo(() => {
     if (view === 'friends' && friendView) return `${friendView.name}'s cellar`
-    if (view === 'account' && profileMode === 'edit') return 'Edit profile'
+    if (view === 'account' && profileMode === 'settings') {
+      return SETTINGS_SECTION_TITLES[profileSettingsSection]
+    }
     return VIEW_PAGE_TITLES[view]
-  }, [view, friendView, profileMode])
+  }, [view, friendView, profileMode, profileSettingsSection])
 
   useEffect(() => {
     const el = contentRef.current
@@ -491,7 +496,16 @@ export default function App() {
   function goToAccount(highlightSubscription = false) {
     setFriendView(null)
     setView('account')
-    setProfileMode(highlightSubscription ? 'edit' : 'preview')
+    if (highlightSubscription) {
+      setProfileMode('settings')
+      setProfileSettingsSection('subscription')
+    } else if (cloudUser) {
+      setProfileMode('preview')
+      setProfileSettingsSection('menu')
+    } else {
+      setProfileMode('settings')
+      setProfileSettingsSection('menu')
+    }
     setAccountHighlight(highlightSubscription)
   }
 
@@ -1173,6 +1187,8 @@ export default function App() {
           <ProfileScreen
             mode={profileMode}
             onModeChange={setProfileMode}
+            settingsSection={profileSettingsSection}
+            onSettingsSectionChange={setProfileSettingsSection}
             profile={profile}
             email={cloudUser?.email}
             signedIn={Boolean(cloudUser)}

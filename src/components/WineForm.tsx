@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { aiLabelToScanResult, LabelScanError, scanLabelWithAi } from '../lib/labelScanApi'
+import {
+  baselineFromAiLabel,
+  reportLabelScanCorrection,
+  type LabelScanBaseline,
+} from '../lib/scanCorrectionLog'
 import { applyCompositeRating, compositeScore } from '../lib/ranking'
 import { suggestRegions } from '../lib/regionSuggestions'
 import { journeyFormHints } from '../lib/journeys'
@@ -86,6 +91,7 @@ export function WineForm({
   const [scanSummary, setScanSummary] = useState('')
   const [aiPreviewUrl, setAiPreviewUrl] = useState<string | null>(null)
   const scanInputRef = useRef<HTMLInputElement>(null)
+  const aiScanBaselineRef = useRef<LabelScanBaseline | null>(null)
   const aiAvailable = pro && signedIn && cloudConfigured
   const triedCellar = useMemo(() => triedWines(cellarWines), [cellarWines])
 
@@ -275,6 +281,7 @@ export function WineForm({
     try {
       const { label } = await scanLabelWithAi(file)
       setScanPct(100)
+      aiScanBaselineRef.current = baselineFromAiLabel(label)
       applyScan(aiLabelToScanResult(label), 'ai')
     } catch (err) {
       if (err instanceof LabelScanError) {
@@ -355,6 +362,23 @@ export function WineForm({
       },
       rankingPreference,
     )
+    if (
+      aiScanBaselineRef.current &&
+      scanMode === 'ai' &&
+      signedIn &&
+      cloudConfigured &&
+      !wishlistForm
+    ) {
+      reportLabelScanCorrection(aiScanBaselineRef.current, {
+        name: wine.name,
+        winery: wine.winery,
+        vintage: wine.vintage,
+        varietal: wine.varietal,
+        region: wine.region,
+        type: wine.type,
+      })
+      aiScanBaselineRef.current = null
+    }
     onSave(wine)
   }
 

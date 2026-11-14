@@ -18,15 +18,15 @@ export const THEME_OPTIONS: {
 }[] = [
   {
     id: 'classic',
-    label: 'Cellar',
+    label: 'Red',
     description: 'Deep burgundy with gold accents',
     swatches: ['#12080c', '#c41e3a', '#e8b04b'],
-    previewSrc: `${brandBase}/theme-preview-classic.svg`,
-    logoSrc: `${brandBase}/logo-light.png`,
+    previewSrc: `${brandBase}/logo-navy.png`,
+    logoSrc: `${brandBase}/logo-navy.png`,
   },
   {
     id: 'light',
-    label: 'Daylight',
+    label: 'White',
     description: 'White canvas with terracotta',
     swatches: ['#ffffff', '#a35447', '#231f20'],
     previewSrc: `${brandBase}/logo-light.png`,

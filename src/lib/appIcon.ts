@@ -2,10 +2,10 @@ import { Capacitor } from '@capacitor/core'
 import { STORAGE_PREFIX } from '../brand'
 import { isNativeApp } from './platform'
 
-export type AppIconVariant = 'white' | 'navy'
+export type AppIconVariant = 'white' | 'red'
 
-/** Must match iOS alternate app icon set name in Assets.xcassets. */
-const IOS_ALTERNATE_NAVY = 'AppIconNavy'
+/** Must match iOS alternate app icon set name in Assets.xcassets (burgundy “red” theme). */
+const IOS_ALTERNATE_RED = 'AppIconNavy'
 
 export const APP_ICON_STORAGE_KEY = `${STORAGE_PREFIX}.app-icon`
 export const APP_ICON_CHANGE_EVENT = 'decanti:app-icon-change'
@@ -23,20 +23,21 @@ export const APP_ICON_OPTIONS: {
     previewSrc: `${import.meta.env.BASE_URL}brand/app-icon-white-preview.jpg`,
   },
   {
-    id: 'navy',
-    label: 'Navy',
-    description: 'Dark blue home screen icon',
-    previewSrc: `${import.meta.env.BASE_URL}brand/app-icon-navy-preview.jpg`,
+    id: 'red',
+    label: 'Red',
+    description: 'Burgundy home screen icon (matches Red theme)',
+    previewSrc: `${import.meta.env.BASE_URL}brand/app-icon-red-preview.jpg`,
   },
 ]
 
 export function isAppIconVariant(value: string | null | undefined): value is AppIconVariant {
-  return value === 'white' || value === 'navy'
+  return value === 'white' || value === 'red'
 }
 
 export function loadStoredAppIcon(): AppIconVariant {
   try {
     const stored = localStorage.getItem(APP_ICON_STORAGE_KEY)
+    if (stored === 'navy') return 'red'
     if (isAppIconVariant(stored)) return stored
   } catch {
     // ignore
@@ -45,7 +46,7 @@ export function loadStoredAppIcon(): AppIconVariant {
 }
 
 function updateWebIcons(variant: AppIconVariant): void {
-  const suffix = variant === 'navy' ? '-navy' : ''
+  const suffix = variant === 'red' ? '-navy' : ''
   const touch = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]')
   if (touch) {
     touch.href = `${import.meta.env.BASE_URL}icons/apple-touch-icon${suffix}.png`
@@ -62,8 +63,8 @@ async function applyNativeAppIcon(variant: AppIconVariant): Promise<void> {
   const platform = Capacitor.getPlatform()
 
   if (platform === 'ios') {
-    if (variant === 'navy') {
-      await AppIcon.change({ name: IOS_ALTERNATE_NAVY })
+    if (variant === 'red') {
+      await AppIcon.change({ name: IOS_ALTERNATE_RED })
     } else {
       await AppIcon.reset({})
     }
@@ -71,7 +72,7 @@ async function applyNativeAppIcon(variant: AppIconVariant): Promise<void> {
   }
 
   if (platform === 'android') {
-    if (variant === 'navy') {
+    if (variant === 'red') {
       await AppIcon.change({ name: 'navy', disable: ['white', 'navy'] })
     } else {
       await AppIcon.change({ name: 'white', disable: ['navy'] })

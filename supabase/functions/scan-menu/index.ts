@@ -1,23 +1,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts'
+import { callGeminiVision } from '../_shared/geminiVision.ts'
+import { recordScanEvent } from '../_shared/scanMetrics.ts'
+import { assertProAndScanQuota, ScanPreflightError } from '../_shared/scanPreflight.ts'
 import { deleteScanUpload, resolveScanImageFromBody } from '../_shared/scanImage.ts'
 
 const MONTHLY_LIMIT = 30
 const MAX_IMAGE_CHARS = 6_000_000
-
-/** Tried in order when GEMINI_MODEL is unset. Newer keys may 404 on retired 2.x models. */
-const MODEL_FALLBACKS = [
-  'gemini-3.7-flash',
-  'gemini-3.6-flash',
-  'gemini-flash-latest',
-  'gemini-3.5-flash-lite',
-  'gemini-3.1-flash-lite',
-  'gemini-flash-lite-latest',
-  'gemini-3-flash-preview',
-  'gemini-2.5-flash-lite',
-  'gemini-2.5-flash',
-  'gemini-2.5-pro',
-] as const
 
 const MENU_PROMPT = `You extract wines from restaurant menu photos.
 
@@ -40,14 +29,6 @@ interface AiWine {
   name?: string
   price?: string | null
   description?: string | null
-}
-
-function modelsToTry(): string[] {
-  const configured = Deno.env.get('GEMINI_MODEL')?.trim()
-  if (configured) {
-    return [configured, ...MODEL_FALLBACKS.filter((m) => m !== configured)]
-  }
-  return [...MODEL_FALLBACKS]
 }
 
 function parseJsonFromModel(text: string): { wines?: AiWine[] } {
@@ -75,79 +56,45 @@ function parseJsonFromModel(text: string): { wines?: AiWine[] } {
   throw new Error('Could not parse menu results.')
 }
 
-async function callGeminiVision(
-  apiKey: string,
-  mimeType: string,
-  imageBase64: string,
-): Promise<string> {
-  const models = modelsToTry()
-  let lastDetail = 'No models responded.'
-
-  for (const model of models) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      if (attempt > 0) {
-        await new Promise((resolve) => setTimeout(resolve, 800 * attempt))
-      }
-
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey,
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: MENU_PROMPT },
-                  { inline_data: { mime_type: mimeType, data: imageBase64 } },
-                ],
-              },
-            ],
-            generationConfig: {
-              temperature: 0.2,
-            },
-          }),
-        },
-      )
-
-      if (res.ok) {
-        const json = await res.json()
-        const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
-        if (text) {
-          console.log(`Gemini success via ${model}`)
-          return text
-        }
-        lastDetail = 'No response from vision model.'
-        continue
-      }
-
-      lastDetail = await res.text()
-      console.error(`Gemini ${model} attempt ${attempt + 1}:`, res.status, lastDetail.slice(0, 300))
-
-      // Auth errors won't improve by switching models.
-      if (res.status === 401 || res.status === 403) {
-        throw new Error(`Vision API auth failed: ${lastDetail.slice(0, 200)}`)
-      }
-
-      // 404 = model unavailable; 503 = overloaded — try next model.
-      if (res.status === 404 || res.status === 503) {
-        break
-      }
-
-      // Other errors: one retry, then next model.
-      if (attempt === 1) break
-    }
-  }
-
-  throw new Error(`Vision API failed: ${lastDetail.slice(0, 200)}`)
+function approxImageBytes(base64Length: number): number {
+  return Math.max(0, Math.floor((base64Length * 3) / 4))
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  const requestStarted = Date.now()
+  let userId: string | null = null
+  let admin: ReturnType<typeof createClient> | null = null
+  const metrics: {
+    durationMsPreflight?: number
+    durationMsImage?: number
+    durationMsGemini?: number
+    model?: string
+    fallbackAttempts?: number
+    imageBytes?: number
+    winesCount?: number
+    errorCode?: string
+  } = {}
+
+  async function flushMetrics(status: 'success' | 'no_data' | 'error') {
+    if (!admin || !userId) return
+    await recordScanEvent(admin, {
+      userId,
+      scanType: 'menu',
+      status,
+      model: metrics.model,
+      fallbackAttempts: metrics.fallbackAttempts,
+      durationMsTotal: Date.now() - requestStarted,
+      durationMsPreflight: metrics.durationMsPreflight,
+      durationMsImage: metrics.durationMsImage,
+      durationMsGemini: metrics.durationMsGemini,
+      imageBytes: metrics.imageBytes,
+      winesCount: metrics.winesCount,
+      errorCode: metrics.errorCode ?? null,
+    })
   }
 
   try {
@@ -175,75 +122,82 @@ Deno.serve(async (req) => {
     if (userError || !user) {
       return jsonResponse({ error: 'Invalid session.', code: 'auth_required' }, 401)
     }
-
-    const admin = createClient(supabaseUrl, serviceKey)
-
-    const { data: profile, error: profileError } = await admin
-      .from('profiles')
-      .select('is_pro')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    if (profileError) {
-      return jsonResponse({ error: profileError.message }, 500)
-    }
-    if (!profile?.is_pro) {
-      return jsonResponse(
-        { error: 'AI menu scan is a Pro feature.', code: 'pro_required' },
-        403,
-      )
-    }
-
-    const monthStart = new Date()
-    monthStart.setUTCDate(1)
-    monthStart.setUTCHours(0, 0, 0, 0)
-
-    const { count, error: countError } = await admin
-      .from('menu_scan_usage')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('created_at', monthStart.toISOString())
-
-    if (countError) {
-      return jsonResponse({ error: countError.message }, 500)
-    }
-    if ((count ?? 0) >= MONTHLY_LIMIT) {
-      return jsonResponse(
-        {
-          error: `You've used all ${MONTHLY_LIMIT} AI menu scans this month.`,
-          code: 'quota_exceeded',
-          remaining: 0,
-        },
-        429,
-      )
-    }
+    userId = user.id
+    admin = createClient(supabaseUrl, serviceKey)
 
     const body = await req.json()
+    const preflightStart = Date.now()
+
+    let quotaCount = 0
     let imageBase64: string
     let mimeType: string
     let cleanupPath: string | undefined
+
     try {
-      const resolved = await resolveScanImageFromBody(admin, user.id, body)
+      const [quota, resolved] = await Promise.all([
+        assertProAndScanQuota(
+          admin,
+          user.id,
+          'menu_scan_usage',
+          MONTHLY_LIMIT,
+          'pro_required',
+          'quota_exceeded',
+        ),
+        resolveScanImageFromBody(admin, user.id, body),
+      ])
+      quotaCount = quota.count
       imageBase64 = resolved.imageBase64
       mimeType = resolved.mimeType
       cleanupPath = resolved.cleanupPath
+      metrics.durationMsPreflight = Date.now() - preflightStart
+      metrics.durationMsImage = Date.now() - preflightStart
+      metrics.imageBytes = approxImageBytes(imageBase64.length)
     } catch (e) {
+      if (e instanceof ScanPreflightError) {
+        metrics.errorCode = e.code
+        metrics.durationMsPreflight = Date.now() - preflightStart
+        await flushMetrics('error')
+        if (e.code === 'pro_required') {
+          return jsonResponse(
+            { error: 'AI menu scan is a Pro feature.', code: 'pro_required' },
+            403,
+          )
+        }
+        return jsonResponse(
+          {
+            error: `You've used all ${MONTHLY_LIMIT} AI menu scans this month.`,
+            code: 'quota_exceeded',
+            remaining: 0,
+          },
+          429,
+        )
+      }
+      await flushMetrics('error')
       return jsonResponse({ error: String(e) }, 400)
     }
 
     if (!imageBase64 || imageBase64.length > MAX_IMAGE_CHARS) {
       await deleteScanUpload(admin, cleanupPath)
+      metrics.errorCode = 'image_too_large'
+      await flushMetrics('error')
       return jsonResponse({ error: 'Image is missing or too large.' }, 400)
     }
     if (!mimeType.startsWith('image/')) {
       await deleteScanUpload(admin, cleanupPath)
+      metrics.errorCode = 'bad_mime'
+      await flushMetrics('error')
       return jsonResponse({ error: 'File must be an image.' }, 400)
     }
 
-    let textPart: string
+    let vision
     try {
-      textPart = await callGeminiVision(geminiKey, mimeType, imageBase64)
+      vision = await callGeminiVision(geminiKey, mimeType, imageBase64, MENU_PROMPT)
+      metrics.model = vision.model
+      metrics.fallbackAttempts = Math.max(0, vision.attempts - 1)
+      metrics.durationMsGemini = vision.durationMs
     } catch (e) {
+      metrics.errorCode = 'gemini_failed'
+      await flushMetrics('error')
       return jsonResponse({ error: String(e) }, 502)
     } finally {
       await deleteScanUpload(admin, cleanupPath)
@@ -251,8 +205,10 @@ Deno.serve(async (req) => {
 
     let parsed: { wines?: AiWine[] }
     try {
-      parsed = parseJsonFromModel(textPart)
+      parsed = parseJsonFromModel(vision.text)
     } catch {
+      metrics.errorCode = 'parse_failed'
+      await flushMetrics('error')
       return jsonResponse({ error: 'Could not parse menu results.' }, 502)
     }
 
@@ -274,12 +230,21 @@ Deno.serve(async (req) => {
       .filter((w) => w.name.length >= 2 || w.winery.length >= 2)
       .map((w) => (w.name.length >= 2 ? w : { ...w, name: w.winery, winery: '' }))
 
+    metrics.winesCount = wines.length
+    const status = wines.length === 0 ? 'no_data' : 'success'
+    if (wines.length === 0) {
+      metrics.errorCode = 'no_wines'
+    }
+
     await admin.from('menu_scan_usage').insert({ user_id: user.id })
 
-    const remaining = MONTHLY_LIMIT - (count ?? 0) - 1
+    const remaining = MONTHLY_LIMIT - quotaCount - 1
+    await flushMetrics(status)
 
     return jsonResponse({ wines, remaining })
   } catch (e) {
+    metrics.errorCode = 'unexpected'
+    await flushMetrics('error')
     return jsonResponse({ error: String(e) }, 500)
   }
 })
