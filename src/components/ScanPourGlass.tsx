@@ -1,28 +1,33 @@
 import { useId } from 'react'
 
-/** Upright wine glass: stream from above into the rim; level rises in the bowl only. */
+/** Angular modern wine glass — continuous bowl-to-stem taper; pour into rim. */
 export function ScanPourGlass() {
   const uid = useId().replace(/:/g, '')
   const bowlClip = `scan-pour-bowl-${uid}`
   const wineGrad = `scan-wine-grad-${uid}`
   const glowGrad = `scan-glow-grad-${uid}`
 
+  const rimY = 26
+  const bowlBottomY = 100
+  const fillMax = bowlBottomY - rimY - 6
+  const pourStartY = -34
+  const pourEndY = rimY + 2
+
+  /** Bowl interior only (angular / bordeaux silhouette). */
   const bowlCup =
-    'M36 72 C36 36 52 18 70 18 S104 36 104 72 C104 94 94 108 80 116 L60 116 C46 108 36 94 36 72 Z'
+    'M48 27H92L105 53L74 96Q70 100 66 96L35 53L48 27Z'
 
+  /** Single outline: rim → shoulders → bowl floor → stem → foot (no gap at junction). */
   const glassOutline =
-    'M36 72 C36 36 52 18 70 18 S104 36 104 72 C104 94 94 108 80 116 L60 116 C46 108 36 94 36 72 Z M64 116 L64 152 M50 166 H90'
+    'M46 25H94L108 54L76 98Q70 101 64 98L32 54L46 25M70 101C70 105 70 118 70 152M52 158Q70 166 88 158'
 
-  const bowlBottomY = 116
-  const fillMax = 92
-  const rimY = 22
-  const pourStartY = -32
-  const pourEndY = rimY + 4
+  /** Left-edge crystal highlight. */
+  const glassSheen = 'M50 28L38 52L64 94'
 
   return (
     <svg
       className="scan-pour-glass-svg"
-      viewBox={`0 ${pourStartY - 8} 140 ${188 - pourStartY + 16}`}
+      viewBox={`0 ${pourStartY - 8} 140 ${168 - pourStartY + 28}`}
       width={140}
       height={188}
       aria-hidden
@@ -36,22 +41,16 @@ export function ScanPourGlass() {
           <stop offset="50%" stopColor="#c25747" />
           <stop offset="100%" stopColor="#7a2f28" />
         </linearGradient>
-        <radialGradient id={glowGrad} cx="50%" cy="55%" r="48%">
-          <stop offset="0%" stopColor="#c25747" stopOpacity="0.35" />
+        <radialGradient id={glowGrad} cx="50%" cy="48%" r="46%">
+          <stop offset="0%" stopColor="#c25747" stopOpacity="0.32" />
           <stop offset="100%" stopColor="#c25747" stopOpacity="0" />
         </radialGradient>
       </defs>
 
-      <ellipse cx="70" cy="80" rx="44" ry="48" fill={`url(#${glowGrad})`} className="scan-pour-svg-glow" />
+      <ellipse cx="70" cy="68" rx="42" ry="44" fill={`url(#${glowGrad})`} className="scan-pour-svg-glow" />
 
       <g clipPath={`url(#${bowlClip})`}>
-        <rect
-          x="28"
-          y={bowlBottomY}
-          width="84"
-          height="0"
-          fill={`url(#${wineGrad})`}
-        >
+        <rect x="34" y={bowlBottomY} width="72" height="0" fill={`url(#${wineGrad})`}>
           <animate
             attributeName="height"
             values={`0;${fillMax};${fillMax};0`}
@@ -67,10 +66,10 @@ export function ScanPourGlass() {
             repeatCount="indefinite"
           />
         </rect>
-        <ellipse cx="70" cy={bowlBottomY - fillMax} rx="40" ry="7" fill="#f5c9bf" opacity="0.92">
+        <ellipse cx="70" cy={bowlBottomY - fillMax} rx="22" ry="5.5" fill="#f5c9bf" opacity="0.92">
           <animate
             attributeName="cy"
-            values={`${rimY + 6};${bowlBottomY - fillMax};${bowlBottomY - fillMax};${rimY + 6}`}
+            values={`${rimY + 5};${bowlBottomY - fillMax};${bowlBottomY - fillMax};${rimY + 5}`}
             keyTimes="0;0.36;0.72;1"
             dur="4.2s"
             repeatCount="indefinite"
@@ -83,17 +82,26 @@ export function ScanPourGlass() {
             repeatCount="indefinite"
           />
         </ellipse>
-        <ellipse cx="56" cy="78" rx="10" ry="18" fill="#fff" opacity="0.18" />
+        <path d="M58 42L54 88" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity="0.14" />
       </g>
 
       <path
         d={glassOutline}
         fill="none"
-        stroke="#faf4f5"
-        strokeWidth="3.6"
-        strokeLinejoin="round"
+        stroke="#f3ecef"
+        strokeWidth="3.2"
+        strokeLinejoin="miter"
         strokeLinecap="round"
         className="scan-pour-svg-outline"
+      />
+      <path
+        d={glassSheen}
+        fill="none"
+        stroke="#fff"
+        strokeWidth="2"
+        strokeLinecap="round"
+        opacity="0.35"
+        className="scan-pour-svg-sheen"
       />
 
       <g className="scan-pour-svg-stream-group">
@@ -101,7 +109,7 @@ export function ScanPourGlass() {
           d={`M70 ${pourStartY} L70 ${pourEndY}`}
           fill="none"
           stroke="#c25747"
-          strokeWidth="7"
+          strokeWidth="6"
           strokeLinecap="round"
           strokeDasharray={pourEndY - pourStartY}
           strokeDashoffset={pourEndY - pourStartY}
@@ -126,7 +134,7 @@ export function ScanPourGlass() {
           d={`M70 ${pourStartY} L70 ${pourEndY}`}
           fill="none"
           stroke="#fff"
-          strokeWidth="2"
+          strokeWidth="1.8"
           strokeLinecap="round"
           strokeDasharray={pourEndY - pourStartY}
           strokeDashoffset={pourEndY - pourStartY}
@@ -140,15 +148,6 @@ export function ScanPourGlass() {
             repeatCount="indefinite"
           />
         </path>
-        <ellipse cx="70" cy={pourStartY + 2} rx="5" ry="3" fill="#e88a7a" opacity="0">
-          <animate
-            attributeName="opacity"
-            values="0;0.85;0.85;0"
-            keyTimes="0;0.1;0.4;0.55"
-            dur="4.2s"
-            repeatCount="indefinite"
-          />
-        </ellipse>
         <circle fill="#e88a7a" r="3.5" cx="70" cy={pourStartY + 8}>
           <animate
             attributeName="cy"
