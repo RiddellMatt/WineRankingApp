@@ -21,8 +21,8 @@ export const THEME_OPTIONS: {
     label: 'Red',
     description: 'Deep burgundy with gold accents',
     swatches: ['#12080c', '#c41e3a', '#e8b04b'],
-    previewSrc: `${brandBase}/logo-navy.png`,
-    logoSrc: `${brandBase}/logo-navy.png`,
+    previewSrc: `${brandBase}/logo-red.png`,
+    logoSrc: `${brandBase}/logo-red.png`,
   },
   {
     id: 'light',
