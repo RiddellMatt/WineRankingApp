@@ -57,7 +57,6 @@ export function ProfileScreen({
         wines={wines}
         completedJourneys={completedJourneys}
         rankingPreference={rankingPreference}
-        onRankingPreferenceSaved={onRankingPreferenceSaved}
         onOpenSettings={openSettingsMenu}
         onViewFriendCellar={onViewFriendCellar}
       />
@@ -70,6 +69,8 @@ export function ProfileScreen({
     <AccountPanel
       profile={profile}
       signedIn={signedIn}
+      rankingPreference={rankingPreference}
+      onRankingPreferenceSaved={onRankingPreferenceSaved}
       {...accountProps}
       settingsSection={settingsSection}
       onSettingsSectionChange={onSettingsSectionChange}

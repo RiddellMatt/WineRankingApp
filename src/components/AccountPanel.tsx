@@ -13,6 +13,8 @@ import { friendlyRevenueCatError } from '../lib/revenueCatErrors'
 import { openExternalUrl } from '../lib/openUrl'
 import { redeemProOnServer } from '../lib/proApi'
 import { updateDisplayName, uploadAvatar, removeAvatar, type UserProfile } from '../lib/profileDb'
+import type { RankingPreference } from '../types'
+import { RankingPreferencePicker } from './RankingPreferencePicker'
 import { APP_NAME_PRO } from '../brand'
 import { Avatar } from './Avatar'
 import { AppIconPicker } from './AppIconPicker'
@@ -36,6 +38,8 @@ interface Props {
   cloudConfigured: boolean
   pro: boolean
   wineCount: number
+  rankingPreference: RankingPreference
+  onRankingPreferenceSaved: (preference: RankingPreference) => Promise<void>
   highlightSubscription?: boolean
   onProfileSaved: (profile: UserProfile) => void
   /** After StoreKit/RevenueCat unlock; keeps Pro in UI when Supabase sync is still catching up. */
@@ -56,6 +60,8 @@ export function AccountPanel({
   cloudConfigured,
   pro,
   wineCount,
+  rankingPreference,
+  onRankingPreferenceSaved,
   highlightSubscription = false,
   onProfileSaved,
   onProUnlocked,
@@ -280,6 +286,7 @@ export function AccountPanel({
           signedIn={signedIn}
           pro={pro}
           onSelect={(section) => onSettingsSectionChange(section)}
+          onSignOut={signedIn ? onSignOut : undefined}
         />
       )}
 
@@ -351,12 +358,6 @@ export function AccountPanel({
               <span>Email</span>
               <input value={resolvedEmail} readOnly />
             </label>
-          </section>
-
-          <section className="account-section account-signout">
-            <button type="button" className="btn ghost account-signout-btn" onClick={onSignOut}>
-              Sign out
-            </button>
           </section>
         </>
       )}
@@ -513,6 +514,13 @@ export function AccountPanel({
           userId={profile.id}
           signedIn={signedIn}
           cloudConfigured={cloudConfigured}
+        />
+      )}
+
+      {settingsSection === 'ranking' && (
+        <RankingPreferencePicker
+          rankingPreference={rankingPreference}
+          onRankingPreferenceSaved={onRankingPreferenceSaved}
         />
       )}
 
