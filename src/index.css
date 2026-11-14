@@ -781,6 +781,73 @@ textarea::placeholder {
   display: block;
 }
 
+.profile-panel-ranking {
+  margin: 0 0 0.85rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.profile-panel-ranking h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.settings-menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.settings-menu-row:active {
+  background: var(--bg-soft);
+}
+
+.settings-menu-row-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.settings-menu-row-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.settings-menu-row-detail {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.settings-menu-row-chevron {
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--text-dim);
+}
+
 .profile-tab-panel {
   margin-top: 0.5rem;
 }

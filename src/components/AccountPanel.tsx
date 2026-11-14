@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FREE_WINE_LIMIT, PRO_CONFIG } from '../config'
 import { activatePro } from '../pro'
 import { createBillingPortal, createProCheckout } from '../lib/checkoutApi'
@@ -12,14 +12,14 @@ import {
 import { friendlyRevenueCatError } from '../lib/revenueCatErrors'
 import { openExternalUrl } from '../lib/openUrl'
 import { redeemProOnServer } from '../lib/proApi'
-import { RANKING_PREFERENCE_OPTIONS } from '../lib/ranking'
 import { updateDisplayName, uploadAvatar, removeAvatar, type UserProfile } from '../lib/profileDb'
-import type { RankingPreference } from '../types'
 import { APP_NAME_PRO } from '../brand'
 import { Avatar } from './Avatar'
 import { AppIconPicker } from './AppIconPicker'
 import { ThemePicker } from './ThemePicker'
 import { PushNotificationSettings } from './PushNotificationSettings'
+import { SettingsMenu } from './SettingsMenu'
+import type { AccountSettingsSection } from './accountSettings'
 
 const PRO_FEATURES = [
   'Unlimited wines',
@@ -27,16 +27,6 @@ const PRO_FEATURES = [
   'Export & import cellar',
   'AI menu & label scan',
 ] as const
-
-type AccountSettingsTab = 'profile' | 'plan' | 'look' | 'alerts' | 'ranking'
-
-const SETTINGS_TABS: { id: AccountSettingsTab; label: string; signedInOnly?: boolean }[] = [
-  { id: 'profile', label: 'Profile', signedInOnly: true },
-  { id: 'plan', label: 'Pro' },
-  { id: 'look', label: 'Look' },
-  { id: 'alerts', label: 'Alerts', signedInOnly: true },
-  { id: 'ranking', label: 'Rank' },
-]
 
 interface Props {
   profile: UserProfile | null
@@ -46,16 +36,16 @@ interface Props {
   cloudConfigured: boolean
   pro: boolean
   wineCount: number
-  rankingPreference: RankingPreference
   highlightSubscription?: boolean
   onProfileSaved: (profile: UserProfile) => void
-  onRankingPreferenceSaved: (preference: RankingPreference) => Promise<void>
   /** After StoreKit/RevenueCat unlock; keeps Pro in UI when Supabase sync is still catching up. */
   onProUnlocked: (opts?: { fromNativeIap?: boolean }) => void
   onSignOut: () => void
   onSignIn: () => void
-  /** Return to public profile preview (signed-in users). */
-  onBackToProfile?: () => void
+  settingsSection: AccountSettingsSection
+  onSettingsSectionChange: (section: AccountSettingsSection) => void
+  onBack?: () => void
+  backLabel?: string
 }
 
 export function AccountPanel({
@@ -66,14 +56,15 @@ export function AccountPanel({
   cloudConfigured,
   pro,
   wineCount,
-  rankingPreference,
   highlightSubscription = false,
   onProfileSaved,
-  onRankingPreferenceSaved,
   onProUnlocked,
   onSignOut,
   onSignIn,
-  onBackToProfile,
+  settingsSection,
+  onSettingsSectionChange,
+  onBack,
+  backLabel = '← Back',
 }: Props) {
   const subscriptionRef = useRef<HTMLElement>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
@@ -100,8 +91,6 @@ export function AccountPanel({
     if (iosIap && iapPreviewLoaded) return 'Subscribe to Pro'
     return `Subscribe — ${PRO_CONFIG.priceLabel}`
   }
-  const [rankingBusy, setRankingBusy] = useState(false)
-  const [settingsTab, setSettingsTab] = useState<AccountSettingsTab>('profile')
   const resolvedEmail = profile?.email || email || ''
   const resolvedName =
     profile?.displayName || email?.split('@')[0] || 'Wine lover'
@@ -131,20 +120,9 @@ export function AccountPanel({
     }
   }, [iosIap, pro, profile?.id])
 
-  const visibleSettingsTabs = useMemo(
-    () => SETTINGS_TABS.filter((tab) => !tab.signedInOnly || signedIn),
-    [signedIn],
-  )
-
   useEffect(() => {
-    if (highlightSubscription) setSettingsTab('plan')
-  }, [highlightSubscription])
-
-  useEffect(() => {
-    if (!visibleSettingsTabs.some((t) => t.id === settingsTab)) {
-      setSettingsTab(visibleSettingsTabs[0]?.id ?? 'look')
-    }
-  }, [settingsTab, visibleSettingsTabs])
+    if (highlightSubscription) onSettingsSectionChange('subscription')
+  }, [highlightSubscription, onSettingsSectionChange])
 
   async function handleSaveProfile(e: FormEvent) {
     e.preventDefault()
@@ -179,21 +157,6 @@ export function AccountPanel({
       setProfileInfo('Pro unlocked on your account.')
     } catch (err) {
       setCodeError(String((err as Error).message ?? err))
-    }
-  }
-
-  async function handleRankingPreferenceChange(preference: RankingPreference) {
-    if (preference === rankingPreference) return
-    setProfileError('')
-    setProfileInfo('')
-    setRankingBusy(true)
-    try {
-      await onRankingPreferenceSaved(preference)
-      setProfileInfo('Ranking style saved.')
-    } catch (err) {
-      setProfileError(String((err as Error).message ?? err))
-    } finally {
-      setRankingBusy(false)
     }
   }
 
@@ -298,26 +261,12 @@ export function AccountPanel({
   return (
     <div className="account-panel">
       <div className="account-settings-toolbar">
-        {onBackToProfile && (
-          <button type="button" className="btn ghost friend-back" onClick={onBackToProfile}>
-            ← Profile
+        {onBack && (
+          <button type="button" className="btn ghost friend-back" onClick={onBack}>
+            {backLabel}
           </button>
         )}
       </div>
-
-      <nav className="friends-tabs account-settings-tabs" aria-label="Settings sections">
-        {visibleSettingsTabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`friends-tab account-settings-tab ${settingsTab === tab.id ? 'active' : ''}`}
-            onClick={() => setSettingsTab(tab.id)}
-            aria-current={settingsTab === tab.id ? 'page' : undefined}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
 
       {signedIn && (profileInfo || profileError) && (
         <div className="account-flash">
@@ -326,7 +275,15 @@ export function AccountPanel({
         </div>
       )}
 
-      {settingsTab === 'profile' && signedIn && (
+      {settingsSection === 'menu' && (
+        <SettingsMenu
+          signedIn={signedIn}
+          pro={pro}
+          onSelect={(section) => onSettingsSectionChange(section)}
+        />
+      )}
+
+      {settingsSection === 'profile' && signedIn && (
         <>
           <section className="account-hero">
             <Avatar
@@ -404,7 +361,7 @@ export function AccountPanel({
         </>
       )}
 
-      {settingsTab === 'plan' && (
+      {settingsSection === 'subscription' && (
         <section
           ref={subscriptionRef}
           className={`account-section ${highlightSubscription ? 'account-section-highlight' : ''}`}
@@ -538,7 +495,7 @@ export function AccountPanel({
         </section>
       )}
 
-      {settingsTab === 'look' && (
+      {settingsSection === 'appearance' && (
         <>
           <section className="account-section">
             <h3>Theme</h3>
@@ -551,7 +508,7 @@ export function AccountPanel({
         </>
       )}
 
-      {settingsTab === 'alerts' && profile && (
+      {settingsSection === 'notifications' && profile && (
         <PushNotificationSettings
           userId={profile.id}
           signedIn={signedIn}
@@ -559,27 +516,7 @@ export function AccountPanel({
         />
       )}
 
-      {settingsTab === 'ranking' && (
-        <section className="account-section">
-          <h3>Ranking style</h3>
-          <div className="ranking-preference-list account-ranking-list">
-            {RANKING_PREFERENCE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={`ranking-preference-card ${rankingPreference === option.value ? 'active' : ''}`}
-                disabled={rankingBusy}
-                onClick={() => handleRankingPreferenceChange(option.value)}
-              >
-                <span className="ranking-preference-title">{option.title}</span>
-                <span className="ranking-preference-desc">{option.description}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {!signedIn && settingsTab === 'look' && cloudConfigured && offlineMode && (
+      {!signedIn && settingsSection === 'appearance' && cloudConfigured && offlineMode && (
         <section className="account-section account-cloud-cta">
           <h3>Cloud sync</h3>
           <p>Sign in to sync your cellar across devices and share ratings with friends.</p>
@@ -589,7 +526,7 @@ export function AccountPanel({
         </section>
       )}
 
-      {!cloudConfigured && settingsTab === 'plan' && (
+      {!cloudConfigured && settingsSection === 'subscription' && (
         <section className="account-section account-cloud-cta">
           <h3>Cloud sync</h3>
           <p>Accounts and friends require Supabase configuration on this deployment.</p>
