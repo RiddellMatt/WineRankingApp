@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { DECANTI_GLASS_SRC } from '../lib/brandAssets'
 import { lockAppScroll } from '../lib/lockAppScroll'
+import { ScanPourGlass } from './ScanPourGlass'
 
 export type ScanPourVariant = 'menu' | 'label'
 
@@ -87,16 +87,8 @@ export function ScanPourOverlay({ open, variant, previewUrl, progress }: Props) 
               strokeDashoffset={ringOffset}
             />
           </svg>
-          <div className="scan-pour-glass-stage">
-            <div className="scan-pour-liquid" />
-            <img
-              className="scan-pour-glass-img"
-              src={DECANTI_GLASS_SRC}
-              width={100}
-              height={100}
-              alt=""
-              decoding="async"
-            />
+          <div className="scan-pour-glass-tilt">
+            <ScanPourGlass />
           </div>
         </div>
         <p className="scan-pour-message" key={stageIndex}>

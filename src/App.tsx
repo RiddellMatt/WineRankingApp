@@ -38,6 +38,7 @@ import { WishlistCard } from './components/WishlistCard'
 import { WineForm } from './components/WineForm'
 import { Insights } from './components/Insights'
 import { ScanHub } from './components/ScanHub'
+import { ScanPourOverlay } from './components/ScanPourOverlay'
 import {
   IconBarChart,
   IconChatBubble,
@@ -155,6 +156,10 @@ function sortWines(list: Wine[], sortKey: SortKey, rankingPreference: RankingPre
     }
   })
 }
+
+const demoScanOverlay =
+  import.meta.env.DEV &&
+  (new URLSearchParams(window.location.search).get('demoScan') as 'menu' | 'label' | null)
 
 export default function App() {
   const {
@@ -1596,6 +1601,14 @@ export default function App() {
           !adsAllowed ? `gating off (isPro=${String(profile?.isPro ?? pro)})` : undefined
         }
       />
+
+      {demoScanOverlay === 'menu' || demoScanOverlay === 'label' ? (
+        <ScanPourOverlay
+          open
+          variant={demoScanOverlay}
+          previewUrl={`${import.meta.env.BASE_URL}brand/theme-preview-classic.svg`}
+        />
+      ) : null}
     </div>
   )
 }
