@@ -15,7 +15,16 @@ async function handleDeepLink(url: string): Promise<void> {
 }
 
 async function refreshSession(): Promise<void> {
-  await getSupabase().auth.getSession()
+  try {
+    const {
+      data: { session },
+    } = await getSupabase().auth.getSession()
+    if (session) {
+      await getSupabase().auth.refreshSession()
+    }
+  } catch {
+    // Non-fatal when returning to foreground.
+  }
 }
 
 export async function initNativeShell(): Promise<void> {

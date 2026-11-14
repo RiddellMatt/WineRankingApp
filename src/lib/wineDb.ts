@@ -1,4 +1,5 @@
 import type { Wine, WineType, TasteProfile, RankingPreference, WineStatus } from '../types'
+import { withSupabaseAuthRetry } from './supabaseAuthRetry'
 import { getSupabase, type WineRow } from './supabase'
 import { applyCompositeRating, resolveRankingPreference, wineEnjoyment } from './ranking'
 
@@ -71,13 +72,15 @@ export function wineToRow(
 }
 
 export async function fetchWines(userId: string): Promise<Wine[]> {
-  const { data, error } = await getSupabase()
-    .from('wines')
-    .select('*')
-    .eq('user_id', userId)
-    .order('added_at', { ascending: false })
-  if (error) throw error
-  return (data as WineRow[]).map(wineFromRow)
+  return withSupabaseAuthRetry(async () => {
+    const { data, error } = await getSupabase()
+      .from('wines')
+      .select('*')
+      .eq('user_id', userId)
+      .order('added_at', { ascending: false })
+    if (error) throw error
+    return (data as WineRow[]).map(wineFromRow)
+  })
 }
 
 export async function upsertWine(userId: string, wine: Wine, pref?: RankingPreference): Promise<Wine> {
