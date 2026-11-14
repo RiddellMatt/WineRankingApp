@@ -42,6 +42,7 @@ export function MenuScan({
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set())
   const [savingKey, setSavingKey] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [aiPreviewUrl, setAiPreviewUrl] = useState<string | null>(null)
   const ratedCount = wines.length
   const aiAvailable = pro && signedIn && cloudConfigured
 
@@ -62,6 +63,8 @@ export function MenuScan({
   }
 
   async function runAiScan(file: File) {
+    const preview = URL.createObjectURL(file)
+    setAiPreviewUrl(preview)
     setState({ phase: 'scanning', pct: 15, mode: 'ai' })
     try {
       const { wines: parsed, remaining } = await scanMenuWithAi(file)
@@ -111,6 +114,9 @@ export function MenuScan({
         phase: 'failed',
         message: 'Menu scan failed. Try another photo.',
       })
+    } finally {
+      URL.revokeObjectURL(preview)
+      setAiPreviewUrl(null)
     }
   }
 
@@ -164,7 +170,12 @@ export function MenuScan({
 
   return (
     <div className="menu-scan">
-      <ScanPourOverlay open={aiScanning} message="Reading menu…" />
+      <ScanPourOverlay
+        open={aiScanning}
+        variant="menu"
+        previewUrl={aiPreviewUrl}
+        progress={state.phase === 'scanning' && state.mode === 'ai' ? state.pct : undefined}
+      />
       <section className="menu-scan-hero">
         <h2 className="menu-scan-section-title">Scan a menu</h2>
         <p className="menu-scan-section-lead">Point your camera at the wine list</p>

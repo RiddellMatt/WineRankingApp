@@ -75,6 +75,7 @@ export function WineForm({
   const [scanMode, setScanMode] = useState<'ai' | 'basic'>('basic')
   const [scanPct, setScanPct] = useState(0)
   const [scanSummary, setScanSummary] = useState('')
+  const [aiPreviewUrl, setAiPreviewUrl] = useState<string | null>(null)
   const scanInputRef = useRef<HTMLInputElement>(null)
   const aiAvailable = pro && signedIn && cloudConfigured
   const triedCellar = useMemo(() => triedWines(cellarWines), [cellarWines])
@@ -234,6 +235,8 @@ export function WineForm({
   }
 
   async function runAiScan(file: File) {
+    const preview = URL.createObjectURL(file)
+    setAiPreviewUrl(preview)
     setScanMode('ai')
     setScanState('scanning')
     setScanPct(15)
@@ -263,6 +266,9 @@ export function WineForm({
       }
       setScanState('failed')
       setScanSummary('Label scan failed. Try another photo.')
+    } finally {
+      URL.revokeObjectURL(preview)
+      setAiPreviewUrl(null)
     }
   }
 
@@ -349,7 +355,7 @@ export function WineForm({
       className="modal-backdrop wine-form-backdrop"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <ScanPourOverlay open={aiScanning} message="Reading label…" />
+      <ScanPourOverlay open={aiScanning} variant="label" previewUrl={aiPreviewUrl} />
       <form className="modal wine-form-modal" onSubmit={handleSubmit}>
         <div className="modal-header">
           <div className="modal-header-titles">
