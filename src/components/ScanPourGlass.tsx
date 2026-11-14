@@ -1,27 +1,40 @@
 import { useId } from 'react'
 
-/** Wine glass: pour enters at rim; fill rises inside the bowl only (not from the stem). */
+/** Angular modern wine glass — continuous bowl-to-stem taper; pour into rim. */
 export function ScanPourGlass() {
   const uid = useId().replace(/:/g, '')
   const bowlClip = `scan-pour-bowl-${uid}`
   const wineGrad = `scan-wine-grad-${uid}`
   const glowGrad = `scan-glow-grad-${uid}`
+  const pourGrad = `scan-pour-grad-${uid}`
+  const pourClip = `scan-pour-clip-${uid}`
 
-  /** Bowl cup only (no stem) — liquid clip. */
+  const rimY = 26
+  const bowlBottomY = 100
+  const fillMax = bowlBottomY - rimY - 6
+  const pourStartY = -36
+  const pourEndY = rimY + 2
+  const pourSpan = pourEndY - pourStartY
+
+  /** Bowl interior only (angular / bordeaux silhouette). */
   const bowlCup =
-    'M36 72 C36 36 52 18 70 18 S104 36 104 72 C104 94 94 108 80 116 L60 116 C46 108 36 94 36 72 Z'
+    'M48 27H92L105 53L74 96Q70 100 66 96L35 53L48 27Z'
 
+  /** Single outline: rim → shoulders → bowl floor → stem → foot (no gap at junction). */
   const glassOutline =
-    'M36 72 C36 36 52 18 70 18 S104 36 104 72 C104 94 94 108 80 116 L60 116 C46 108 36 94 36 72 Z M64 116 L64 152 M50 166 H90'
+    'M46 25H94L108 54L76 98Q70 101 64 98L32 54L46 25M70 101C70 105 70 118 70 152M52 158Q70 166 88 158'
 
-  const rimY = 22
-  const bowlBottomY = 116
-  const pourEndY = 30
+  /** Left-edge crystal highlight. */
+  const glassSheen = 'M50 28L38 52L64 94'
+
+  /** Tapered pour ribbon — wide at source, narrow at rim with a soft curve. */
+  const pourRibbon =
+    'M63.5 -36C61.5 -14 60.5 6 67.5 28L72.5 28C79.5 6 78.5 -14 76.5 -36Z'
 
   return (
     <svg
       className="scan-pour-glass-svg"
-      viewBox="0 0 140 188"
+      viewBox={`0 ${pourStartY - 12} 140 ${168 - pourStartY + 32}`}
       width={140}
       height={188}
       aria-hidden
@@ -30,103 +43,150 @@ export function ScanPourGlass() {
         <clipPath id={bowlClip}>
           <path d={bowlCup} />
         </clipPath>
-        <linearGradient id={wineGrad} x1="0" y1="0" x2="0.2" y2="1">
+        <clipPath id={pourClip}>
+          <rect x="56" y={pourStartY} width="28" height="0">
+            <animate
+              attributeName="height"
+              values={`0;${pourSpan};${pourSpan};0`}
+              keyTimes="0;0.38;0.72;1"
+              dur="4.2s"
+              repeatCount="indefinite"
+            />
+            <animate
+              attributeName="y"
+              values={`${pourStartY};${pourStartY};${pourStartY};${pourStartY}`}
+              keyTimes="0;0.38;0.72;1"
+              dur="4.2s"
+              repeatCount="indefinite"
+            />
+          </rect>
+        </clipPath>
+        <linearGradient id={wineGrad} x1="0" y1="0" x2="0.15" y2="1">
           <stop offset="0%" stopColor="#e88a7a" />
           <stop offset="50%" stopColor="#c25747" />
           <stop offset="100%" stopColor="#7a2f28" />
         </linearGradient>
-        <radialGradient id={glowGrad} cx="50%" cy="55%" r="48%">
-          <stop offset="0%" stopColor="#c25747" stopOpacity="0.35" />
+        <linearGradient id={pourGrad} x1="0" y1="0" x2="1" y2="0.2">
+          <stop offset="0%" stopColor="#8f3d32" stopOpacity="0.85" />
+          <stop offset="35%" stopColor="#c25747" />
+          <stop offset="62%" stopColor="#ddb0a6" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#9a4035" stopOpacity="0.95" />
+        </linearGradient>
+        <radialGradient id={glowGrad} cx="50%" cy="48%" r="46%">
+          <stop offset="0%" stopColor="#c25747" stopOpacity="0.32" />
           <stop offset="100%" stopColor="#c25747" stopOpacity="0" />
         </radialGradient>
       </defs>
 
-      <ellipse cx="70" cy="80" rx="44" ry="48" fill={`url(#${glowGrad})`} className="scan-pour-svg-glow" />
+      <ellipse cx="70" cy="68" rx="42" ry="44" fill={`url(#${glowGrad})`} className="scan-pour-svg-glow" />
 
       <g clipPath={`url(#${bowlClip})`}>
-        <g transform={`translate(70 ${bowlBottomY})`}>
-          <g>
-            <animateTransform
-              attributeName="transform"
-              type="scale"
-              values="1 0.04; 1 0.92; 1 0.92; 1 0.06"
-              keyTimes="0;0.36;0.72;1"
-              dur="4.2s"
-              repeatCount="indefinite"
-            />
-            <rect x="-42" y="-98" width="84" height="98" fill={`url(#${wineGrad})`} />
-            <ellipse cx="0" cy="-98" rx="40" ry="7" fill="#f5c9bf" opacity="0.92" />
-            <ellipse cx="-14" cy="-58" rx="10" ry="18" fill="#fff" opacity="0.2" />
-          </g>
-        </g>
+        <rect x="34" y={bowlBottomY} width="72" height="0" fill={`url(#${wineGrad})`}>
+          <animate
+            attributeName="height"
+            values={`0;${fillMax};${fillMax};0`}
+            keyTimes="0;0.36;0.72;1"
+            dur="4.2s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="y"
+            values={`${bowlBottomY};${bowlBottomY - fillMax};${bowlBottomY - fillMax};${bowlBottomY}`}
+            keyTimes="0;0.36;0.72;1"
+            dur="4.2s"
+            repeatCount="indefinite"
+          />
+        </rect>
+        <ellipse cx="70" cy={bowlBottomY - fillMax} rx="22" ry="5.5" fill="#f5c9bf" opacity="0.92">
+          <animate
+            attributeName="cy"
+            values={`${rimY + 5};${bowlBottomY - fillMax};${bowlBottomY - fillMax};${rimY + 5}`}
+            keyTimes="0;0.36;0.72;1"
+            dur="4.2s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="opacity"
+            values="0;0.92;0.92;0"
+            keyTimes="0;0.2;0.72;1"
+            dur="4.2s"
+            repeatCount="indefinite"
+          />
+        </ellipse>
+        <path d="M58 42L54 88" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity="0.14" />
       </g>
 
       <path
         d={glassOutline}
         fill="none"
-        stroke="#faf4f5"
-        strokeWidth="3.6"
-        strokeLinejoin="round"
+        stroke="#f3ecef"
+        strokeWidth="3.2"
+        strokeLinejoin="miter"
         strokeLinecap="round"
         className="scan-pour-svg-outline"
       />
+      <path
+        d={glassSheen}
+        fill="none"
+        stroke="#fff"
+        strokeWidth="2"
+        strokeLinecap="round"
+        opacity="0.35"
+        className="scan-pour-svg-sheen"
+      />
 
       <g className="scan-pour-svg-stream-group">
-        <path
-          d={`M70 0 L70 ${pourEndY}`}
-          fill="none"
-          stroke="#c25747"
-          strokeWidth="7"
-          strokeLinecap="round"
-          strokeDasharray="32"
-          strokeDashoffset="32"
-          opacity="0.95"
-        >
-          <animate
-            attributeName="stroke-dashoffset"
-            values="32;0;0;32"
-            keyTimes="0;0.38;0.72;1"
-            dur="4.2s"
-            repeatCount="indefinite"
-          />
+        <ellipse cx="70" cy={pourStartY - 5} rx="11" ry="4" fill="#b04a3e" opacity="0">
           <animate
             attributeName="opacity"
-            values="0.2;1;1;0.15"
-            keyTimes="0;0.15;0.72;1"
+            values="0;0.75;0.75;0"
+            keyTimes="0;0.1;0.38;0.55"
             dur="4.2s"
             repeatCount="indefinite"
           />
-        </path>
-        <path
-          d={`M70 0 L70 ${pourEndY}`}
-          fill="none"
-          stroke="#fff"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeDasharray="32"
-          strokeDashoffset="32"
-          opacity="0.45"
-        >
+        </ellipse>
+
+        <g clipPath={`url(#${pourClip})`} opacity="0.96">
+          <path d={pourRibbon} fill={`url(#${pourGrad})`} />
+          <path
+            d="M69 -34C68 -8 68 10 70 26"
+            fill="none"
+            stroke="#fff"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+            opacity="0.35"
+          />
+        </g>
+
+        <ellipse cx="70" cy={rimY + 1} rx="10" ry="2.5" fill="#c25747" opacity="0">
           <animate
-            attributeName="stroke-dashoffset"
-            values="32;0;0;32"
-            keyTimes="0;0.38;0.72;1"
+            attributeName="opacity"
+            values="0;0;0.45;0.2;0"
+            keyTimes="0;0.34;0.42;0.55;0.72"
             dur="4.2s"
             repeatCount="indefinite"
           />
-        </path>
-        <circle fill="#e88a7a" r="4" cx="70" cy="8">
+          <animate
+            attributeName="rx"
+            values="6;6;16;12;6"
+            keyTimes="0;0.34;0.42;0.55;0.72"
+            dur="4.2s"
+            repeatCount="indefinite"
+          />
+        </ellipse>
+
+        <circle fill="#ddb0a6" r="2" cx="72" cy={rimY + 3} opacity="0">
+          <animate
+            attributeName="opacity"
+            values="0;0;0.8;0"
+            keyTimes="0;0.4;0.48;0.58"
+            dur="4.2s"
+            repeatCount="indefinite"
+          />
           <animate
             attributeName="cy"
-            values={`4;${rimY + 4};4`}
-            keyTimes="0;0.45;1"
-            dur="4.2s"
-            repeatCount="indefinite"
-          />
-          <animate
-            attributeName="opacity"
-            values="0;1;0"
-            keyTimes="0;0.12;0.5"
+            values={`${rimY + 2};${rimY + 2};${rimY + 8};${rimY + 14}`}
+            keyTimes="0;0.4;0.48;0.58"
             dur="4.2s"
             repeatCount="indefinite"
           />
