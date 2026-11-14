@@ -1,0 +1,1 @@
+import{o as e}from"./index-CRA_vd5d.js";var t=class extends e{async show(e){}async hide(e){}};export{t as SplashScreenWeb};
