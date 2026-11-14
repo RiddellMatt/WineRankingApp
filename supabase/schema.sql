@@ -266,7 +266,8 @@ create table public.notifications (
     'friend_request',
     'friend_accepted',
     'friend_badge_unlock',
-    'friend_journey_complete'
+    'friend_journey_complete',
+    'wine_with_friend'
   )),
   payload jsonb not null default '{}',
   read_at timestamptz,

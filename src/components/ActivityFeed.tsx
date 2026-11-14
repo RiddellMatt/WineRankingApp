@@ -14,6 +14,7 @@ import {
   wineActivitySubtitle,
   wineActivityTitle,
 } from '../lib/activityFeed'
+import { activityWithFriendsClause } from '../lib/wineWithFriends'
 import { compositeScore } from '../lib/ranking'
 import { isWishlist, wishlistIdentityKey } from '../lib/wishlist'
 import type { RankingPreference, Wine } from '../types'
@@ -167,6 +168,7 @@ export function ActivityFeed({
         const wine = event.wine!
         const title = wineActivityTitle(wine)
         const subtitle = wineActivitySubtitle(wine)
+        const withFriends = activityWithFriendsClause(event.withFriends, viewerId)
         const score = compositeScore(wine, rankingPreference)
         const canSave =
           !isOwn &&
@@ -195,6 +197,7 @@ export function ActivityFeed({
               <p className="activity-line">
                 <strong>{name}</strong> {activityEventLabel(event.type)}{' '}
                 <span className="activity-wine">{title}</span>
+                {withFriends && <span className="activity-with-friends"> {withFriends}</span>}
                 {event.type === 'logged' && !isWishlist(wine) && score > 0 && (
                   <span className="activity-rating"> · {score.toFixed(1)}★</span>
                 )}

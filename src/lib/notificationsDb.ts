@@ -13,6 +13,7 @@ export type NotificationType =
   | 'friend_accepted'
   | 'friend_badge_unlock'
   | 'friend_journey_complete'
+  | 'wine_with_friend'
 
 export interface ReactionNotificationPayload {
   reaction_type: ReactionType
@@ -39,11 +40,18 @@ export interface FriendJourneyCompletePayload {
   journey_icon: string
 }
 
+export interface WineWithFriendPayload {
+  wine_id: string
+  wine_name: string
+  winery?: string
+}
+
 export type NotificationPayload =
   | ReactionNotificationPayload
   | FriendshipNotificationPayload
   | FriendBadgeUnlockPayload
   | FriendJourneyCompletePayload
+  | WineWithFriendPayload
 
 export interface AppNotification {
   id: string
@@ -101,6 +109,10 @@ export function notificationMessage(n: AppNotification): string {
       const p = n.payload as FriendJourneyCompletePayload
       const icon = p.journey_icon ?? '🧭'
       return `${name} completed ${icon} ${p.journey_title}`
+    }
+    case 'wine_with_friend': {
+      const p = n.payload as WineWithFriendPayload
+      return `${name} tried ${p.wine_name} with you`
     }
     default:
       return 'New notification'

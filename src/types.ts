@@ -59,6 +59,8 @@ export interface Wine {
   notes: string
   /** Quick tasting descriptors (filterable on tried wines). */
   tastingTags?: string[]
+  /** Accepted friends tagged on this pour (Beli-style "with you"). */
+  withFriendIds?: string[]
   purchasedAt: string
   taste: TasteProfile
   /** Whether taste came from the reference dataset or was tuned by the user. */

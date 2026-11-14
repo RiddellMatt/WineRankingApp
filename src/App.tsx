@@ -69,7 +69,8 @@ import { DecantiLogo, usesThemeWordmarkLogo } from './components/DecantiLogo'
 import { useAppTheme } from './lib/useAppTheme'
 import { APP_NAME, APP_NAME_PRO, STORAGE_PREFIX } from './brand'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
-import { fetchFriendships } from './lib/friendsDb'
+import { fetchFriendships, type FriendProfile } from './lib/friendsDb'
+import { formatWithFriendsNames, friendNameMapFromProfiles } from './lib/wineWithFriends'
 import { fetchCompletedJourneysForUsers } from './lib/journeyDb'
 import {
   consumeCatchUpTestingFlag,
@@ -208,6 +209,7 @@ export default function App() {
   const [savingFriendWishlistKey, setSavingFriendWishlistKey] = useState<string | null>(null)
   const [friendCount, setFriendCount] = useState(0)
   const [friendCountLoaded, setFriendCountLoaded] = useState(false)
+  const [friendNameById, setFriendNameById] = useState(() => new Map<string, string>())
   const [friendsRequestedTab, setFriendsRequestedTab] = useState<'feed' | 'manage' | null>(null)
   const [badgeToastItems, setBadgeToastItems] = useState<MilestoneToastItem[]>([])
   const [xpToastItems, setXpToastItems] = useState<XpFeedbackToastItem[]>([])
@@ -565,13 +567,24 @@ export default function App() {
   useEffect(() => {
     if (!cloudUser) {
       setFriendCount(0)
+      setFriendNameById(new Map())
       setFriendCountLoaded(true)
       return
     }
     setFriendCountLoaded(false)
     fetchFriendships(cloudUser.id)
-      .then((rows) => setFriendCount(rows.filter((f) => f.status === 'accepted').length))
-      .catch(() => setFriendCount(0))
+      .then((rows) => {
+        const accepted = rows.filter((f) => f.status === 'accepted' && f.friend)
+        setFriendCount(accepted.length)
+        const profiles = accepted.map((f) => f.friend as FriendProfile)
+        const names = friendNameMapFromProfiles(profiles)
+        names.set(cloudUser.id, 'You')
+        setFriendNameById(names)
+      })
+      .catch(() => {
+        setFriendCount(0)
+        setFriendNameById(new Map())
+      })
       .finally(() => setFriendCountLoaded(true))
   }, [cloudUser?.id])
 
@@ -1197,6 +1210,7 @@ export default function App() {
               avatarUrl={friendView.avatarUrl}
               userId={friendView.id}
               wines={friendWines}
+              friendNameById={friendNameById}
               rankingPreference={rankingPreference}
               shareAttribution={`From ${friendView.name}'s cellar`}
               backButton={{ label: '← Back to friends', onClick: () => setFriendView(null) }}
@@ -1460,6 +1474,7 @@ export default function App() {
                     wine={wine}
                     rank={rankById.get(wine.id) ?? 0}
                     rankingPreference={rankingPreference}
+                    withFriendsLabel={formatWithFriendsNames(wine, friendNameById)}
                     activeTagFilter={tagFilter}
                     onTagFilter={(id) => setTagFilter(tagFilter === id ? null : id)}
                     onEdit={() => {
@@ -1578,6 +1593,7 @@ export default function App() {
           pro={pro}
           signedIn={Boolean(cloudUser)}
           cloudConfigured={isSupabaseConfigured}
+          userId={cloudUser?.id}
           onUpgrade={() => goToAccount(true)}
         />
       )}

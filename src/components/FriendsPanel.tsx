@@ -10,6 +10,7 @@ import {
 } from '../lib/activityReactions'
 import {
   fetchFriendActivity,
+  ownActivityActor,
   ownRecentActivity,
   type ActivityEvent,
   type WineActivityEventType,
@@ -22,8 +23,10 @@ import {
   respondToRequest,
   sendFriendRequest,
   type Friendship,
+  type FriendProfile,
 } from '../lib/friendsDb'
 import { requestNotificationsRefresh } from '../lib/notificationsRefresh'
+import { enrichActivityWithFriends } from '../lib/wineWithFriends'
 import type { RankingPreference, Wine } from '../types'
 
 interface Props {
@@ -140,9 +143,19 @@ export function FriendsPanel({
     }
     if (friendIds.length === 0) {
       setActivityLoading(false)
-      setActivity(
-        ownRecentActivity(userId, userDisplayName, userEmail, userAvatarUrl, wines, 10),
+      const profileMap = new Map<string, FriendProfile>()
+      profileMap.set(
+        userId,
+        ownActivityActor(userId, userDisplayName, userEmail, userAvatarUrl),
       )
+      for (const f of friends) {
+        if (f.friend) profileMap.set(f.friend.id, f.friend)
+      }
+      const events = enrichActivityWithFriends(
+        ownRecentActivity(userId, userDisplayName, userEmail, userAvatarUrl, wines, 10),
+        profileMap,
+      )
+      setActivity(events)
       return
     }
     setActivityLoading(true)
@@ -164,6 +177,7 @@ export function FriendsPanel({
     userEmail,
     userAvatarUrl,
     wines,
+    friends,
   ])
 
   useEffect(() => {

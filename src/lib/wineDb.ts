@@ -1,4 +1,5 @@
 import type { Wine, WineType, TasteProfile, RankingPreference, WineStatus } from '../types'
+import { normalizeWithFriendIds } from './wineWithFriends'
 import { withSupabaseAuthRetry } from './supabaseAuthRetry'
 import { getSupabase, type WineRow } from './supabase'
 import { applyCompositeRating, resolveRankingPreference, wineEnjoyment } from './ranking'
@@ -32,6 +33,7 @@ export function wineFromRow(row: WineRow): Wine {
     rating: Number(row.rating),
     notes: row.notes,
     tastingTags: Array.isArray(row.tasting_tags) ? row.tasting_tags : [],
+    withFriendIds: normalizeWithFriendIds(row.with_friend_ids),
     purchasedAt: row.purchased_at,
     taste: (row.taste ?? {}) as TasteProfile,
     tasteSource: row.taste_source === 'custom' ? 'custom' : row.taste_source === 'typical' ? 'typical' : undefined,
@@ -63,6 +65,7 @@ export function wineToRow(
     rating_buy_again: normalized.ratingBuyAgain ?? null,
     notes: normalized.notes,
     tasting_tags: normalized.tastingTags ?? [],
+    with_friend_ids: normalizeWithFriendIds(normalized.withFriendIds),
     purchased_at: normalized.purchasedAt,
     taste: (normalized.taste ?? {}) as Record<string, number>,
     taste_source: normalized.tasteSource ?? null,

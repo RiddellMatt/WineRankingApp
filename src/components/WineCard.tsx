@@ -24,6 +24,8 @@ interface Props {
   shareAttribution?: string
   activeTagFilter?: string | null
   onTagFilter?: (tagId: string) => void
+  /** Resolved names for {@link Wine.withFriendIds}. */
+  withFriendsLabel?: string | null
 }
 
 export function WineCard({
@@ -40,6 +42,7 @@ export function WineCard({
   shareAttribution,
   activeTagFilter = null,
   onTagFilter,
+  withFriendsLabel = null,
 }: Props) {
   const medal = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : ''
   const meta = [wine.varietal, wine.region].filter(Boolean).join(' · ')
@@ -100,6 +103,14 @@ export function WineCard({
           <p className="wine-purchased">
             <IconMapPin className="wine-purchased-icon" />
             {wine.purchasedAt}
+          </p>
+        )}
+        {withFriendsLabel && (
+          <p className="wine-with-friends">
+            <span className="wine-with-friends-icon" aria-hidden="true">
+              🥂
+            </span>
+            {withFriendsLabel}
           </p>
         )}
         {wine.notes && <p className="wine-notes">“{wine.notes}”</p>}
