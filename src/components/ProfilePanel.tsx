@@ -15,6 +15,7 @@ import {
 import { fetchFriendships } from '../lib/friendsDb'
 import { computePlayerLevel } from '../lib/playerLevel'
 import { ProfileLevelBar } from './ProfileLevelBar'
+import { IconMenu } from './icons/UiIcons'
 import type { UserProfile } from '../lib/profileDb'
 import type { RankingPreference, Wine } from '../types'
 
@@ -118,8 +119,13 @@ export function ProfilePanel({
           )}
           <ProfileLevelBar level={playerLevel} />
         </div>
-        <button type="button" className="btn primary small profile-panel-edit" onClick={onEditProfile}>
-          Edit
+        <button
+          type="button"
+          className="profile-panel-menu"
+          onClick={onEditProfile}
+          aria-label="Settings"
+        >
+          <IconMenu className="profile-panel-menu-icon" size={22} />
         </button>
       </header>
 

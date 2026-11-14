@@ -758,6 +758,29 @@ textarea::placeholder {
   flex-shrink: 0;
 }
 
+.profile-panel-menu {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.profile-panel-menu:active {
+  background: var(--bg-soft);
+}
+
+.profile-panel-menu-icon {
+  display: block;
+}
+
 .profile-tab-panel {
   margin-top: 0.5rem;
 }
@@ -4279,6 +4302,43 @@ html.app-scroll-locked.native-app .content {
   gap: 1.25rem;
   max-width: 520px;
   padding-bottom: 0.5rem;
+}
+
+.account-settings-toolbar {
+  display: flex;
+  align-items: center;
+  min-height: 2rem;
+}
+
+.account-settings-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 0.15rem;
+}
+
+.account-settings-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.account-settings-tab {
+  flex: 0 0 auto;
+  min-width: 4.1rem;
+  font-size: 0.82rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.account-cloud-cta-inset {
+  margin-top: 1rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.account-cloud-cta-inset p {
+  margin: 0 0 0.65rem;
+  font-size: 0.88rem;
+  color: var(--text-dim);
 }
 
 html.show-banner-ad .account-panel {

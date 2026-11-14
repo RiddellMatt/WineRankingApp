@@ -12,7 +12,7 @@ function logoSrcForTheme(theme: ReturnType<typeof useAppTheme>): string | undefi
   return THEME_OPTIONS.find((option) => option.id === theme)?.logoSrc
 }
 
-/** Theme-aware Decanti mark — wordmark on Cellar & Daylight (see theme logoSrc). */
+/** Theme-aware Decanti mark — wordmark on Red & White themes (see theme logoSrc). */
 export function DecantiLogo({ className = '', context = 'header' }: Props) {
   const theme = useAppTheme()
   const logoSrc = logoSrcForTheme(theme)

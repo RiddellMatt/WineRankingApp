@@ -230,7 +230,7 @@ export default function App() {
 
   const headerPageTitle = useMemo(() => {
     if (view === 'friends' && friendView) return `${friendView.name}'s cellar`
-    if (view === 'account' && profileMode === 'edit') return 'Edit profile'
+    if (view === 'account' && profileMode === 'edit') return 'Settings'
     return VIEW_PAGE_TITLES[view]
   }, [view, friendView, profileMode])
 
