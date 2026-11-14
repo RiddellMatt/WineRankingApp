@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Decanti Red theme">
+  <rect width="512" height="512" fill="#12080c"/>
+  <g transform="translate(118 206)">
+    <text x="0" y="0" fill="#f7eef1" font-family="Georgia, 'Times New Roman', serif" font-size="72" font-weight="700">de</text>
+    <g transform="translate(88 8) rotate(-38) scale(1.4)">
+      <path d="M-8 -22 L8 -22 C8 -8 4 0 0 6 L0 24 L-5 24 C-9 24 -9 30 -5 30 L5 30 C9 30 9 24 5 24 L0 24 L0 6 C-4 0 -8 -8 -8 -22 Z" fill="none" stroke="#f7eef1" stroke-width="3.2"/>
+      <path d="M-6 -6 C-2 -14 2 -16 6 -8 C5 2 2 8 0 10 C-2 8 -5 2 -6 -6 Z" fill="#c41e3a"/>
+    </g>
+    <circle cx="130" cy="-50" r="5" fill="#c41e3a"/>
+    <circle cx="142" cy="-58" r="4" fill="#c41e3a"/>
+    <circle cx="154" cy="-52" r="3.2" fill="#c41e3a"/>
+    <text x="170" y="0" fill="#f7eef1" font-family="Georgia, 'Times New Roman', serif" font-size="72" font-weight="700">anti</text>
+  </g>
+</svg>
