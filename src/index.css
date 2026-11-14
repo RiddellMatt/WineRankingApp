@@ -2699,7 +2699,8 @@ button.tasting-tag-pill-btn.active {
   justify-content: center;
   width: 7.25rem;
   height: 8.25rem;
-  transform: rotate(-24deg) translateZ(0);
+  /* Upright: stem down, rim up — so pour reads top-down on screen */
+  transform: rotate(8deg) translateZ(0);
   animation: scan-glass-swirl 3.6s ease-in-out infinite;
   filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.42));
 }
@@ -2765,19 +2766,19 @@ button.tasting-tag-pill-btn.active {
 @keyframes scan-glass-swirl {
   0%,
   100% {
-    transform: rotate(-28deg) scale(1) translateZ(0);
+    transform: rotate(6deg) scale(1) translateZ(0);
   }
 
   35% {
-    transform: rotate(-18deg) scale(1.02) translateZ(0);
+    transform: rotate(11deg) scale(1.02) translateZ(0);
   }
 
   55% {
-    transform: rotate(-22deg) scale(1.05) translateZ(0);
+    transform: rotate(9deg) scale(1.04) translateZ(0);
   }
 
   75% {
-    transform: rotate(-32deg) scale(1.02) translateZ(0);
+    transform: rotate(5deg) scale(1.02) translateZ(0);
   }
 }
 
@@ -2806,7 +2807,7 @@ button.tasting-tag-pill-btn.active {
 @media (prefers-reduced-motion: reduce) {
   .scan-pour-glass-tilt {
     animation: none;
-    transform: rotate(-38deg) translateZ(0);
+    transform: rotate(0deg) translateZ(0);
   }
 
   .scan-pour-sweep-beam {
