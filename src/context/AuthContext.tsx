@@ -78,12 +78,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const supabase = getSupabase()
 
-    supabase.auth.getSession().then(({ data }) => {
+    void (async () => {
+      const { data } = await supabase.auth.getSession()
       if (cancelled) return
-      setSession(data.session)
-      if (data.session) cleanAuthParamsFromUrl()
+      let nextSession = data.session
+      // Cold launch often uses a persisted JWT before device clock / GoTrue agree (PostgREST: "JWT issued at future").
+      if (nextSession) {
+        const { data: refreshed, error } = await supabase.auth.refreshSession()
+        if (!cancelled && !error && refreshed.session) {
+          nextSession = refreshed.session
+        }
+      }
+      if (cancelled) return
+      setSession(nextSession)
+      if (nextSession) cleanAuthParamsFromUrl()
       setLoading(false)
-    })
+    })()
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
       if (cancelled) return

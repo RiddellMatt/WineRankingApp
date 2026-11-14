@@ -1,4 +1,5 @@
 import type { RankingPreference } from '../types'
+import { withSupabaseAuthRetry } from './supabaseAuthRetry'
 import { getSupabase, type ProfileRow } from './supabase'
 import {
   isMissingAvatarColumn,
@@ -80,9 +81,11 @@ async function selectMyProfileRow() {
 }
 
 export async function fetchMyProfile(): Promise<UserProfile | null> {
-  const { row, error } = await selectMyProfileRow()
-  if (error) throw error
-  return row ? mapProfileRow(row) : null
+  return withSupabaseAuthRetry(async () => {
+    const { row, error } = await selectMyProfileRow()
+    if (error) throw error
+    return row ? mapProfileRow(row) : null
+  })
 }
 
 export async function updateDisplayName(displayName: string): Promise<UserProfile> {
