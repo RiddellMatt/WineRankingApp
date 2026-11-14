@@ -53,6 +53,7 @@ export interface WineRow {
   rating_buy_again?: number | null
   notes: string
   tasting_tags?: string[] | null
+  with_friend_ids?: string[] | null
   purchased_at: string
   taste: Record<string, number>
   taste_source: string | null

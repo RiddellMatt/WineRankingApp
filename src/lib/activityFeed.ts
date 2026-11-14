@@ -29,6 +29,8 @@ export interface ActivityEvent {
   at: number
   actor: FriendProfile
   wine?: Wine
+  /** Friends the actor tagged on this pour. */
+  withFriends?: FriendProfile[]
   milestone?: ActivityMilestone
   reactions?: EventReactions
 }
@@ -140,9 +142,15 @@ export async function fetchFriendActivity(
       ...milestoneRows.map((r) => r.user_id),
     ]),
   ]
+  const taggedIds = [
+    ...new Set(
+      rows.flatMap((r) => (Array.isArray(r.with_friend_ids) ? (r.with_friend_ids as string[]) : [])),
+    ),
+  ]
+  const profileIdSet = [...new Set([...actorIds, ...taggedIds])]
   const profiles = new Map<string, FriendProfile>()
-  if (actorIds.length > 0) {
-    const profileRows = await fetchProfilesByIds(actorIds)
+  if (profileIdSet.length > 0) {
+    const profileRows = await fetchProfilesByIds(profileIdSet)
     for (const row of profileRows) {
       profiles.set(row.id, {
         id: row.id,
@@ -151,6 +159,13 @@ export async function fetchFriendActivity(
         avatarUrl: row.avatar_url ?? undefined,
       })
     }
+  }
+
+  function taggedProfiles(wine: Wine): FriendProfile[] | undefined {
+    const ids = wine.withFriendIds ?? []
+    if (ids.length === 0) return undefined
+    const tagged = ids.map((id) => profiles.get(id)).filter((p): p is FriendProfile => Boolean(p))
+    return tagged.length > 0 ? tagged : undefined
   }
 
   const events: ActivityEvent[] = []
@@ -166,6 +181,7 @@ export async function fetchFriendActivity(
       at: wine.addedAt,
       actor,
       wine,
+      withFriends: taggedProfiles(wine),
     })
   }
 

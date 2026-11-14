@@ -6,6 +6,7 @@ export type PushNotificationType =
   | 'friend_accepted'
   | 'friend_badge_unlock'
   | 'friend_journey_complete'
+  | 'wine_with_friend'
 
 export interface PushMessage {
   title: string
@@ -47,6 +48,8 @@ export function shouldSendPushForType(
     case 'friend_badge_unlock':
     case 'friend_journey_complete':
       return prefs.friend_milestones !== false
+    case 'wine_with_friend':
+      return prefs.reactions !== false
     default:
       return false
   }
@@ -98,6 +101,14 @@ export function buildPushMessage(input: {
       return {
         title,
         body: `${actorName} completed ${icon} ${journeyTitle}`,
+        deepLink: pushDeepLink('feed'),
+      }
+    }
+    case 'wine_with_friend': {
+      const wine = String(payload.wine_name ?? 'a wine')
+      return {
+        title,
+        body: `${actorName} tried ${wine} with you`,
         deepLink: pushDeepLink('feed'),
       }
     }

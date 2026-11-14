@@ -5,6 +5,7 @@ import { WineCard } from './WineCard'
 import { computePlayerLevel } from '../lib/playerLevel'
 import { compareByRank } from '../lib/ranking'
 import { triedWines, wishlistIdentityKey } from '../lib/wishlist'
+import { formatWithFriendsNames } from '../lib/wineWithFriends'
 import type { RankingPreference, Wine } from '../types'
 
 function sortWinesByRating(wines: Wine[], rankingPreference: RankingPreference): Wine[] {
@@ -26,6 +27,7 @@ export interface FriendCellarViewProps {
   emptyMessage?: string
   completedJourneys?: ReadonlySet<string>
   friendCount?: number
+  friendNameById?: Map<string, string>
 }
 
 export function FriendCellarView({
@@ -43,6 +45,7 @@ export function FriendCellarView({
   emptyMessage = "They haven't logged any wines yet.",
   completedJourneys = new Set(),
   friendCount = 0,
+  friendNameById,
 }: FriendCellarViewProps) {
   const rankById = useMemo(() => {
     const tried = triedWines(wines)
@@ -98,6 +101,9 @@ export function FriendCellarView({
               wishlistSaved={isWishlistSaved?.(wine)}
               wishlistSaving={
                 wishlistSavingKey != null && wishlistSavingKey === wishlistIdentityKey(wine)
+              }
+              withFriendsLabel={
+                friendNameById ? formatWithFriendsNames(wine, friendNameById) : null
               }
             />
           ))}

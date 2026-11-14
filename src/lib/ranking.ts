@@ -122,6 +122,7 @@ export function normalizeWine(raw: Partial<Wine>): Wine {
     rating: raw.rating ?? enjoyment,
     notes: raw.notes ?? '',
     tastingTags: Array.isArray(raw.tastingTags) ? raw.tastingTags : [],
+    withFriendIds: Array.isArray(raw.withFriendIds) ? raw.withFriendIds : [],
     purchasedAt: raw.purchasedAt ?? '',
     taste: raw.taste ?? {},
     tasteSource: raw.tasteSource,

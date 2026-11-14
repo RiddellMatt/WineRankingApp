@@ -2092,6 +2092,88 @@ button.tasting-tag-pill-btn.active {
   color: #f6c9d4;
 }
 
+.wine-with-friends {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--star);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.wine-with-friends-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.with-friends-field {
+  margin-top: 0.75rem;
+}
+
+.with-friends-field-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 0.45rem;
+}
+
+.with-friends-hint {
+  margin: 0 0 0.55rem;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+  line-height: 1.35;
+}
+
+.with-friends-hint.muted {
+  color: var(--text-faint);
+}
+
+.with-friends-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.with-friends-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.65rem 0.28rem 0.35rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.with-friends-chip .avatar-sm {
+  width: 1.35rem;
+  height: 1.35rem;
+  font-size: 0.65rem;
+}
+
+.with-friends-chip.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.with-friends-chip:disabled:not(.active) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.activity-with-friends {
+  color: var(--star);
+  font-weight: 500;
+}
+
 .taste-caption {
   margin: -0.35rem 0 0.7rem;
   font-size: 0.8rem;

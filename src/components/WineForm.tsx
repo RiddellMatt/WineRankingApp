@@ -16,6 +16,9 @@ import { TastingTagsInput } from './TastingTagsInput'
 import { VarietalSelect } from './VarietalSelect'
 import { RegionPicker } from './RegionPicker'
 import { ScanPourOverlay } from './ScanPourOverlay'
+import { WithFriendsPicker } from './WithFriendsPicker'
+import { fetchFriendships, type FriendProfile } from '../lib/friendsDb'
+import { normalizeWithFriendIds } from '../lib/wineWithFriends'
 
 interface Props {
   initial: Wine | null
@@ -31,6 +34,7 @@ interface Props {
   onUpgrade?: () => void
   /** Open the label scan file picker once when adding a new wine. */
   autoOpenScan?: boolean
+  userId?: string
 }
 
 export function WineForm({
@@ -46,6 +50,7 @@ export function WineForm({
   cloudConfigured = false,
   onUpgrade,
   autoOpenScan = false,
+  userId,
 }: Props) {
   const wishlistForm = formMode === 'wishlist'
   const promoteFromWishlist = initial?.status === 'wishlist' && !wishlistForm
@@ -70,6 +75,10 @@ export function WineForm({
   const [tasteBasedOn, setTasteBasedOn] = useState('')
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [tastingTags, setTastingTags] = useState<string[]>(initial?.tastingTags ?? [])
+  const [withFriendIds, setWithFriendIds] = useState<string[]>(
+    normalizeWithFriendIds(initial?.withFriendIds),
+  )
+  const [acceptedFriends, setAcceptedFriends] = useState<FriendProfile[]>([])
   const [error, setError] = useState('')
   const [scanState, setScanState] = useState<'idle' | 'scanning' | 'done' | 'failed'>('idle')
   const [scanMode, setScanMode] = useState<'ai' | 'basic'>('basic')
@@ -85,6 +94,28 @@ export function WineForm({
     const t = window.setTimeout(() => scanInputRef.current?.click(), 120)
     return () => window.clearTimeout(t)
   }, [autoOpenScan, initial])
+
+  useEffect(() => {
+    if (!userId || !signedIn || !cloudConfigured) {
+      setAcceptedFriends([])
+      return
+    }
+    let cancelled = false
+    fetchFriendships(userId)
+      .then((rows) => {
+        if (cancelled) return
+        const list = rows
+          .filter((f) => f.status === 'accepted' && f.friend)
+          .map((f) => f.friend as FriendProfile)
+        setAcceptedFriends(list)
+      })
+      .catch(() => {
+        if (!cancelled) setAcceptedFriends([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [userId, signedIn, cloudConfigured])
 
   useEffect(() => {
     const root = document.documentElement
@@ -315,6 +346,7 @@ export function WineForm({
           : pro
             ? tastingTags
             : tastingTags.filter((id) => catalogTags(false).some((t) => t.id === id)),
+        withFriendIds: wishlistForm ? [] : normalizeWithFriendIds(withFriendIds),
         purchasedAt: purchasedAt.trim(),
         taste: wishlistForm ? {} : taste,
         tasteSource: wishlistForm ? undefined : tasteTouched ? 'custom' : 'typical',
@@ -556,6 +588,17 @@ export function WineForm({
             cellarWines={triedCellar}
             onUpgrade={onUpgrade}
           />
+        )}
+
+        {!wishlistForm && signedIn && cloudConfigured && (
+          <div className="with-friends-field">
+            <span className="with-friends-field-label">Drank with</span>
+            <WithFriendsPicker
+              friends={acceptedFriends}
+              selected={withFriendIds}
+              onChange={setWithFriendIds}
+            />
+          </div>
         )}
 
         <div className="form-grid">
