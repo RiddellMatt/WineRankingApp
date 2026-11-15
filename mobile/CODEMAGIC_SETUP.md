@@ -18,7 +18,7 @@ Android Play Store builds are optional in the same `codemagic.yaml` (second work
 
 1. Enroll in the Apple Developer Program.
 2. **Certificates, Identifiers & Profiles → Identifiers** — register App ID `com.northline.decanti`.
-3. Enable **Sign in with Apple** on the App ID (required when offering Google sign-in).
+3. Enable **Sign in with Apple** on the App ID (required when offering Google sign-in). Full Supabase + Services ID steps: [APPLE_SIGN_IN.md](./APPLE_SIGN_IN.md).
 4. **App Store Connect → Apps → +** — create **Decanti** with bundle ID `com.northline.decanti`.
 5. Note the numeric **Apple ID** (General → App Information). Update `APP_STORE_APPLE_ID` in `codemagic.yaml`.
 6. **TestFlight → Internal Testing** — create a group (e.g. **Internal Testers**) and add testers. Internal groups receive builds automatically; do not list them under `beta_groups` in `codemagic.yaml` (Apple rejects explicit assignment).

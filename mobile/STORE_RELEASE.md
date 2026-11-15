@@ -58,7 +58,7 @@ Rebuild after changing env: `npm run cap:sync`.
 com.northline.decanti://login-callback
 ```
 
-Enable **Google** and **Apple** providers in Supabase (same as web OAuth setup).
+Enable **Google** and **Apple** providers in Supabase (same as web OAuth setup). Step-by-step Apple: [APPLE_SIGN_IN.md](./APPLE_SIGN_IN.md).
 
 Run **section 5** of `supabase/run-in-sql-editor.sql` so OAuth names/avatars seed profiles.
 
