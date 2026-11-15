@@ -27,6 +27,11 @@ export function adsShowForPro(): boolean {
   return envFlag('VITE_ADMOB_SHOW_FOR_PRO')
 }
 
+/** When production fill fails, show Google test banner (QA only). Off by default for real revenue builds. */
+export function productionTestFallbackEnabled(): boolean {
+  return envFlag('VITE_ADMOB_PRODUCTION_TEST_FALLBACK')
+}
+
 /** TestFlight QA chip only — off in App Store release builds. */
 export function adsDebugProbeEnabled(): boolean {
   return envFlag('VITE_ADMOB_DEBUG_PROBE')
@@ -45,6 +50,7 @@ export function adUnitModeLabel(): 'test' | 'prod' {
 export function bundledAdMobTestModeEnv(): string {
   const raw = import.meta.env.VITE_ADMOB_TEST_MODE
   if (raw === undefined || raw === '') return 'default→test'
+  if (raw === 'false') return 'off'
   return String(raw)
 }
 

@@ -14,6 +14,7 @@ import {
   adUnitModeLabel,
   bannerAdUnitId,
   googleTestBannerAdUnitId,
+  productionTestFallbackEnabled,
   shouldUseTestAdUnits,
 } from './adConfig'
 import { isNativeApp } from './platform'
@@ -27,7 +28,9 @@ let refreshMarginTimer: ReturnType<typeof setTimeout> | null = null
 let loadWatchdogTimer: ReturnType<typeof setTimeout> | null = null
 /** True after native SizeChanged reports height > 0 (safe to remove+re-show for margin). */
 let nativeBannerSized = false
-const PENDING_SLOT_PX = 50
+/** Reserve space while loading; adaptive banners are often taller than 50pt. */
+const PENDING_SLOT_PX = 60
+const PROVISIONAL_BANNER_HEIGHT_PX = 60
 
 function syncBannerContentPad(heightPx: number): void {
   const root = document.documentElement
@@ -141,14 +144,16 @@ function armNativeLoadWatchdog(adId: string, ms = 8_000): void {
     loadWatchdogTimer = null
     if (!running || nativeBannerSized) return
   void (async () => {
-    setBannerAdDebug('timeout', 'retry BANNER m0')
+    const margin = shouldUseTestAdUnits() && Capacitor.getPlatform() === 'ios' ? 0 : bannerBottomMarginPx()
+    setBannerAdDebug('timeout', `retry BANNER m=${margin}`)
     try {
       await AdMob.removeBanner()
       nativeBannerSized = false
+      setBannerInset(PROVISIONAL_BANNER_HEIGHT_PX)
       await AdMob.showBanner({
         ...bannerOptions(adId),
         adSize: BannerAdSize.BANNER,
-        margin: 0,
+        margin,
       })
     } catch (err) {
       setBannerAdDebug('timeout', err instanceof Error ? err.message.slice(0, 40) : 'retry failed')
@@ -166,7 +171,7 @@ async function presentBanner(adId: string, size = BannerAdSize.ADAPTIVE_BANNER):
 }
 
 async function tryTestBannerAfterProductionNoFill(): Promise<void> {
-  if (shouldUseTestAdUnits() || productionLoadFailed) return
+  if (shouldUseTestAdUnits() || productionLoadFailed || !productionTestFallbackEnabled()) return
   const testId = googleTestBannerAdUnitId()
   if (!testId || !running) return
   productionLoadFailed = true
@@ -198,6 +203,9 @@ async function attachListeners(): Promise<void> {
     }),
     AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
       setBannerAdDebug('loaded', 'native creative')
+      if (!nativeBannerSized) {
+        setBannerInset(PROVISIONAL_BANNER_HEIGHT_PX)
+      }
     }),
     AdMob.addListener(BannerAdPluginEvents.FailedToLoad, (err) => {
       const message =
@@ -209,7 +217,7 @@ async function attachListeners(): Promise<void> {
       const short = message.replace(/\s*<https?:\/\/[^>]+>/g, '').slice(0, 72)
       setBannerAdDebug('failed', `${short} (${adUnitModeLabel()})`)
       if (shouldUseTestAdUnits()) setPendingAdSlot()
-      else setBannerInset(0)
+      else setPendingAdSlot()
       void tryTestBannerAfterProductionNoFill()
     }),
   ])

@@ -9,6 +9,7 @@ Use this before each **App Store / TestFlight release candidate** build. Goal: n
 | `VITE_ADMOB_TEST_MODE` | `false` after AdMob verification | `true` or omit |
 | `VITE_ADMOB_DEBUG_PROBE` | **unset** or `false` | `true` while debugging ads |
 | `VITE_ADMOB_SHOW_FOR_PRO` | **unset** | optional `true` to test banners as Pro |
+| `VITE_ADMOB_PRODUCTION_TEST_FALLBACK` | **unset** | optional `true` to show Google test ads when prod has no fill |
 
 Production banner units default in `src/lib/adConfig.ts`. Info.plist app id is set by `scripts/configure-admob-ios-app-id.mjs` at build time.
 

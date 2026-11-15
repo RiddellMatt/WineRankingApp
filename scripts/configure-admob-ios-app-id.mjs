@@ -10,7 +10,7 @@ const root = resolve(import.meta.dirname, '..')
 const plistPath = resolve(root, 'ios/App/App/Info.plist')
 
 const PRODUCTION_IOS_APP_ID = 'ca-app-pub-5228268438882570~1709768455'
-const GOOGLE_SAMPLE_IOS_APP_ID = 'ca-app-pub-3940256089942544~1458002511'
+const GOOGLE_SAMPLE_IOS_APP_ID = 'ca-app-pub-3940256099942544~1458002511'
 
 function useTestAdsAtBuildTime() {
   return process.env.VITE_ADMOB_TEST_MODE !== 'false'

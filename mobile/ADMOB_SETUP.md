@@ -166,7 +166,7 @@ This comes from **Google’s ad servers**, not from Capacitor. The native banner
 
 **When `[test]`** and it still fails: the CI build should use Google’s sample **app** id in `Info.plist` (`configure-admob-ios-app-id.mjs`). Trigger a fresh iOS build after merge.
 
-The app automatically retries **Google test** banners after a production load failure when `VITE_ADMOB_TEST_MODE=false`.
+With `VITE_ADMOB_TEST_MODE=false`, a failed production load keeps a **reserved bottom slot** (no Google test creative) unless you opt in with `VITE_ADMOB_PRODUCTION_TEST_FALLBACK=true` for pipeline QA.
 
 ### 11. Common pitfalls
 
