@@ -644,11 +644,7 @@ export default function App() {
     ;(async () => {
       try {
         const localBadges = loadEarnedBadgeTiers()
-        const syncedBadges = await syncEarnedBadgeTiersWithCellar(
-          cloudUser.id,
-          localBadges,
-          buildBadgeInput(winesRef.current, badgeFriendCountRef.current),
-        )
+        const syncedBadges = await syncEarnedBadgeTiersWithCellar(cloudUser.id, localBadges)
         const localJourneys = loadCompletedJourneysLocal()
         const syncedJourneys = await syncJourneyCompletions(cloudUser.id, localJourneys)
         if (!cancelled) {

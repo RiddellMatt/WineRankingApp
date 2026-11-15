@@ -1,5 +1,9 @@
-import type { BadgeTier } from './badges'
-import { computeDisplayedBadgeProgress } from './badgeUnlocks'
+import { BADGE_DEFINITIONS, type BadgeTier } from './badges'
+import {
+  type BadgeTierSnapshot,
+  loadEarnedBadgeTiers,
+  lockedBadgeSnapshot,
+} from './badgeUnlocks'
 import { isWishlist, triedWines } from './wishlist'
 import type { Wine } from '../types'
 
@@ -54,22 +58,29 @@ export function xpForWine(wine: Wine): number {
   return xp
 }
 
-export function computeTotalXp(input: PlayerLevelInput): number {
+function badgeXpFromEarnedLedger(earned: BadgeTierSnapshot): number {
+  let xp = 0
+  for (const def of BADGE_DEFINITIONS) {
+    const tier = earned[def.id] ?? 'locked'
+    xp += BADGE_TIER_XP[tier]
+  }
+  return xp
+}
+
+function earnedBadgeTiers(override?: BadgeTierSnapshot | null): BadgeTierSnapshot {
+  return override ?? loadEarnedBadgeTiers() ?? lockedBadgeSnapshot()
+}
+
+export function computeTotalXp(
+  input: PlayerLevelInput,
+  earnedOverride?: BadgeTierSnapshot | null,
+): number {
   let total = 0
   for (const wine of triedWines(input.wines)) {
     total += xpForWine(wine)
   }
   total += input.completedJourneys.size * JOURNEY_COMPLETE_XP
-
-  const badges = computeDisplayedBadgeProgress({
-    wines: input.wines,
-    friendCount: input.friendCount,
-    completedJourneys: input.completedJourneys,
-  })
-  for (const badge of badges) {
-    total += BADGE_TIER_XP[badge.tier]
-  }
-
+  total += badgeXpFromEarnedLedger(earnedBadgeTiers(earnedOverride))
   return total
 }
 
@@ -91,8 +102,11 @@ export function levelTitle(level: number): string {
   return 'Novice'
 }
 
-export function computePlayerLevel(input: PlayerLevelInput): PlayerLevelState {
-  const totalXp = computeTotalXp(input)
+export function computePlayerLevel(
+  input: PlayerLevelInput,
+  earnedOverride?: BadgeTierSnapshot | null,
+): PlayerLevelState {
+  const totalXp = computeTotalXp(input, earnedOverride)
   let level = 1
   while (level < MAX_LEVEL && totalXp >= xpRequiredForLevel(level + 1)) {
     level += 1
