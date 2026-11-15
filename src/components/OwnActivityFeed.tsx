@@ -77,7 +77,7 @@ export function OwnActivityFeed({ events, rankingPreference, emptyHint }: Props)
         const title = [wine.name, wine.vintage].filter(Boolean).join(' ')
         let actionPrefix = 'Logged'
         if (event.type === 'saved_to_try') {
-          actionPrefix = 'Saved to try'
+          actionPrefix = 'Saved'
         } else if (!isWishlist(wine) && compositeScore(wine, rankingPreference) > 0) {
           actionPrefix = 'Rated'
         }

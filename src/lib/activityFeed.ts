@@ -42,7 +42,7 @@ export function activityEventType(wine: Pick<Wine, 'status'>): WineActivityEvent
 export function activityEventLabel(type: ActivityEventType): string {
   switch (type) {
     case 'saved_to_try':
-      return 'saved to try'
+      return 'saved'
     case 'badge_unlock':
       return 'earned a badge'
     case 'journey_complete':
