@@ -163,7 +163,7 @@ export function computeDisplayedBadgeProgress(
  * When `seedIfMissing` is false (pending save queued), keep locked rather than seeding from live wines.
  */
 export function hydrateEarnedBadgeTiers(
-  input: BadgeInput,
+  _input: BadgeInput,
   options?: { seedIfMissing?: boolean },
 ): BadgeTierSnapshot {
   const stored = loadEarnedBadgeTiers()
@@ -173,9 +173,9 @@ export function hydrateEarnedBadgeTiers(
     return lockedBadgeSnapshot()
   }
 
-  const current = snapshotFromBadgeInput(input)
-  saveEarnedBadgeTiers(current)
-  return current
+  const locked = lockedBadgeSnapshot()
+  saveEarnedBadgeTiers(locked)
+  return locked
 }
 
 export function evaluateBadgeProgressChange(

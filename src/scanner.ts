@@ -32,6 +32,8 @@ export const VARIETALS: [string, WineType][] = [
   ['chardonnay', 'White'],
   ['merlot', 'Red'],
   ['malbec', 'Red'],
+  ['red blend', 'Red'],
+  ['white blend', 'White'],
   ['syrah', 'Red'],
   ['shiraz', 'Red'],
   ['zinfandel', 'Red'],

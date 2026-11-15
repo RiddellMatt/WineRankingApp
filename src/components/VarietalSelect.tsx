@@ -1,4 +1,8 @@
-import { WINE_VARIETAL_OPTIONS, VARIETAL_CUSTOM } from '../lib/wineVarietals'
+import {
+  VARIETAL_CUSTOM,
+  varietalMatchesOption,
+  WINE_VARIETAL_OPTIONS,
+} from '../lib/wineVarietals'
 
 interface Props {
   value: string
@@ -9,12 +13,16 @@ interface Props {
 function isListed(value: string): boolean {
   const v = value.trim()
   if (!v) return false
-  return WINE_VARIETAL_OPTIONS.some((o) => o.toLowerCase() === v.toLowerCase())
+  return WINE_VARIETAL_OPTIONS.some((o) => varietalMatchesOption(v, o))
 }
 
 export function VarietalSelect({ value, onChange, id }: Props) {
   const customMode = value.trim() !== '' && !isListed(value)
-  const selectValue = customMode ? VARIETAL_CUSTOM : isListed(value) ? value : ''
+  const selectValue = customMode
+    ? VARIETAL_CUSTOM
+    : isListed(value)
+      ? (WINE_VARIETAL_OPTIONS.find((o) => varietalMatchesOption(value, o)) ?? value)
+      : ''
 
   return (
     <div className="varietal-select">
