@@ -16,7 +16,6 @@ import { fetchFriendships } from '../lib/friendsDb'
 import { computePlayerLevel } from '../lib/playerLevel'
 import { ProfileLevelBar } from './ProfileLevelBar'
 import { IconMenu } from './icons/UiIcons'
-import { RankingPreferencePicker } from './RankingPreferencePicker'
 import type { UserProfile } from '../lib/profileDb'
 import type { RankingPreference, Wine } from '../types'
 
@@ -28,7 +27,6 @@ interface Props {
   wines: Wine[]
   completedJourneys: Set<string>
   rankingPreference: RankingPreference
-  onRankingPreferenceSaved: (preference: RankingPreference) => Promise<void>
   onOpenSettings: () => void
   onViewFriendCellar: (friendId: string, friendName: string, avatarUrl?: string) => void
 }
@@ -39,7 +37,6 @@ export function ProfilePanel({
   wines,
   completedJourneys,
   rankingPreference,
-  onRankingPreferenceSaved,
   onOpenSettings,
   onViewFriendCellar,
 }: Props) {
@@ -116,27 +113,23 @@ export function ProfilePanel({
           size="md"
         />
         <div className="profile-panel-identity">
-          <h2 className="profile-panel-name">{displayName}</h2>
+          <div className="profile-panel-title-row">
+            <h2 className="profile-panel-name">{displayName}</h2>
+            <button
+              type="button"
+              className="profile-panel-menu"
+              onClick={onOpenSettings}
+              aria-label="Settings menu"
+            >
+              <IconMenu className="profile-panel-menu-icon" size={22} />
+            </button>
+          </div>
           {(profile.email ?? email) && (
             <p className="profile-panel-email">{profile.email ?? email}</p>
           )}
           <ProfileLevelBar level={playerLevel} />
         </div>
-        <button
-          type="button"
-          className="profile-panel-menu"
-          onClick={onOpenSettings}
-          aria-label="Settings menu"
-        >
-          <IconMenu className="profile-panel-menu-icon" size={22} />
-        </button>
       </header>
-
-      <RankingPreferencePicker
-        className="profile-panel-ranking"
-        rankingPreference={rankingPreference}
-        onRankingPreferenceSaved={onRankingPreferenceSaved}
-      />
 
       <section className="profile-tabs friends-tabs" aria-label="Profile views">
         <button

@@ -191,6 +191,21 @@ export type RestoreDecantiProResult = {
   syncNote?: string
 }
 
+/** If StoreKit still shows Pro but Supabase does not, sync without re-prompting Restore. */
+export async function reconcileProWithSupabase(supabaseUserId: string): Promise<boolean> {
+  if (!isIosStoreKitConfigured()) return false
+  try {
+    await ensureConfigured()
+    await Purchases.logIn({ appUserID: supabaseUserId })
+    const { customerInfo } = await Purchases.getCustomerInfo()
+    if (!entitlementActive(customerInfo)) return false
+    const result = await syncRevenueCatEntitlement()
+    return Boolean(result.isPro)
+  } catch {
+    return false
+  }
+}
+
 export async function restoreDecantiPro(
   supabaseUserId?: string | null,
 ): Promise<RestoreDecantiProResult> {
