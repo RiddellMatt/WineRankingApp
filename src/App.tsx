@@ -24,6 +24,7 @@ import { AdBannerProbe } from './components/AdBannerProbe'
 import { setBannerAdDebug } from './lib/bannerAdDebug'
 import { startBannerAds, stopBannerAds } from './lib/bannerAds'
 import { isNativeApp } from './lib/platform'
+import { isIosStoreKitConfigured, reconcileProWithSupabase } from './lib/revenueCat'
 import { useAuth } from './context/AuthContext'
 import { AddWineChooser, type AddWineDestination } from './components/AddWineChooser'
 import { AuthScreen } from './components/AuthScreen'
@@ -560,19 +561,32 @@ export default function App() {
     }
     setProfileLoaded(false)
     let cancelled = false
-    fetchMyProfile()
-      .then((p) => {
+    void (async () => {
+      try {
+        let p = await fetchMyProfile()
+        if (
+          !cancelled &&
+          cloudUser?.id &&
+          p &&
+          !p.isPro &&
+          isIosStoreKitConfigured()
+        ) {
+          const synced = await reconcileProWithSupabase(cloudUser.id)
+          if (synced && !cancelled) {
+            p = await fetchMyProfile()
+          }
+        }
         if (!cancelled) {
           setProfile(p)
           setPro(syncProFromServer(p?.isPro, true))
         }
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) setProfile(null)
-      })
-      .finally(() => {
+      }
+      finally {
         if (!cancelled) setProfileLoaded(true)
-      })
+      }
+    })()
     return () => {
       cancelled = true
     }
