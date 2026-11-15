@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { TabBar, type Tab } from '@capawesome/capacitor-tab-bar'
+import { refreshBannerMargin } from './bannerAds'
 
 export type NativeTabId = 'cellar' | 'friends' | 'scan' | 'insights' | 'account'
 
@@ -83,6 +84,9 @@ export async function syncNativeTabBar(options: {
       await TabBar.show()
       visible = true
     }
+    window.setTimeout(() => {
+      void refreshBannerMargin(true)
+    }, 500)
   } catch (err) {
     console.warn('Native tab bar unavailable', err)
     document.documentElement.classList.remove('native-ios-tab-bar')

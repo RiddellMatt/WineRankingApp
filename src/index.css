@@ -6755,6 +6755,6 @@ html.native-ios-tab-bar.ad-banner-pending.show-banner-ad::after {
 
 html.native-ios-tab-bar .ad-banner-probe {
   bottom: calc(
-    env(safe-area-inset-bottom, 0px) + var(--banner-ad-height, 0px) + 0.35rem
+    env(safe-area-inset-bottom, 0px) + var(--banner-ad-height, 0px) + 3.25rem
   );
 }

@@ -22,7 +22,7 @@ import {
 import { adsDebugProbeEnabled, adsEnabledForAccount } from './lib/adConfig'
 import { AdBannerProbe } from './components/AdBannerProbe'
 import { setBannerAdDebug } from './lib/bannerAdDebug'
-import { startBannerAds, stopBannerAds } from './lib/bannerAds'
+import { refreshBannerMargin, startBannerAds, stopBannerAds } from './lib/bannerAds'
 import { isNativeApp } from './lib/platform'
 import { isIosStoreKitConfigured, reconcileProWithSupabase } from './lib/revenueCat'
 import { useAuth } from './context/AuthContext'
@@ -287,6 +287,11 @@ export default function App() {
 
   useEffect(() => {
     void selectNativeTab(view)
+    if (isNativeApp()) {
+      window.setTimeout(() => {
+        void refreshBannerMargin(true)
+      }, 400)
+    }
   }, [view])
 
   useEffect(() => {
