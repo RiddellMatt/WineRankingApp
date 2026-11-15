@@ -184,6 +184,7 @@ export default function App() {
     id: string
     name: string
     avatarUrl?: string
+    focusWineId?: string
   } | null>(null)
   const [cellarLoading, setCellarLoading] = useState(false)
   const [cellarReady, setCellarReady] = useState(false)
@@ -1125,7 +1126,12 @@ export default function App() {
     }
   }
 
-  async function viewFriendCellar(friendId: string, friendName: string, avatarUrl?: string) {
+  async function viewFriendCellar(
+    friendId: string,
+    friendName: string,
+    avatarUrl?: string,
+    focusWineId?: string,
+  ) {
     setCellarLoading(true)
     try {
       const [list, journeyMap] = await Promise.all([
@@ -1134,7 +1140,7 @@ export default function App() {
       ])
       setFriendWines(list)
       setFriendCompletedJourneys(journeyMap.get(friendId) ?? new Set())
-      setFriendView({ id: friendId, name: friendName, avatarUrl })
+      setFriendView({ id: friendId, name: friendName, avatarUrl, focusWineId })
       setView('friends')
     } catch (e) {
       window.alert(`Could not load their cellar: ${(e as Error).message}`)
@@ -1241,6 +1247,7 @@ export default function App() {
               avatarUrl={friendView.avatarUrl}
               userId={friendView.id}
               wines={friendWines}
+              highlightWineId={friendView.focusWineId}
               friendNameById={friendNameById}
               rankingPreference={rankingPreference}
               shareAttribution={`From ${friendView.name}'s cellar`}

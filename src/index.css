@@ -1700,6 +1700,22 @@ a.icon-btn {
   overflow-x: clip;
 }
 
+.wine-card-highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(196, 30, 58, 0.35);
+}
+
+.friend-cellar-wishlist {
+  margin-top: 1.25rem;
+}
+
+.friend-cellar-wishlist-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
 .wine-favorite-btn {
   position: absolute;
   top: 0.55rem;
@@ -4216,6 +4232,22 @@ html.app-scroll-locked.native-app .content {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+}
+
+.activity-item-interactive {
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.activity-item-interactive:hover {
+  border-color: rgba(196, 30, 58, 0.45);
+  background: var(--bg-soft);
+}
+
+.activity-item-interactive:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .activity-body {

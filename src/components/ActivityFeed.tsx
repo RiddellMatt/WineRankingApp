@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import { Avatar } from './Avatar'
 import { ShareWineButton } from './ShareWineButton'
 import {
@@ -28,7 +29,12 @@ interface Props {
   loading?: boolean
   emptyHint: string
   reactionsEnabled?: boolean
-  onViewCellar: (friendId: string, friendName: string, avatarUrl?: string) => void
+  onViewCellar: (
+    friendId: string,
+    friendName: string,
+    avatarUrl?: string,
+    focusWineId?: string,
+  ) => void
   onSaveToWishlist?: (wine: Wine, friendName: string) => void | Promise<void>
   isWishlistSaved?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
   savingWishlistKey?: string | null
@@ -184,8 +190,40 @@ export function ActivityFeed({
         const reactions = event.reactions
         const reactionBusy = togglingReactionKey === event.id
 
+        function openFriendWine(focusWineId: string) {
+          onViewCellar(
+            event.actor.id,
+            actorLabel(event.actor, viewerId),
+            event.actor.avatarUrl,
+            focusWineId,
+          )
+        }
+
+        function onWineActivityClick(e: MouseEvent) {
+          if (isOwn) return
+          const target = e.target as HTMLElement
+          if (target.closest('button, a, [role="button"]')) return
+          openFriendWine(wine.id)
+        }
+
         return (
-          <li className="activity-item" key={event.id}>
+          <li
+            className={`activity-item${!isOwn ? ' activity-item-interactive' : ''}`}
+            key={event.id}
+            onClick={onWineActivityClick}
+            onKeyDown={
+              !isOwn
+                ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      openFriendWine(wine.id)
+                    }
+                  }
+                : undefined
+            }
+            role={!isOwn ? 'button' : undefined}
+            tabIndex={!isOwn ? 0 : undefined}
+          >
             <Avatar
               displayName={name}
               email={event.actor.email}
@@ -209,15 +247,9 @@ export function ActivityFeed({
                   <button
                     type="button"
                     className="link-btn"
-                    onClick={() =>
-                      onViewCellar(
-                        event.actor.id,
-                        actorLabel(event.actor, viewerId),
-                        event.actor.avatarUrl,
-                      )
-                    }
+                    onClick={() => openFriendWine(wine.id)}
                   >
-                    View cellar
+                    View wine
                   </button>
                 )}
                 {canShare && (
