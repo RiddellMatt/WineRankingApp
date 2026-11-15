@@ -96,5 +96,11 @@ export function friendlyAuthError(message: string): string {
       'then try again.'
     )
   }
+  if (/provider.*not enabled|unsupported provider|apple.*not configured|validation failed/i.test(message)) {
+    return (
+      'Sign in with Apple is not enabled for this Supabase project yet. In Supabase → Authentication → Providers → Apple, ' +
+      'turn it on and add your Apple Services ID, Team ID, Key ID, and .p8 secret. See mobile/APPLE_SIGN_IN.md in the repo.'
+    )
+  }
   return message
 }
