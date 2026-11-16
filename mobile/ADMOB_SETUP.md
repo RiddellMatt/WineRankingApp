@@ -149,14 +149,20 @@ Then **new iOS TestFlight / Play** builds. Ads do not update via web-only deploy
 
 ### 10. “Account not approved yet” (dashboard was approved, then pending again)
 
-This string comes from **Google’s ad servers**, not from Decanti code. It often appears after **AdMob account or app settings change** (e.g. switching banner background to transparent, editing app link, payments/tax, Policy center).
+This string comes from **Google’s ad servers**, not from Decanti code. It often appears after **AdMob account settings change** — especially **Account → Seller information (sellers.json)** switching between **Confidential** and **Transparent** (identity/domain checks), plus app link edits, payments/tax, or Policy center items. This is unrelated to how the in-app banner looks.
+
+**Seller information (sellers.json) — not in-app ad styling**
+
+- **Transparent:** your business name (and optional verified domain) can appear in Google’s public [sellers.json](https://storage.googleapis.com/adx-rtb-dictionaries/sellers.json). Google may run **identity verification** when you switch here; approval can follow once that finishes.
+- **Confidential:** less disclosure in sellers.json; some buyers still require Transparent for high fill — that’s a business choice, not a Decanti setting.
+- After you **Save** a change, verification can flip to **in progress** again even if you were approved before. **Don’t toggle Confidential ↔ Transparent** while home still says “isn’t approved yet”; pick one, complete Payments/legal name if prompted, optionally add **Verify** on a domain you control, then wait.
 
 **In AdMob console**
 
-1. **Policy center** — resolve any holds; “being verified” can return after implementation changes.
-2. **Payments** — tax/banking still complete.
+1. **Policy center** — resolve any holds; “being verified” can return after seller-info or app changes.
+2. **Payments** — legal name matches what you expect in sellers.json when Transparent.
 3. **Apps → Decanti (iOS)** — app linked to `com.northline.decanti`; unit active.
-4. Avoid toggling ad format/placement repeatedly while under review.
+4. Avoid repeated Save churn on Account settings while under review.
 
 **While verification is pending**
 
