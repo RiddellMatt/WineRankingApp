@@ -147,7 +147,26 @@ Then **new iOS TestFlight / Play** builds. Ads do not update via web-only deploy
 | Production | Real units + real app IDs + `VITE_ADMOB_TEST_MODE=false` → real impressions count toward pay. |
 | Pro users | With `VITE_ADMOB_SHOW_FOR_PRO` unset, Pro never loads banners. |
 
-### 10. “Publisher data not found” (iOS probe shows `failed — …`)
+### 10. “Account not approved yet” (dashboard was approved, then pending again)
+
+This string comes from **Google’s ad servers**, not from Decanti code. It often appears after **AdMob account or app settings change** (e.g. switching banner background to transparent, editing app link, payments/tax, Policy center).
+
+**In AdMob console**
+
+1. **Policy center** — resolve any holds; “being verified” can return after implementation changes.
+2. **Payments** — tax/banking still complete.
+3. **Apps → Decanti (iOS)** — app linked to `com.northline.decanti`; unit active.
+4. Avoid toggling ad format/placement repeatedly while under review.
+
+**While verification is pending**
+
+- Set Codemagic `VITE_ADMOB_TEST_MODE=true` (or omit it) so builds use **Google test ads** and layout can be checked.
+- Unset `VITE_ADMOB_DEBUG_PROBE` on builds you use daily (no red error chip).
+- When prod is `false` and Google returns “account not approved”, the app **clears the bottom gutter** (no dashed placeholder).
+
+Real **production** revenue needs dashboard **Ready / approved** again; that is not something a new TestFlight build can force.
+
+### 11. “Publisher data not found” (iOS probe shows `failed — …`)
 
 This comes from **Google’s ad servers**, not from Capacitor. The native banner **did** load and the SDK returned `bannerAdFailedToLoad`.
 
@@ -168,7 +187,7 @@ This comes from **Google’s ad servers**, not from Capacitor. The native banner
 
 With `VITE_ADMOB_TEST_MODE=false`, a failed production load keeps a **reserved bottom slot** (no Google test creative) unless you opt in with `VITE_ADMOB_PRODUCTION_TEST_FALLBACK=true` for pipeline QA.
 
-### 11. Common pitfalls
+### 12. Common pitfalls
 
 - **`initialize()` before UMP consent** — request consent first, then `initialize()` + `showBanner()` (see `bannerAds.ts`).
 - **Production unit, no fill** — new AdMob apps often show no banner until verified; leave `VITE_ADMOB_TEST_MODE` unset (Google test ads) until you see a banner, or use the app’s built-in test fallback when production fails.
