@@ -147,7 +147,32 @@ Then **new iOS TestFlight / Play** builds. Ads do not update via web-only deploy
 | Production | Real units + real app IDs + `VITE_ADMOB_TEST_MODE=false` → real impressions count toward pay. |
 | Pro users | With `VITE_ADMOB_SHOW_FOR_PRO` unset, Pro never loads banners. |
 
-### 10. “Publisher data not found” (iOS probe shows `failed — …`)
+### 10. “Account not approved yet” (dashboard was approved, then pending again)
+
+This string comes from **Google’s ad servers**, not from Decanti code. It often appears after **AdMob account settings change** — especially **Account → Seller information (sellers.json)** switching between **Confidential** and **Transparent** (identity/domain checks), plus app link edits, payments/tax, or Policy center items. This is unrelated to how the in-app banner looks.
+
+**Seller information (sellers.json) — not in-app ad styling**
+
+- **Transparent:** your business name (and optional verified domain) can appear in Google’s public [sellers.json](https://storage.googleapis.com/adx-rtb-dictionaries/sellers.json). Google may run **identity verification** when you switch here; approval can follow once that finishes.
+- **Confidential:** less disclosure in sellers.json; some buyers still require Transparent for high fill — that’s a business choice, not a Decanti setting.
+- After you **Save** a change, verification can flip to **in progress** again even if you were approved before. **Don’t toggle Confidential ↔ Transparent** while home still says “isn’t approved yet”; pick one, complete Payments/legal name if prompted, optionally add **Verify** on a domain you control, then wait.
+
+**In AdMob console**
+
+1. **Policy center** — resolve any holds; “being verified” can return after seller-info or app changes.
+2. **Payments** — legal name matches what you expect in sellers.json when Transparent.
+3. **Apps → Decanti (iOS)** — app linked to `com.northline.decanti`; unit active.
+4. Avoid repeated Save churn on Account settings while under review.
+
+**While verification is pending**
+
+- Set Codemagic `VITE_ADMOB_TEST_MODE=true` (or omit it) so builds use **Google test ads** and layout can be checked.
+- Unset `VITE_ADMOB_DEBUG_PROBE` on builds you use daily (no red error chip).
+- When prod is `false` and Google returns “account not approved”, the app **clears the bottom gutter** (no dashed placeholder).
+
+Real **production** revenue needs dashboard **Ready / approved** again; that is not something a new TestFlight build can force.
+
+### 11. “Publisher data not found” (iOS probe shows `failed — …`)
 
 This comes from **Google’s ad servers**, not from Capacitor. The native banner **did** load and the SDK returned `bannerAdFailedToLoad`.
 
@@ -168,7 +193,7 @@ This comes from **Google’s ad servers**, not from Capacitor. The native banner
 
 With `VITE_ADMOB_TEST_MODE=false`, a failed production load keeps a **reserved bottom slot** (no Google test creative) unless you opt in with `VITE_ADMOB_PRODUCTION_TEST_FALLBACK=true` for pipeline QA.
 
-### 11. Common pitfalls
+### 12. Common pitfalls
 
 - **`initialize()` before UMP consent** — request consent first, then `initialize()` + `showBanner()` (see `bannerAds.ts`).
 - **Production unit, no fill** — new AdMob apps often show no banner until verified; leave `VITE_ADMOB_TEST_MODE` unset (Google test ads) until you see a banner, or use the app’s built-in test fallback when production fails.

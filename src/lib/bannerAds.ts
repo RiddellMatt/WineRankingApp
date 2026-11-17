@@ -32,6 +32,13 @@ let nativeBannerSized = false
 const PENDING_SLOT_PX = 60
 const PROVISIONAL_BANNER_HEIGHT_PX = 60
 
+/** Google errors that mean prod will not fill soon — avoid reserved empty gutter. */
+function isAdAccountOrSetupBlock(message: string): boolean {
+  return /account not approved|publisher data not found|not approved yet|ad unit.*not found/i.test(
+    message,
+  )
+}
+
 function syncBannerContentPad(heightPx: number): void {
   const root = document.documentElement
   if (heightPx <= 0) {
@@ -216,8 +223,13 @@ async function attachListeners(): Promise<void> {
       nativeBannerSized = false
       const short = message.replace(/\s*<https?:\/\/[^>]+>/g, '').slice(0, 72)
       setBannerAdDebug('failed', `${short} (${adUnitModeLabel()})`)
-      if (shouldUseTestAdUnits()) setPendingAdSlot()
-      else setPendingAdSlot()
+      if (shouldUseTestAdUnits()) {
+        setPendingAdSlot()
+      } else if (isAdAccountOrSetupBlock(message)) {
+        setBannerInset(0)
+      } else {
+        setPendingAdSlot()
+      }
       void tryTestBannerAfterProductionNoFill()
     }),
   ])
