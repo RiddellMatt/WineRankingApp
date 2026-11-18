@@ -28,7 +28,8 @@ export default defineConfig(({ mode }) => {
               manifest: {
                 name: 'Decanti',
                 short_name: 'Decanti',
-                description: "Decanti — rank, remember, and share every wine you've tried.",
+                description:
+                  'Decanti is a wine ranking app. Rate every bottle you try, keep a want-to-try list, and share your cellar with friends.',
                 theme_color: '#12080c',
                 background_color: '#12080c',
                 display: 'standalone',
