@@ -15,7 +15,6 @@ import {
 import { fetchFriendships } from '../lib/friendsDb'
 import { computePlayerLevel } from '../lib/playerLevel'
 import { ProfileLevelBar } from './ProfileLevelBar'
-import { IconMenu } from './icons/UiIcons'
 import type { UserProfile } from '../lib/profileDb'
 import type { RankingPreference, Wine } from '../types'
 
@@ -27,7 +26,6 @@ interface Props {
   wines: Wine[]
   completedJourneys: Set<string>
   rankingPreference: RankingPreference
-  onOpenSettings: () => void
   onViewFriendCellar: (friendId: string, friendName: string, avatarUrl?: string) => void
 }
 
@@ -37,7 +35,6 @@ export function ProfilePanel({
   wines,
   completedJourneys,
   rankingPreference,
-  onOpenSettings,
   onViewFriendCellar,
 }: Props) {
   const [tab, setTab] = useState<ProfileTab>('activity')
@@ -113,17 +110,7 @@ export function ProfilePanel({
           size="md"
         />
         <div className="profile-panel-identity">
-          <div className="profile-panel-title-row">
-            <h2 className="profile-panel-name">{displayName}</h2>
-            <button
-              type="button"
-              className="profile-panel-menu"
-              onClick={onOpenSettings}
-              aria-label="Settings menu"
-            >
-              <IconMenu className="profile-panel-menu-icon" size={22} />
-            </button>
-          </div>
+          <h2 className="profile-panel-name">{displayName}</h2>
           {(profile.email ?? email) && (
             <p className="profile-panel-email">{profile.email ?? email}</p>
           )}

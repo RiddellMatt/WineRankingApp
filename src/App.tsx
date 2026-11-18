@@ -19,6 +19,7 @@ import {
   selectNativeTab,
   setNativeTabBarSelectHandler,
   syncNativeTabBar,
+  type NativeTabId,
 } from './lib/nativeTabBar'
 import { adsDebugProbeEnabled, adsEnabledForAccount } from './lib/adConfig'
 import { AdBannerProbe } from './components/AdBannerProbe'
@@ -46,14 +47,15 @@ import {
   IconBarChart,
   IconChatBubble,
   IconCellarList,
+  IconEllipsis,
   IconLock,
   IconPlus,
-  IconUser,
 } from './components/icons/UiIcons'
+import { Avatar } from './components/Avatar'
 import { FriendsPanel } from './components/FriendsPanel'
 import { NotificationsBell } from './components/NotificationsBell'
 import { FriendCellarView } from './components/FriendCellarView'
-import { ProfileScreen, type ProfileScreenMode } from './components/ProfileScreen'
+import { ProfileScreen } from './components/ProfileScreen'
 import { SETTINGS_SECTION_TITLES, type AccountSettingsSection } from './components/accountSettings'
 import {
   BadgeUnlockToasts,
@@ -134,7 +136,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'addedAt', label: 'Recently added' },
 ]
 
-type View = 'cellar' | 'scan' | 'insights' | 'friends' | 'account'
+type View = 'cellar' | 'scan' | 'insights' | 'friends' | 'more' | 'profile'
 type CellarSegment = 'tried' | 'wishlist'
 
 const VIEW_PAGE_TITLES: Record<View, string> = {
@@ -142,7 +144,8 @@ const VIEW_PAGE_TITLES: Record<View, string> = {
   scan: 'Add',
   insights: 'Stats',
   friends: 'Social',
-  account: 'Profile',
+  more: 'More',
+  profile: 'Profile',
 }
 
 function sortWines(list: Wine[], sortKey: SortKey, rankingPreference: RankingPreference): Wine[] {
@@ -193,7 +196,6 @@ export default function App() {
   const [pro, setPro] = useState<boolean>(loadProStatus)
   const [view, setView] = useState<View>('cellar')
   const [accountHighlight, setAccountHighlight] = useState(false)
-  const [profileMode, setProfileMode] = useState<ProfileScreenMode>('preview')
   const [profileSettingsSection, setProfileSettingsSection] =
     useState<AccountSettingsSection>('menu')
   const [search, setSearch] = useState('')
@@ -238,11 +240,17 @@ export default function App() {
 
   const headerPageTitle = useMemo(() => {
     if (view === 'friends' && friendView) return `${friendView.name}'s cellar`
-    if (view === 'account' && profileMode === 'settings') {
+    if (view === 'more' && profileSettingsSection !== 'menu') {
       return SETTINGS_SECTION_TITLES[profileSettingsSection]
     }
     return VIEW_PAGE_TITLES[view]
-  }, [view, friendView, profileMode, profileSettingsSection])
+  }, [view, friendView, profileSettingsSection])
+
+  const headerProfileLabel =
+    profile?.displayName?.trim() ||
+    profile?.email?.split('@')[0] ||
+    cloudUser?.email?.split('@')[0] ||
+    'You'
 
   useEffect(() => {
     const el = contentRef.current
@@ -250,8 +258,8 @@ export default function App() {
     el.scrollTop = 0
   }, [view, friendView])
 
-  const viewRef = useRef(view)
-  viewRef.current = view
+  const lastNativeTabRef = useRef<NativeTabId>(view === 'profile' ? 'cellar' : view)
+  if (view !== 'profile') lastNativeTabRef.current = view
 
   const mainAppShell =
     !authLoading && (offlineMode || !configured || Boolean(user))
@@ -270,7 +278,10 @@ export default function App() {
     if (!isNativeIosTabBar()) return
     setNativeTabBarSelectHandler((id) => {
       setFriendView(null)
-      if (id === 'account') setProfileMode('preview')
+      if (id === 'more') {
+        setProfileSettingsSection('menu')
+        setAccountHighlight(false)
+      }
       setView(id)
     })
     return () => setNativeTabBarSelectHandler(null)
@@ -285,12 +296,12 @@ export default function App() {
     void syncNativeTabBar({
       signedIn: Boolean(cloudUser),
       pro,
-      selected: viewRef.current,
+      selected: lastNativeTabRef.current,
     })
   }, [authLoading, launchComplete, mainAppShell, authGateScreen, cloudUser, pro])
 
   useEffect(() => {
-    void selectNativeTab(view)
+    if (view !== 'profile') void selectNativeTab(view)
     if (isNativeApp()) {
       window.setTimeout(() => {
         void refreshBannerMargin(true)
@@ -503,19 +514,15 @@ export default function App() {
     [applyBadgeProgressChange, badgeReady, buildBadgeInput, ensureBadgeHydrated, pushXpFeedback],
   )
 
+  function openProfile() {
+    setFriendView(null)
+    setView('profile')
+  }
+
   function goToAccount(highlightSubscription = false) {
     setFriendView(null)
-    setView('account')
-    if (highlightSubscription) {
-      setProfileMode('settings')
-      setProfileSettingsSection('subscription')
-    } else if (cloudUser) {
-      setProfileMode('preview')
-      setProfileSettingsSection('menu')
-    } else {
-      setProfileMode('settings')
-      setProfileSettingsSection('menu')
-    }
+    setView('more')
+    setProfileSettingsSection(highlightSubscription ? 'subscription' : 'menu')
     setAccountHighlight(highlightSubscription)
   }
 
@@ -717,7 +724,8 @@ export default function App() {
     const key = `${STORAGE_PREFIX}.profile-name-prompt`
     if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, '1')
-    goToAccount(false)
+    setFriendView(null)
+    setView('profile')
   }, [cloudUser?.email, profile?.displayName])
 
   useEffect(() => {
@@ -755,7 +763,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (view !== 'account') setAccountHighlight(false)
+    if (view !== 'more') setAccountHighlight(false)
   }, [view])
 
   // After Stripe checkout, poll profile until webhook grants Pro (or timeout).
@@ -1178,6 +1186,21 @@ export default function App() {
     <div className="app">
       <header className="header">
         <div className="header-inner">
+          <button
+            type="button"
+            className={`header-profile${view === 'profile' ? ' active' : ''}`}
+            aria-label="Profile"
+            aria-current={view === 'profile' ? 'page' : undefined}
+            onClick={openProfile}
+          >
+            <Avatar
+              displayName={headerProfileLabel}
+              email={profile?.email ?? cloudUser?.email}
+              avatarUrl={profile?.avatarUrl}
+              seed={profile?.id ?? cloudUser?.id}
+              size="sm"
+            />
+          </button>
           <div className={`brand${showThemeLogo ? ' brand-theme-logo' : ''}`}>
             <DecantiLogo context="header" />
             <div className="brand-text">
@@ -1213,14 +1236,14 @@ export default function App() {
       </header>
 
       <main ref={contentRef} className="content">
-        {cellarLoading && view !== 'account' && (
+        {cellarLoading && view !== 'profile' && view !== 'more' && (
           <p className="auth-info">Syncing cellar…</p>
         )}
 
-        {view === 'account' ? (
+        {view === 'profile' || view === 'more' ? (
           <ProfileScreen
-            mode={profileMode}
-            onModeChange={setProfileMode}
+            surface={view}
+            profileLoaded={profileLoaded}
             settingsSection={profileSettingsSection}
             onSettingsSectionChange={setProfileSettingsSection}
             profile={profile}
@@ -1604,16 +1627,17 @@ export default function App() {
         </button>
         <button
           type="button"
-          className={`tab tab-icon ${view === 'account' ? 'active' : ''}`}
-          aria-label="Profile"
-          aria-current={view === 'account' ? 'page' : undefined}
+          className={`tab tab-icon ${view === 'more' ? 'active' : ''}`}
+          aria-label="More"
+          aria-current={view === 'more' ? 'page' : undefined}
           onClick={() => {
             setFriendView(null)
-            setProfileMode('preview')
-            setView('account')
+            setProfileSettingsSection('menu')
+            setAccountHighlight(false)
+            setView('more')
           }}
         >
-          <IconUser className="tab-icon-svg" size={22} />
+          <IconEllipsis className="tab-icon-svg tab-icon-more" size={27} />
         </button>
       </nav>
       )}

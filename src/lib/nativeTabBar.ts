@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core'
 import { TabBar, type Tab } from '@capawesome/capacitor-tab-bar'
 import { refreshBannerMargin } from './bannerAds'
 
-export type NativeTabId = 'cellar' | 'friends' | 'scan' | 'insights' | 'account'
+export type NativeTabId = 'cellar' | 'friends' | 'scan' | 'insights' | 'more'
 
 /** Classic Decanti accent — matches `--accent` on the default theme. */
 const NATIVE_TAB_SELECTED = '#c41e3a'
@@ -35,7 +35,7 @@ function buildTabs(signedIn: boolean, pro: boolean): Tab[] {
       title: 'Stats',
       systemImage: pro ? 'chart.bar.fill' : 'lock.fill',
     },
-    { id: 'account', title: 'Profile', systemImage: 'person.fill' },
+    { id: 'more', title: 'More', systemImage: 'ellipsis' },
   )
   return tabs
 }

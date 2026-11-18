@@ -266,13 +266,13 @@ export function AccountPanel({
 
   return (
     <div className="account-panel">
-      <div className="account-settings-toolbar">
-        {onBack && (
+      {onBack && (
+        <div className="account-settings-toolbar">
           <button type="button" className="btn ghost friend-back" onClick={onBack}>
             {backLabel}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {signedIn && (profileInfo || profileError) && (
         <div className="account-flash">
