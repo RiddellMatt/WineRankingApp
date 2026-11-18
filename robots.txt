@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://riddellmatt.github.io/WineRankingApp/sitemap.xml
+Sitemap: https://decantiwine.com/sitemap.xml
