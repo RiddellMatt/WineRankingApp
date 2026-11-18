@@ -5,6 +5,7 @@ import { FREE_WINE_LIMIT, FREE_WISHLIST_LIMIT } from './config'
 import { syncProSubscription } from './lib/checkoutApi'
 import { activatePro, loadProStatus, syncProFromServer } from './pro'
 import { isCheckoutSuccessUrl } from './lib/authRedirect'
+import { rememberOpenApp, shouldOpenAppDirectly } from './lib/siteEntry'
 import { ACCOUNT_EVENT, CHECKOUT_SUCCESS_EVENT, FRIENDS_PUSH_EVENT } from './lib/mobileDeepLinks'
 import {
   PUSH_NAV_EVENT,
@@ -28,6 +29,7 @@ import { isIosStoreKitConfigured, reconcileProWithSupabase } from './lib/revenue
 import { useAuth } from './context/AuthContext'
 import { AddWineChooser, type AddWineDestination } from './components/AddWineChooser'
 import { AuthScreen } from './components/AuthScreen'
+import { MarketingPage } from './components/MarketingPage'
 import {
   CellarFilterBar,
   priceBoundsFromWines,
@@ -209,6 +211,7 @@ export default function App() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileLoaded, setProfileLoaded] = useState(false)
   const [launchComplete, setLaunchComplete] = useState(() => !isNativeApp())
+  const [enteredApp, setEnteredApp] = useState(shouldOpenAppDirectly)
   const [rankingSetupOpen, setRankingSetupOpen] = useState(false)
   const [rankingSetupBusy, setRankingSetupBusy] = useState(false)
   const [savingFriendWishlistKey, setSavingFriendWishlistKey] = useState<string | null>(null)
@@ -1158,6 +1161,16 @@ export default function App() {
   }
 
   if (configured && !offlineMode && !user) {
+    if (!enteredApp) {
+      return (
+        <MarketingPage
+          onOpenApp={() => {
+            rememberOpenApp()
+            setEnteredApp(true)
+          }}
+        />
+      )
+    }
     return <AuthScreen />
   }
 

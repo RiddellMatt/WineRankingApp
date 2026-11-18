@@ -6790,3 +6790,112 @@ html.native-ios-tab-bar .ad-banner-probe {
     env(safe-area-inset-bottom, 0px) + var(--banner-ad-height, 0px) + 3.25rem
   );
 }
+
+/* ── Public marketing page (web, signed out) ─────────── */
+
+.mkt {
+  min-height: 100vh;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: calc(1.25rem + var(--safe-top)) 1.25rem calc(2.5rem + var(--safe-bottom));
+}
+
+.mkt-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.mkt-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.mkt-brand .brand-wordmark {
+  font-size: 1.35rem;
+}
+
+.mkt-hero h1 {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 0.4rem 0 0.8rem;
+}
+
+.mkt-kicker {
+  margin: 0;
+  color: var(--brand-gold);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mkt-lead {
+  margin: 0 0 1.4rem;
+  color: var(--text-dim);
+  font-size: 1.05rem;
+  max-width: 34rem;
+}
+
+.mkt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.mkt-section {
+  margin-top: 2.4rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--border);
+}
+
+.mkt-section h2 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  margin: 0 0 0.7rem;
+}
+
+.mkt-section p {
+  margin: 0 0 0.8rem;
+  color: var(--text-dim);
+}
+
+.mkt-faq details {
+  border-top: 1px solid var(--border);
+  padding: 0.85rem 0;
+}
+
+.mkt-faq details:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.mkt-faq summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mkt-faq p {
+  margin: 0.55rem 0 0.2rem;
+}
+
+.mkt-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-top: 2.5rem;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+}
+
+.mkt-foot a {
+  color: var(--text-dim);
+}

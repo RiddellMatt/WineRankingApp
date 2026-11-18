@@ -7,6 +7,16 @@ export const APP_DESCRIPTION =
 export const APP_ID = 'com.northline.decanti'
 export const APP_SCHEME = 'com.northline.decanti'
 
+/** Public site. Canonical, Open Graph, and the sitemap all use this origin. */
+export const SITE_URL = 'https://riddellmatt.github.io/WineRankingApp/'
+
+/**
+ * Public store listings. Leave empty until the listing returns a real page.
+ * A 404 download link hurts both visitors and search results.
+ */
+export const APP_STORE_URL = ''
+export const PLAY_STORE_URL = ''
+
 export const STORAGE_PREFIX = 'decanti'
 export const LEGACY_STORAGE_PREFIX = 'cellar-rank'
 export const LEGACY_WINE_STORAGE_KEY = 'wine-rank.wines.v1'
