@@ -18,6 +18,7 @@ import {
   shouldUseTestAdUnits,
 } from './adConfig'
 import { isNativeApp } from './platform'
+import { isBannerChromeSettled } from './bannerChrome'
 
 let running = false
 let activeAdUnitId: string | null = null
@@ -28,6 +29,12 @@ let refreshMarginTimer: ReturnType<typeof setTimeout> | null = null
 let loadWatchdogTimer: ReturnType<typeof setTimeout> | null = null
 /** True after native SizeChanged reports height > 0 (safe to remove+re-show for margin). */
 let nativeBannerSized = false
+/** Margin last passed to showBanner. Same margin must not remove and reload the ad. */
+let presentedMargin: number | null = null
+let lastPresentedSize: BannerAdSize | null = null
+let presentQueue: Promise<void> = Promise.resolve()
+let chromeWait: Promise<void> | null = null
+let chromeGeneration = 0
 /** Reserve space while loading; adaptive banners are often taller than 50pt. */
 const PENDING_SLOT_PX = 60
 const PROVISIONAL_BANNER_HEIGHT_PX = 60
@@ -43,10 +50,12 @@ function syncBannerContentPad(heightPx: number): void {
   const root = document.documentElement
   if (heightPx <= 0) {
     root.style.removeProperty('--banner-content-pad')
+    root.style.removeProperty('--banner-native-margin')
     return
   }
   const margin = bannerBottomMarginPx()
   const pad = Math.ceil(heightPx + margin + 20)
+  root.style.setProperty('--banner-native-margin', `${margin}px`)
   root.style.setProperty('--banner-content-pad', `${pad}px`)
 }
 
@@ -60,6 +69,7 @@ function setBannerInset(heightPx: number): void {
   } else {
     root.style.removeProperty('--banner-ad-height')
     root.style.removeProperty('--banner-content-pad')
+    root.style.removeProperty('--banner-native-margin')
     root.classList.remove('show-banner-ad')
     root.classList.remove('ad-banner-pending')
   }
@@ -145,35 +155,104 @@ async function ensureConsent(): Promise<boolean> {
   }
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms))
+}
+
+/** Read the live bottom inset. Custom properties keep the `env()` text, so measure a probe. */
+function measureSafeAreaBottomPx(): number {
+  const probe = document.createElement('div')
+  probe.style.cssText =
+    'position:fixed;left:0;bottom:0;width:0;height:env(safe-area-inset-bottom,0px);pointer-events:none;visibility:hidden;'
+  document.documentElement.appendChild(probe)
+  const height = probe.getBoundingClientRect().height
+  probe.remove()
+  return height
+}
+
+function invalidateBannerChrome(): void {
+  chromeGeneration += 1
+  chromeWait = null
+}
+
+/**
+ * On the first iOS paint the tab bar has not grown the safe area yet.
+ * Showing then makes the banner sit in the old bottom slot until a later
+ * reload moves it. Wait until that inset has settled before the first show.
+ */
+function waitForSettledBannerChrome(): Promise<void> {
+  if (Capacitor.getPlatform() !== 'ios') {
+    return new Promise((resolve) => requestAnimationFrame(() => resolve()))
+  }
+  const generation = chromeGeneration
+  if (!chromeWait) {
+    chromeWait = (async () => {
+      const started = Date.now()
+      let baseline: number | null = null
+      let lastInset = Number.NaN
+      let stableTicks = 0
+      setBannerAdDebug('position', 'waiting for tab bar')
+      while (chromeGeneration === generation) {
+        const elapsedMs = Date.now() - started
+        const nativeTabBar = document.documentElement.classList.contains('native-ios-tab-bar')
+        const insetPx = measureSafeAreaBottomPx()
+        if (baseline === null) baseline = insetPx
+        stableTicks = insetPx === lastInset ? stableTicks + 1 : 0
+        lastInset = insetPx
+        if (
+          isBannerChromeSettled({
+            platform: 'ios',
+            nativeTabBar,
+            insetPx,
+            baselineInsetPx: baseline,
+            stableTicks,
+            elapsedMs,
+          })
+        ) {
+          setBannerAdDebug('position', `settled ${Math.round(insetPx)}px`)
+          return
+        }
+        await delay(50)
+      }
+    })()
+  }
+  return chromeWait
+}
+
+function enqueueBannerPresent(task: () => Promise<void>): Promise<void> {
+  const run = presentQueue.then(task, task)
+  presentQueue = run.then(
+    () => undefined,
+    () => undefined,
+  )
+  return run
+}
+
 function armNativeLoadWatchdog(adId: string, ms = 8_000): void {
   if (loadWatchdogTimer) clearTimeout(loadWatchdogTimer)
   loadWatchdogTimer = setTimeout(() => {
     loadWatchdogTimer = null
     if (!running || nativeBannerSized) return
-  void (async () => {
-    const margin = shouldUseTestAdUnits() && Capacitor.getPlatform() === 'ios' ? 0 : bannerBottomMarginPx()
+    const margin = bannerBottomMarginPx()
     setBannerAdDebug('timeout', `retry BANNER m=${margin}`)
-    try {
-      await AdMob.removeBanner()
-      nativeBannerSized = false
-      setBannerInset(PROVISIONAL_BANNER_HEIGHT_PX)
-      await AdMob.showBanner({
-        ...bannerOptions(adId),
-        adSize: BannerAdSize.BANNER,
-        margin,
-      })
-    } catch (err) {
-      setBannerAdDebug('timeout', err instanceof Error ? err.message.slice(0, 40) : 'retry failed')
-    }
-  })()
+    presentedMargin = null
+    lastPresentedSize = null
+    void enqueueBannerPresent(() => presentBanner(adId, BannerAdSize.BANNER))
   }, ms)
 }
 
 async function presentBanner(adId: string, size = BannerAdSize.ADAPTIVE_BANNER): Promise<void> {
+  await waitForSettledBannerChrome()
+  if (!running) return
+  const margin = bannerBottomMarginPx()
+  if (presentedMargin === margin && activeAdUnitId === adId && lastPresentedSize === size) return
   activeAdUnitId = adId
+  lastPresentedSize = size
   nativeBannerSized = false
-  setBannerAdDebug('show', size)
+  setPendingAdSlot()
+  setBannerAdDebug('show', `${size} m=${margin}`)
   await AdMob.showBanner({ ...bannerOptions(adId), adSize: size })
+  presentedMargin = margin
   armNativeLoadWatchdog(adId)
 }
 
@@ -187,8 +266,9 @@ async function tryTestBannerAfterProductionNoFill(): Promise<void> {
   )
   try {
     await AdMob.removeBanner()
-    await presentBanner(testId)
-    activeAdUnitId = testId
+    presentedMargin = null
+    lastPresentedSize = null
+    await enqueueBannerPresent(() => presentBanner(testId))
   } catch (err) {
     console.warn('AdMob banner: test fallback failed', err)
   }
@@ -240,18 +320,6 @@ async function detachListeners(): Promise<void> {
   listeners = []
 }
 
-function waitForTabBarLayout(): Promise<void> {
-  return new Promise((resolve) => {
-    if (Capacitor.getPlatform() !== 'ios') {
-      resolve()
-      return
-    }
-    requestAnimationFrame(() => {
-      window.setTimeout(resolve, 450)
-    })
-  })
-}
-
 /** Show adaptive bottom banner for signed-in free users on native builds. */
 export async function startBannerAds(): Promise<void> {
   if (!isNativeApp() || Capacitor.getPlatform() === 'web') {
@@ -276,8 +344,9 @@ export async function startBannerAds(): Promise<void> {
   running = true
   productionLoadFailed = false
   nativeBannerSized = false
+  presentedMargin = null
+  lastPresentedSize = null
   activeAdUnitId = adId
-  setPendingAdSlot()
   setBannerAdDebug('starting', `unit …${adId.slice(-10)}`)
   console.info('AdMob banner: starting', {
     adUnitTail: adId.slice(-12),
@@ -305,35 +374,16 @@ export async function startBannerAds(): Promise<void> {
       'AdMob.initialize',
     )
 
-    const iosTest = shouldUseTestAdUnits() && Capacitor.getPlatform() === 'ios'
-    if (iosTest) {
-      await AdMob.showBanner({
-        adId,
-        adSize: BannerAdSize.BANNER,
-        position: BannerAdPosition.BOTTOM_CENTER,
-        margin: 0,
-        isTesting: false,
-        npa: true,
-      })
-      activeAdUnitId = adId
-      armNativeLoadWatchdog(adId)
-      setBannerAdDebug('requested', 'iOS BANNER m0 — waiting SDK')
-      return
-    }
-
-    await waitForTabBarLayout()
-  try {
-      await presentBanner(adId)
+    try {
+      await enqueueBannerPresent(() => presentBanner(adId))
     } catch (firstErr) {
       if (shouldUseTestAdUnits() && Capacitor.getPlatform() === 'ios') {
-        console.warn('AdMob adaptive banner failed, retrying BANNER @ margin 0', firstErr)
-        setBannerAdDebug('retry', 'BANNER margin 0')
+        console.warn('AdMob adaptive banner failed, retrying BANNER at the settled margin', firstErr)
+        setBannerAdDebug('retry', 'BANNER settled margin')
+        presentedMargin = null
+        lastPresentedSize = null
         await AdMob.removeBanner()
-        await AdMob.showBanner({
-          ...bannerOptions(adId),
-          adSize: BannerAdSize.BANNER,
-          margin: 0,
-        })
+        await enqueueBannerPresent(() => presentBanner(adId, BannerAdSize.BANNER))
       } else {
         throw firstErr
       }
@@ -353,6 +403,8 @@ export async function startBannerAds(): Promise<void> {
 
 export async function stopBannerAds(): Promise<void> {
   if (!isNativeApp()) return
+  running = false
+  invalidateBannerChrome()
   if (refreshMarginTimer) {
     clearTimeout(refreshMarginTimer)
     refreshMarginTimer = null
@@ -369,34 +421,42 @@ export async function stopBannerAds(): Promise<void> {
     // ignore
   }
   await detachListeners()
-  running = false
   activeAdUnitId = null
   productionLoadFailed = false
   requestNonPersonalizedAds = false
   nativeBannerSized = false
+  presentedMargin = null
+  lastPresentedSize = null
 }
 
 /**
- * Re-show banner with updated bottom margin after native tab bar layout.
- * Skips until the first ad has reported a height — removeBanner() during load cancels requests.
+ * Re-show the banner only when the bottom margin changed.
+ * A same-margin reload is what flashed the old position on cold start.
  */
 export async function refreshBannerMargin(force = false): Promise<void> {
   if (!running) return
-  if (!force && !nativeBannerSized) return
+  if (!force && !nativeBannerSized && presentedMargin === null) return
   const adId = activeAdUnitId ?? bannerAdUnitId()
   if (!adId) return
 
   if (refreshMarginTimer) clearTimeout(refreshMarginTimer)
   refreshMarginTimer = setTimeout(() => {
     refreshMarginTimer = null
-    void (async () => {
+    void enqueueBannerPresent(async () => {
       if (!running) return
+      await waitForSettledBannerChrome()
+      if (!running) return
+      const margin = bannerBottomMarginPx()
+      if (presentedMargin === margin) return
+      if (!force && !nativeBannerSized) return
       try {
         await AdMob.removeBanner()
+        presentedMargin = null
+        lastPresentedSize = null
         await presentBanner(adId)
       } catch {
         // ignore
       }
-    })()
+    })
   }, 350)
 }
