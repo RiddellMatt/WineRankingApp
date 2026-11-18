@@ -6771,9 +6771,11 @@ html.ad-banner-pending.show-banner-ad::after {
   z-index: 18;
 }
 
-/* Native UITabBar is outside the WebView — do not add --tab-bar-height in web chrome. */
+/* Native UITabBar is outside the WebView. The ad is constrained to the safe area
+   plus --banner-native-margin, so the loading slot has to use that same lift.
+   A slot flush with the safe area is the old position and jumps when the ad loads. */
 html.native-ios-tab-bar.ad-banner-pending.show-banner-ad::after {
-  bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--banner-native-margin, 55px));
 }
 
 .ad-banner-probe {
