@@ -7,13 +7,101 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover, shrink-to-fit=no"
     />
-    <meta name="description" content="Decanti — rank, remember, and share every wine you've tried." />
+    <title>Decanti — wine ranking app</title>
+    <meta
+      name="description"
+      content="Decanti is a wine ranking app. Rate every bottle you try, keep a want-to-try list, and share your cellar with friends."
+    />
+    <link rel="canonical" href="https://riddellmatt.github.io/WineRankingApp/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Decanti" />
+    <meta property="og:title" content="Decanti — wine ranking app" />
+    <meta
+      property="og:description"
+      content="Rate every bottle you try, keep a want-to-try list, and share your cellar with friends."
+    />
+    <meta property="og:url" content="https://riddellmatt.github.io/WineRankingApp/" />
+    <meta property="og:image" content="https://riddellmatt.github.io/WineRankingApp/icons/pwa-512.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Decanti — wine ranking app" />
+    <meta
+      name="twitter:description"
+      content="Rate every bottle you try, keep a want-to-try list, and share your cellar with friends."
+    />
+    <meta name="twitter:image" content="https://riddellmatt.github.io/WineRankingApp/icons/pwa-512.png" />
     <meta name="theme-color" content="#12080c" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Decanti",
+        "applicationCategory": "LifestyleApplication",
+        "operatingSystem": "iOS, Android, Web",
+        "url": "https://riddellmatt.github.io/WineRankingApp/",
+        "description": "Decanti is a wine ranking app. Rate every bottle you try, keep a want-to-try list, and share your cellar with friends.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is Decanti?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Decanti is a wine ranking app. You rate bottles you have tried, keep a want-to-try list, and share that cellar with friends."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is Decanti free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Decanti is free to start. Decanti Pro is $3.99/month and adds a larger cellar, label and menu scans, and insights."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use Decanti on iPhone or Android?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Decanti is built for iPhone and Android, and the same account works on the web. Open Decanti here while the App Store and Google Play listings are being published."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I rank wines with friends?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Add a friend with the email they use to sign in, then see what they are drinking and keep your own ranked cellar."
+            }
+          }
+        ]
+      }
+    </script>
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Decanti" />
-    <title>Decanti — every wine, remembered</title>
+    <style>
+      #decanti-seo {
+        max-width: 40rem;
+        margin: 2rem auto;
+        padding: 0 1.25rem;
+        font-family: Georgia, 'Times New Roman', serif;
+      }
+      .js #decanti-seo { display: none; }
+    </style>
+    <script>
+      document.documentElement.classList.add('js')
+    </script>
     <script>
       try {
         var t = localStorage.getItem('decanti.theme');
@@ -34,11 +122,24 @@
         }
       } catch (e) {}
     </script>
-    <script type="module" crossorigin src="/WineRankingApp/assets/index-DferPSTR.js"></script>
+    <script type="module" crossorigin src="/WineRankingApp/assets/index-1c0V-Jv2.js"></script>
     <link rel="modulepreload" crossorigin href="/WineRankingApp/assets/rolldown-runtime-C0FnF6B9.js">
-    <link rel="stylesheet" crossorigin href="/WineRankingApp/assets/index-DIF-Q6v5.css">
+    <link rel="stylesheet" crossorigin href="/WineRankingApp/assets/index-BBPEKbxR.css">
   <link rel="manifest" href="/WineRankingApp/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/WineRankingApp/registerSW.js"></script></head>
   <body>
+    <article id="decanti-seo">
+      <h1>Decanti, the wine ranking app</h1>
+      <p>
+        Decanti ranks every wine you try. Rate the bottle, remember the winery and region, keep a
+        want-to-try list, and share the cellar with friends. The same account works on iPhone,
+        Android, and the web.
+      </p>
+      <p>
+        Decanti is free to start. Decanti Pro is $3.99/month and adds a larger cellar, label and
+        menu scans, and insights. Public App Store and Google Play listings are on the way. Until
+        then, open Decanti on this site.
+      </p>
+    </article>
     <div id="root"></div>
   </body>
 </html>
