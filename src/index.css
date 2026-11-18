@@ -365,6 +365,38 @@ textarea::placeholder {
   font-size: 0.9rem;
 }
 
+.header-profile {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.55rem;
+  height: 2.55rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+}
+
+.header-profile:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.header-profile .avatar {
+  width: 2.35rem;
+  height: 2.35rem;
+  font-size: 0.95rem;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 18%, transparent);
+}
+
+.header-profile.active .avatar {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -568,6 +600,12 @@ textarea::placeholder {
   flex-shrink: 0;
 }
 
+/* Ellipsis dots are short by nature; draw them at the same scale as the other tab icons. */
+.tab-icon-more {
+  width: 3.05rem;
+  height: 1.7rem;
+}
+
 .tab-pro-badge {
   position: absolute;
   top: 0.15rem;
@@ -691,13 +729,6 @@ textarea::placeholder {
   min-width: 0;
 }
 
-.profile-panel-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.45rem;
-}
-
 .profile-panel-name {
   margin: 0;
   font-family: var(--font-display);
@@ -766,29 +797,6 @@ textarea::placeholder {
 
 .profile-panel-edit {
   flex-shrink: 0;
-}
-
-.profile-panel-menu {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.35rem;
-  height: 2.35rem;
-  padding: 0;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.profile-panel-menu:active {
-  background: var(--bg-soft);
-}
-
-.profile-panel-menu-icon {
-  display: block;
 }
 
 .profile-panel-ranking {

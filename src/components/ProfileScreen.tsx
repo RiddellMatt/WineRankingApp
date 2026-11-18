@@ -6,13 +6,13 @@ import type { ComponentProps } from 'react'
 
 type AccountPanelProps = ComponentProps<typeof AccountPanel>
 
-export type ProfileScreenMode = 'preview' | 'settings'
+export type ProfileSurface = 'profile' | 'more'
 
 interface Props extends AccountPanelProps {
   rankingPreference: RankingPreference
   onRankingPreferenceSaved: (preference: RankingPreference) => Promise<void>
-  mode: ProfileScreenMode
-  onModeChange: (mode: ProfileScreenMode) => void
+  surface: ProfileSurface
+  profileLoaded: boolean
   settingsSection: AccountSettingsSection
   onSettingsSectionChange: (section: AccountSettingsSection) => void
   wines: Wine[]
@@ -21,8 +21,8 @@ interface Props extends AccountPanelProps {
 }
 
 export function ProfileScreen({
-  mode,
-  onModeChange,
+  surface,
+  profileLoaded,
   settingsSection,
   onSettingsSectionChange,
   profile,
@@ -32,50 +32,58 @@ export function ProfileScreen({
   onViewFriendCellar,
   rankingPreference,
   onRankingPreferenceSaved,
+  offlineMode,
+  cloudConfigured,
+  onSignIn,
   ...accountProps
 }: Props) {
-  function openSettingsMenu() {
-    onModeChange('settings')
-    onSettingsSectionChange('menu')
-  }
-
-  function handleSettingsBack() {
-    if (settingsSection !== 'menu') {
-      onSettingsSectionChange('menu')
-      return
+  if (surface === 'profile') {
+    if (signedIn && !profileLoaded) {
+      return <p className="auth-info">Loading profile…</p>
     }
+
     if (signedIn && profile) {
-      onModeChange('preview')
+      return (
+        <ProfilePanel
+          profile={profile}
+          email={accountProps.email}
+          wines={wines}
+          completedJourneys={completedJourneys}
+          rankingPreference={rankingPreference}
+          onViewFriendCellar={onViewFriendCellar}
+        />
+      )
     }
-  }
 
-  if (signedIn && profile && mode === 'preview') {
     return (
-      <ProfilePanel
-        profile={profile}
-        email={accountProps.email}
-        wines={wines}
-        completedJourneys={completedJourneys}
-        rankingPreference={rankingPreference}
-        onOpenSettings={openSettingsMenu}
-        onViewFriendCellar={onViewFriendCellar}
-      />
+      <section className="empty">
+        <h2>Your profile</h2>
+        <p>Sign in to see your activity, badges, and passport.</p>
+        {offlineMode && cloudConfigured && (
+          <div className="empty-actions">
+            <button type="button" className="btn primary" onClick={onSignIn}>
+              Sign in or create account
+            </button>
+          </div>
+        )}
+      </section>
     )
   }
-
-  const showSettingsBack = mode === 'settings' && (settingsSection !== 'menu' || Boolean(signedIn && profile))
 
   return (
     <AccountPanel
       profile={profile}
       signedIn={signedIn}
+      offlineMode={offlineMode}
+      cloudConfigured={cloudConfigured}
+      onSignIn={onSignIn}
       rankingPreference={rankingPreference}
       onRankingPreferenceSaved={onRankingPreferenceSaved}
       {...accountProps}
       settingsSection={settingsSection}
       onSettingsSectionChange={onSettingsSectionChange}
-      onBack={showSettingsBack ? handleSettingsBack : undefined}
-      backLabel={settingsSection === 'menu' ? '← Profile' : '← Settings'}
+      onBack={settingsSection !== 'menu' ? () => onSettingsSectionChange('menu') : undefined}
+      backLabel="← More"
     />
   )
 }
