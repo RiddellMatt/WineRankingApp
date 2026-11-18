@@ -14,7 +14,7 @@ export function mobilePortalReturnUrl(): string {
 }
 
 export function webCheckoutUrls(): { successUrl: string; cancelUrl: string } {
-  const appUrl = Deno.env.get('APP_URL') ?? 'https://riddellmatt.github.io/WineRankingApp/'
+  const appUrl = Deno.env.get('APP_URL') ?? 'https://decantiwine.com/'
   const base = appUrl.endsWith('/') ? appUrl : `${appUrl}/`
   return {
     successUrl: Deno.env.get('STRIPE_SUCCESS_URL') ?? `${base}?checkout=success`,
@@ -23,7 +23,7 @@ export function webCheckoutUrls(): { successUrl: string; cancelUrl: string } {
 }
 
 export function webPortalReturnUrl(): string {
-  const appUrl = Deno.env.get('APP_URL') ?? 'https://riddellmatt.github.io/WineRankingApp/'
+  const appUrl = Deno.env.get('APP_URL') ?? 'https://decantiwine.com/'
   const base = appUrl.endsWith('/') ? appUrl : `${appUrl}/`
   return Deno.env.get('STRIPE_PORTAL_RETURN_URL') ?? `${base}?view=account`
 }

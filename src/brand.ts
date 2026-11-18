@@ -8,7 +8,7 @@ export const APP_ID = 'com.northline.decanti'
 export const APP_SCHEME = 'com.northline.decanti'
 
 /** Public site. Canonical, Open Graph, and the sitemap all use this origin. */
-export const SITE_URL = 'https://riddellmatt.github.io/WineRankingApp/'
+export const SITE_URL = 'https://decantiwine.com/'
 
 /**
  * Public store listings. Leave empty until the listing returns a real page.

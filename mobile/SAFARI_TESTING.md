@@ -9,14 +9,16 @@ Dashboard → **Authentication → URL Configuration**
 **Site URL** (set to):
 
 ```
-https://riddellmatt.github.io/WineRankingApp/
+https://decantiwine.com/
 ```
 
 **Redirect URLs** — add all of these:
 
 ```
-https://riddellmatt.github.io/WineRankingApp/
-https://riddellmatt.github.io/WineRankingApp
+https://decantiwine.com/
+https://decantiwine.com
+https://www.decantiwine.com/
+https://www.decantiwine.com
 com.northline.decanti://login-callback
 com.northline.cellarrank://login-callback
 http://localhost:5173/
@@ -29,11 +31,13 @@ Save changes.
 
 OAuth client type: **Web application**
 
-Authorized redirect URI:
+Authorized redirect URI (the host Google shows on the account picker):
 
 ```
-https://wqkllahjpusemdpznxfb.supabase.co/auth/v1/callback
+https://auth.decantiwine.com/auth/v1/callback
 ```
+
+Leave the `auth.decantiwine.com` DNS record pointed at the Supabase project. That host is only the sign-in address. It is separate from the website at `decantiwine.com`.
 
 Test users on the OAuth consent screen must include each Gmail address that will sign in (while app is in **Testing** mode).
 
@@ -53,7 +57,7 @@ Push to `main` to deploy, or run **Actions → Deploy to GitHub Pages → Run wo
 Send this URL (open in **Safari**, not Chrome if possible on iOS):
 
 ```
-https://riddellmatt.github.io/WineRankingApp/
+https://decantiwine.com/
 ```
 
 Tap **Continue with Google** on the sign-in screen.
