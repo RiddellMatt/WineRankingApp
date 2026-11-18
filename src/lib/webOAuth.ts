@@ -6,6 +6,10 @@ import { friendlyAuthError } from './supabaseConfig'
 
 /** Add these in Supabase → Authentication → URL Configuration → Redirect URLs. */
 export const SUPABASE_WEB_REDIRECT_URLS = [
+  'https://decantiwine.com/',
+  'https://decantiwine.com',
+  'https://www.decantiwine.com/',
+  'https://www.decantiwine.com',
   'https://riddellmatt.github.io/WineRankingApp/',
   'https://riddellmatt.github.io/WineRankingApp',
   'http://localhost:5173/',

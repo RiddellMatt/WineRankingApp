@@ -35,7 +35,7 @@ Note: Pro entitlement is stored client-side (localStorage), which is fine for va
 
 Every push to `main` deploys automatically to GitHub Pages via `.github/workflows/deploy.yml`:
 
-**https://riddellmatt.github.io/WineRankingApp/**
+**https://decantiwine.com/**
 
 The app is a PWA — on a phone, open the URL and use "Add to Home Screen" (Share menu on iOS, browser menu on Android) to install it like a native app. It works offline after the first load. Note that data still lives per-device in localStorage; syncing between devices requires accounts + a backend (future work).
 

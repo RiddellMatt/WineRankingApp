@@ -5,11 +5,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const isMobile = mode === 'mobile'
-  const isGhPages = process.env.GITHUB_PAGES === 'true'
 
   return {
     // Capacitor loads bundled assets from the app filesystem (relative paths).
-    base: isMobile ? './' : isGhPages ? '/WineRankingApp/' : '/',
+    // The public site is served at the root of decantiwine.com, including the
+    // GitHub Pages build, so web assets stay at /.
+    base: isMobile ? './' : '/',
     plugins: [
       react(),
       {

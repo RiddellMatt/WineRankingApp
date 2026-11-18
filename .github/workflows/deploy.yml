@@ -33,3 +33,6 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+          # Attaches decantiwine.com. Pages already has Enforce HTTPS on, so
+          # GitHub provisions the certificate once this domain is published.
+          cname: decantiwine.com
