@@ -1,1 +1,0 @@
-import{o as e}from"./index-DSTcSTvW.js";var t=class extends e{async show(e){}async hide(e){}};export{t as SplashScreenWeb};
