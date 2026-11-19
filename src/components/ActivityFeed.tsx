@@ -21,6 +21,7 @@ import { isWishlist, wishlistIdentityKey } from '../lib/wishlist'
 import type { RankingPreference, Wine } from '../types'
 import type { BadgeTier } from '../lib/badges'
 import { BadgeMedal } from './BadgeMedal'
+import { ReportControl } from './ReportSheet'
 
 interface Props {
   events: ActivityEvent[]
@@ -138,6 +139,7 @@ export function ActivityFeed({
                       View cellar
                     </button>
                   )}
+                  {!isOwn && <ReportControl targetUserId={event.actor.id} targetName={name} />}
                 </div>
                 {canReact && (
                   <div className="activity-reactions" role="group" aria-label="React to this milestone">
@@ -269,6 +271,9 @@ export function ActivityFeed({
                   >
                     {saved ? 'Saved to try ✓' : saving ? 'Saving…' : '♡ Save to try'}
                   </button>
+                )}
+                {!isOwn && (
+                  <ReportControl targetUserId={event.actor.id} targetName={name} wineId={wine.id} />
                 )}
               </div>
               {canReact && (

@@ -4661,6 +4661,44 @@ html.show-banner-ad .account-panel {
   margin: 0 0 0.35rem;
 }
 
+.friend-cellar-safety {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  margin-top: 0.35rem;
+}
+
+.report-reasons {
+  border: 0;
+  margin: 0.25rem 0 0.9rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.report-reasons legend {
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.report-reasons label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.report-note {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.report-note textarea {
+  width: 100%;
+  min-height: 5.5rem;
+}
+
 .own-activity-footer {
   display: flex;
   align-items: center;

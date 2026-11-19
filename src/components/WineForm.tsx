@@ -5,6 +5,7 @@ import {
   reportLabelScanCorrection,
   type LabelScanBaseline,
 } from '../lib/scanCorrectionLog'
+import { CONTENT_REJECTED_MESSAGE, containsBlockedPhrase } from '../lib/contentFilter'
 import { applyCompositeRating, compositeScore } from '../lib/ranking'
 import { suggestRegions } from '../lib/regionSuggestions'
 import { journeyFormHints } from '../lib/journeys'
@@ -301,6 +302,10 @@ export function WineForm({
     }
     if (!wishlistForm && ratingEnjoyment === 0) {
       setError('Add an enjoyment rating.')
+      return
+    }
+    if (containsBlockedPhrase(notes)) {
+      setError(CONTENT_REJECTED_MESSAGE)
       return
     }
     const wine = applyCompositeRating(

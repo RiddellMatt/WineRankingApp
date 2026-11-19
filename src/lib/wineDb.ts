@@ -2,6 +2,7 @@ import type { Wine, WineType, TasteProfile, RankingPreference, WineStatus } from
 import { normalizeWithFriendIds } from './wineWithFriends'
 import { withSupabaseAuthRetry } from './supabaseAuthRetry'
 import { getSupabase, type WineRow } from './supabase'
+import { assertCleanText } from './contentFilter'
 import { applyCompositeRating, resolveRankingPreference, wineEnjoyment } from './ranking'
 
 function wineStatusFromRow(raw: string | null | undefined): WineStatus {
@@ -87,6 +88,7 @@ export async function fetchWines(userId: string): Promise<Wine[]> {
 }
 
 export async function upsertWine(userId: string, wine: Wine, pref?: RankingPreference): Promise<Wine> {
+  assertCleanText(wine.notes)
   const normalized = ensureWineId(wine)
   const resolved = pref ?? resolveRankingPreference()
   const row = wineToRow(userId, normalized, resolved)
@@ -106,6 +108,7 @@ export async function bulkUpsertWines(
   pref?: RankingPreference,
 ): Promise<Wine[]> {
   if (wines.length === 0) return []
+  for (const wine of wines) assertCleanText(wine.notes)
   const normalized = wines.map(ensureWineId)
   const resolved = pref ?? resolveRankingPreference()
   const rows = normalized.map((w) => wineToRow(userId, w, resolved))

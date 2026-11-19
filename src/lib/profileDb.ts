@@ -13,6 +13,7 @@ import {
   PROFILE_COLUMNS_NO_RANKING,
   PROFILE_COLUMNS_NO_STRIPE,
 } from './profileColumns'
+import { assertCleanText } from './contentFilter'
 import { saveLocalRankingPreference } from './ranking'
 
 export const AVATAR_BUCKET = 'avatars'
@@ -91,6 +92,7 @@ export async function fetchMyProfile(): Promise<UserProfile | null> {
 export async function updateDisplayName(displayName: string): Promise<UserProfile> {
   const trimmed = displayName.trim()
   if (trimmed.length < 2) throw new Error('Display name must be at least 2 characters.')
+  assertCleanText(trimmed)
 
   const { data: { user } } = await getSupabase().auth.getUser()
   if (!user) throw new Error('Not signed in')
