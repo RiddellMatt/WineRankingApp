@@ -1,5 +1,6 @@
 import type { RankingPreference, Wine } from '../types'
 import { shopUrl } from '../config'
+import { showsShopLink } from '../lib/platform'
 import { compositeScore, isWineFavorite } from '../lib/ranking'
 import { getPairings } from '../pairings'
 import { hasTaste, lookupTaste } from '../tasteData'
@@ -180,16 +181,18 @@ export function WineCard({
             >
               <IconTrash />
             </button>
-            <a
-              className="icon-btn"
-              href={shopUrl(wine)}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Shop for ${wine.name}`}
-              title="Find this wine online"
-            >
-              <IconGlobe />
-            </a>
+            {showsShopLink() && (
+              <a
+                className="icon-btn"
+                href={shopUrl(wine)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Shop for ${wine.name}`}
+                title="Find this wine online"
+              >
+                <IconGlobe />
+              </a>
+            )}
           </div>
         )}
       </div>
