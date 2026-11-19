@@ -30,6 +30,7 @@ const FAQS = [
 
 export function MarketingPage({ onOpenApp }: Props) {
   const privacyHref = `${import.meta.env.BASE_URL}privacy.html`
+  const termsHref = `${import.meta.env.BASE_URL}terms.html`
 
   return (
     <div className="mkt">
@@ -121,6 +122,7 @@ export function MarketingPage({ onOpenApp }: Props) {
 
       <footer className="mkt-foot">
         <a href={privacyHref}>Privacy policy</a>
+        <a href={termsHref}>Terms of use</a>
         <span>Decanti, a wine ranking app for the bottles you have tried.</span>
       </footer>
     </div>

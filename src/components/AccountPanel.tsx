@@ -12,6 +12,8 @@ import {
 import { friendlyRevenueCatError } from '../lib/revenueCatErrors'
 import { openExternalUrl } from '../lib/openUrl'
 import { deleteMyAccount } from '../lib/deleteAccount'
+import { nativePlatform } from '../lib/platform'
+import { purchasePath } from '../lib/purchasePath'
 import { redeemProOnServer } from '../lib/proApi'
 import { updateDisplayName, uploadAvatar, removeAvatar, type UserProfile } from '../lib/profileDb'
 import type { RankingPreference } from '../types'
@@ -92,9 +94,13 @@ export function AccountPanel({
   const [deleteError, setDeleteError] = useState('')
   const [deleteBusy, setDeleteBusy] = useState(false)
   const iosIap = isIosStoreKitConfigured()
+  const path = purchasePath(nativePlatform(), iosIap)
+  const privacyHref = `${import.meta.env.BASE_URL}privacy.html`
+  const termsHref = `${import.meta.env.BASE_URL}terms.html`
   const [iapPriceLabel, setIapPriceLabel] = useState<string | null>(null)
   const [iapSetupHint, setIapSetupHint] = useState<string | null>(null)
   const [iapPreviewLoaded, setIapPreviewLoaded] = useState(false)
+  const priceShown = iapPriceLabel ?? PRO_CONFIG.priceLabel
 
   function subscribeButtonLabel(busy: boolean): string {
     if (busy) return iosIap ? 'Processing…' : 'Starting checkout…'
@@ -177,9 +183,13 @@ export function AccountPanel({
       onSignIn()
       return
     }
+    if (path === 'unavailable') {
+      setCodeError('Purchases are unavailable in this build.')
+      return
+    }
     setCheckoutBusy(true)
     try {
-      if (iosIap) {
+      if (path === 'storekit') {
         const syncNote = await purchaseDecantiPro()
         activatePro()
         onProUnlocked({ fromNativeIap: true })
@@ -500,6 +510,13 @@ export function AccountPanel({
             </button>
           )}
 
+          {pro && (
+            <p className="account-legal-links">
+              <a href={privacyHref}>Privacy policy</a>
+              <a href={termsHref}>Terms of use</a>
+            </p>
+          )}
+
           {!pro && (
             <>
               <ul className="account-pro-features">
@@ -508,11 +525,21 @@ export function AccountPanel({
                 ))}
               </ul>
 
+              <p className="account-subscription-legal">
+                {APP_NAME_PRO} · 1 month, auto-renews · {priceShown}
+              </p>
+              <p className="account-legal-links">
+                <a href={privacyHref}>Privacy policy</a>
+                <a href={termsHref}>Terms of use</a>
+              </p>
+
               {canCheckout && iosIap && iapSetupHint && (
                 <p className="form-error">{iapSetupHint}</p>
               )}
 
-              {canCheckout && iosIap ? (
+              {path === 'unavailable' ? (
+                <p className="account-hint">Purchases are unavailable in this build.</p>
+              ) : path === 'storekit' && canCheckout ? (
                 <>
                   <button
                     type="button"
@@ -531,7 +558,7 @@ export function AccountPanel({
                     {restoreBusy ? 'Restoring…' : 'Restore purchases'}
                   </button>
                 </>
-              ) : canCheckout ? (
+              ) : path === 'external' && canCheckout ? (
                 <button
                   type="button"
                   className="btn primary account-upgrade"
@@ -540,7 +567,7 @@ export function AccountPanel({
                 >
                   {subscribeButtonLabel(checkoutBusy)}
                 </button>
-              ) : PRO_CONFIG.paymentUrl ? (
+              ) : path === 'external' && PRO_CONFIG.paymentUrl ? (
                 <a
                   className="btn primary account-upgrade"
                   href={PRO_CONFIG.paymentUrl}
