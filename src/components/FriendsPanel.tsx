@@ -335,7 +335,15 @@ export function FriendsPanel({
                 type="email"
                 placeholder="friend@example.com"
                 value={email}
+                enterKeyHint="send"
+                autoComplete="email"
                 onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAddFriend()
+                  }
+                }}
               />
               <button
                 className="btn primary"

@@ -44,20 +44,46 @@ interface InputProps {
   value: number
   onChange: (value: number) => void
   size?: number
+  label?: string
 }
 
-export function StarInput({ value, onChange, size = 30 }: InputProps) {
+export function StarInput({ value, onChange, size = 30, label = 'Rating' }: InputProps) {
   const [hover, setHover] = useState<number | null>(null)
   const shown = hover ?? value
 
+  function nudge(delta: number) {
+    const next = Math.min(5, Math.max(0, Math.round((value + delta) * 2) / 2))
+    onChange(next)
+  }
+
   return (
-    <div className="star-input" onMouseLeave={() => setHover(null)}>
+    <div
+      className="star-input"
+      tabIndex={0}
+      role="slider"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={5}
+      aria-valuenow={value}
+      aria-valuetext={value > 0 ? `${value} out of 5` : 'No rating'}
+      onMouseLeave={() => setHover(null)}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+          e.preventDefault()
+          nudge(0.5)
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+          e.preventDefault()
+          nudge(-0.5)
+        }
+      }}
+    >
       <span className="star-row">
         {[1, 2, 3, 4, 5].map((i) => (
           <span key={i} className="star-cell" style={{ width: size, height: size }}>
             <Star size={size} fill={Math.min(Math.max(shown - i + 1, 0), 1)} />
             <button
               type="button"
+              tabIndex={-1}
               className="star-half left"
               aria-label={`Rate ${i - 0.5} stars`}
               onMouseEnter={() => setHover(i - 0.5)}
@@ -66,6 +92,7 @@ export function StarInput({ value, onChange, size = 30 }: InputProps) {
             />
             <button
               type="button"
+              tabIndex={-1}
               className="star-half right"
               aria-label={`Rate ${i} stars`}
               onMouseEnter={() => setHover(i)}

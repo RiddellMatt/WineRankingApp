@@ -4,6 +4,7 @@ import { APP_DESCRIPTION, APP_NAME } from '../brand'
 import { DecantiLogo, usesThemeWordmarkLogo } from './DecantiLogo'
 import { useAppTheme } from '../lib/useAppTheme'
 import { OAUTH_ERROR_EVENT, OAUTH_SUCCESS_EVENT } from '../lib/mobileOAuth'
+import { focusNextTextField, isTextField } from '../lib/keyboardInset'
 import { isNativeApp } from '../lib/platform'
 
 export function AuthScreen() {
@@ -105,7 +106,15 @@ export function AuthScreen() {
           <span>or use email</span>
         </div>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <form
+          className="auth-form"
+          onSubmit={handleSubmit}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return
+            if (!isTextField(e.target) || e.target instanceof HTMLTextAreaElement) return
+            if (focusNextTextField(e.target, e.currentTarget)) e.preventDefault()
+          }}
+        >
           {mode === 'signup' && (
             <label className="field">
               <span>Display name</span>
@@ -114,6 +123,7 @@ export function AuthScreen() {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 autoComplete="nickname"
+                enterKeyHint="next"
                 placeholder="How friends will see you"
                 minLength={2}
                 maxLength={40}
@@ -128,6 +138,7 @@ export function AuthScreen() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
+              enterKeyHint="next"
               required
             />
           </label>
@@ -138,6 +149,7 @@ export function AuthScreen() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+              enterKeyHint="go"
               minLength={6}
               required
             />

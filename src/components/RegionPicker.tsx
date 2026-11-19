@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import {
   parseRegionLabel,
   regionsForCountry,
@@ -20,6 +20,7 @@ interface Props {
 export function RegionPicker({ value, onChange, suggestionChips = [] }: Props) {
   const parsed = useMemo(() => parseRegionLabel(value), [value])
   const [search, setSearch] = useState('')
+  const [browse, setBrowse] = useState(false)
   const [country, setCountry] = useState(parsed?.country ?? '')
   const [regionOnly, setRegionOnly] = useState(parsed?.region ?? '')
 
@@ -46,6 +47,14 @@ export function RegionPicker({ value, onChange, suggestionChips = [] }: Props) {
     else if (r) onChange(r)
   }
 
+  function onSearchKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== 'Enter' || searchHits.length === 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    onChange(searchHits[0])
+    setSearch('')
+  }
+
   return (
     <div className="region-picker">
       <label className="region-picker-search">
@@ -54,21 +63,23 @@ export function RegionPicker({ value, onChange, suggestionChips = [] }: Props) {
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={onSearchKeyDown}
           placeholder="e.g. Barolo or Italy"
           autoComplete="off"
-          enterKeyHint="search"
+          enterKeyHint="next"
         />
       </label>
 
       {searching ? (
         <ul className="region-picker-results" role="listbox">
           {searchHits.length === 0 ? (
-            <li className="region-picker-empty">No matches — pick country and region below.</li>
+            <li className="region-picker-empty">No matches — browse by country below.</li>
           ) : (
             searchHits.map((label) => (
               <li key={label}>
                 <button
                   type="button"
+                  tabIndex={-1}
                   className="region-picker-result"
                   onClick={() => {
                     onChange(label)
@@ -82,6 +93,21 @@ export function RegionPicker({ value, onChange, suggestionChips = [] }: Props) {
           )}
         </ul>
       ) : (
+        <>
+          {value.trim() && <p className="region-picker-current">{value}</p>}
+          <button
+            type="button"
+            className="link-btn region-picker-browse"
+            tabIndex={-1}
+            aria-expanded={browse}
+            onClick={() => setBrowse((open) => !open)}
+          >
+            {browse ? 'Hide country list' : 'Browse by country'}
+          </button>
+        </>
+      )}
+
+      {!searching && browse && (
         <div className="region-picker-nested">
           <label className="field region-picker-field">
             <span>Country</span>
@@ -142,6 +168,7 @@ export function RegionPicker({ value, onChange, suggestionChips = [] }: Props) {
             <button
               key={suggestion}
               type="button"
+              tabIndex={-1}
               className="region-suggestion-chip"
               onClick={() => onChange(suggestion)}
             >

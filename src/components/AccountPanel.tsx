@@ -348,6 +348,8 @@ export function AccountPanel({
                   minLength={2}
                   maxLength={40}
                   required
+                  enterKeyHint="done"
+                  autoComplete="nickname"
                 />
               </label>
               <button type="submit" className="btn primary small" disabled={profileBusy}>

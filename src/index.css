@@ -2759,6 +2759,13 @@ button.tasting-tag-pill-btn.active {
   display: flex;
   align-items: center;
   gap: 0.7rem;
+  width: fit-content;
+  border-radius: 10px;
+}
+
+.star-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .star-cell {
@@ -3104,7 +3111,7 @@ button.tasting-tag-pill-btn.active {
     max(1rem, var(--safe-bottom))
     max(1rem, var(--safe-left));
   overflow-y: auto;
-  z-index: 10;
+  z-index: 400;
 }
 
 .modal {
@@ -3398,43 +3405,67 @@ textarea {
 
 .wine-form-backdrop {
   padding-top: max(0.5rem, calc(var(--safe-top) + 0.35rem));
-  padding-bottom: max(1rem, var(--safe-bottom));
+  padding-bottom: calc(max(0.5rem, var(--safe-bottom)) + var(--keyboard-inset, 0px));
   overflow: hidden;
   overscroll-behavior: contain;
   touch-action: pan-y;
-  align-items: flex-start;
+  align-items: stretch;
+}
+
+html.keyboard-open .wine-form-backdrop {
+  padding-top: max(0.35rem, calc(var(--safe-top) + 0.2rem));
 }
 
 .wine-form-modal {
   display: flex;
   flex-direction: column;
+  flex: 0 1 auto;
   height: auto;
   align-self: flex-start;
-  max-height: min(
-    92dvh,
-    calc(
-      100dvh - var(--safe-top) - var(--safe-bottom) - 0.75rem - var(--keyboard-inset, 0px)
-    )
-  );
+  min-height: 0;
+  max-height: calc(100dvh - 1rem - var(--keyboard-inset, 0px));
+  max-height: 100%;
   overflow: hidden;
   margin-top: 0;
+}
+
+html.keyboard-open .wine-form-modal {
+  flex: 1 1 auto;
+  align-self: stretch;
 }
 
 .wine-form-modal .modal-header {
   flex-shrink: 0;
 }
 
+.wine-form-body input:not([type='range']),
+.wine-form-body select,
+.wine-form-body textarea,
+.auth-form input,
+.account-profile-form input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.form-grid,
+.field,
+.region-picker,
+.varietal-select {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .wine-form-body {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-height: 0;
-  max-height: min(
-    72dvh,
-    calc(100dvh - var(--safe-top) - var(--safe-bottom) - 10.5rem - var(--keyboard-inset, 0px))
-  );
+  overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.35rem;
+  scroll-padding-top: 0.5rem;
+  scroll-padding-bottom: 0.85rem;
 }
 
 .wine-form-modal .modal-actions {
@@ -4058,11 +4089,21 @@ html.app-scroll-locked.native-app .content {
 /* ── Auth ───────────────────────────────────────────── */
 
 .auth-screen {
-  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
+  align-items: safe center;
   justify-content: center;
-  padding: 2rem 1.25rem;
+  padding: 2rem 1.25rem calc(2rem + var(--keyboard-inset, 0px));
+  overflow-y: auto;
+  scroll-padding-bottom: calc(1.25rem + var(--keyboard-inset, 0px));
+}
+
+html.keyboard-open .auth-screen {
+  align-items: flex-start;
+  padding-top: max(1rem, calc(var(--safe-top) + 0.5rem));
 }
 
 .auth-card {
@@ -4978,8 +5019,8 @@ html.show-banner-ad .account-panel {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: var(--content-scroll-pad);
-    scroll-padding-bottom: var(--content-scroll-pad);
+    padding-bottom: calc(var(--content-scroll-pad) + var(--keyboard-inset, 0px));
+    scroll-padding-bottom: calc(var(--content-scroll-pad) + var(--keyboard-inset, 0px));
   }
 
   .app-footer-note {
@@ -5204,8 +5245,14 @@ html.show-banner-ad .account-panel {
 
   .modal-backdrop.wine-form-backdrop {
     overflow: hidden;
-    align-items: flex-start;
+    align-items: stretch;
     justify-content: center;
+    padding-top: max(0.5rem, calc(var(--safe-top) + 0.35rem));
+    padding-bottom: calc(max(0.5rem, var(--safe-bottom)) + var(--keyboard-inset, 0px));
+  }
+
+  html.keyboard-open .modal-backdrop.wine-form-backdrop {
+    padding-top: max(0.35rem, calc(var(--safe-top) + 0.2rem));
   }
 
   .wine-form-modal {
@@ -5213,13 +5260,15 @@ html.show-banner-ad .account-panel {
     margin-right: auto;
     width: 100%;
     max-width: min(560px, 100%);
+    flex: 1 1 auto;
+    align-self: stretch;
   }
 
   .modal:not(.wine-form-modal):not(.insights-leaders-modal) {
     margin: 0;
     padding: 1.25rem 1.1rem;
     max-height: calc(
-      100dvh - var(--safe-top) - var(--safe-bottom) - var(--modal-sheet-top-gap) - 1rem
+      100dvh - var(--safe-top) - var(--safe-bottom) - var(--modal-sheet-top-gap) - 1rem - var(--keyboard-inset, 0px)
     );
     overflow-y: auto;
   }
@@ -6052,6 +6101,18 @@ html.show-banner-ad .account-panel {
   margin-bottom: 0.25rem;
 }
 
+.region-picker-current {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.region-picker-browse {
+  align-self: flex-start;
+  padding: 0;
+  font-size: 0.82rem;
+}
+
 .region-picker-nested {
   display: grid;
   gap: 0.5rem;
@@ -6568,8 +6629,8 @@ html.native-app .content {
   min-height: 0;
   min-width: 0;
   max-width: 100%;
-  padding-bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 0.65rem);
-  scroll-padding-bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 0.65rem);
+  padding-bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 0.65rem + var(--keyboard-inset, 0px));
+  scroll-padding-bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 0.65rem + var(--keyboard-inset, 0px));
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-x: none;
@@ -6582,13 +6643,13 @@ html.show-banner-ad.native-app:not(.native-ios-tab-bar) .content {
     var(
         --banner-content-pad,
         calc(max(var(--banner-ad-height, 50px), 50px) + var(--tab-bar-height) + 1rem)
-      ) + var(--safe-bottom) + 0.5rem
+      ) + var(--safe-bottom) + 0.5rem + var(--keyboard-inset, 0px)
   );
   scroll-padding-bottom: calc(
     var(
         --banner-content-pad,
         calc(max(var(--banner-ad-height, 50px), 50px) + var(--tab-bar-height) + 1rem)
-      ) + var(--safe-bottom) + 0.5rem
+      ) + var(--safe-bottom) + 0.5rem + var(--keyboard-inset, 0px)
   );
 }
 
@@ -6720,7 +6781,8 @@ html.native-app .modal-backdrop {
 html.native-app .modal-backdrop.wine-form-backdrop {
   overflow: hidden;
   padding-top: max(0.35rem, calc(var(--safe-top) + 0.25rem));
-  align-items: flex-start;
+  padding-bottom: calc(max(0.5rem, var(--safe-bottom)) + var(--keyboard-inset, 0px));
+  align-items: stretch;
 }
 
 html.native-app .modal-backdrop.insights-leaders-backdrop {
@@ -6734,8 +6796,8 @@ html.native-ios-tab-bar .tabs.tabs-dock {
 }
 
 html.native-ios-tab-bar .content {
-  padding-bottom: max(0.5rem, var(--safe-bottom));
-  scroll-padding-bottom: max(0.5rem, var(--safe-bottom));
+  padding-bottom: calc(max(0.5rem, var(--safe-bottom)) + var(--keyboard-inset, 0px));
+  scroll-padding-bottom: calc(max(0.5rem, var(--safe-bottom)) + var(--keyboard-inset, 0px));
 }
 
 html.show-banner-ad.native-ios-tab-bar .content {
@@ -6743,13 +6805,13 @@ html.show-banner-ad.native-ios-tab-bar .content {
     var(
         --banner-content-pad,
         calc(max(var(--banner-ad-height, 50px), 50px) + 3.75rem)
-      ) + max(0.5rem, var(--safe-bottom))
+      ) + max(0.5rem, var(--safe-bottom)) + var(--keyboard-inset, 0px)
   );
   scroll-padding-bottom: calc(
     var(
         --banner-content-pad,
         calc(max(var(--banner-ad-height, 50px), 50px) + 3.75rem)
-      ) + max(0.5rem, var(--safe-bottom))
+      ) + max(0.5rem, var(--safe-bottom)) + var(--keyboard-inset, 0px)
   );
 }
 

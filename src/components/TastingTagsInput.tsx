@@ -61,6 +61,7 @@ export function TastingTagsInput({
           <button
             key={tag.id}
             type="button"
+            tabIndex={-1}
             className={`chip tasting-tag-chip ${selected.includes(tag.id) ? 'active' : ''}`}
             onClick={() => toggle(tag.id)}
           >
@@ -71,7 +72,7 @@ export function TastingTagsInput({
       {!pro && (
         <p className="tasting-tags-pro-note">
           Free plan uses {orderedCatalog.length} quick tags.{' '}
-          <button type="button" className="link-btn" onClick={onUpgrade}>
+          <button type="button" className="link-btn" tabIndex={-1} onClick={onUpgrade}>
             Upgrade to Pro
           </button>{' '}
           for detailed tags and your own labels.
@@ -85,9 +86,11 @@ export function TastingTagsInput({
             onChange={(e) => setCustomDraft(e.target.value)}
             placeholder="Add your own tag (e.g. pencil shavings)"
             maxLength={40}
+            enterKeyHint="done"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
+                e.stopPropagation()
                 addCustom()
               }
             }}
