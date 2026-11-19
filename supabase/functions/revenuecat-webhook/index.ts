@@ -68,8 +68,12 @@ Deno.serve(async (req) => {
     const admin = createClient(supabaseUrl, serviceKey)
 
     if (GRANT_EVENTS.has(event.type)) {
-      await grantPro(admin, userId)
-      console.log(`RevenueCat ${event.type}: granted Pro for ${userId}`)
+      const granted = await grantPro(admin, userId, { allowMissing: true })
+      if (granted) {
+        console.log(`RevenueCat ${event.type}: granted Pro for ${userId}`)
+      } else {
+        console.log(`RevenueCat ${event.type}: no profile for ${userId}, skipped`)
+      }
     } else if (REVOKE_EVENTS.has(event.type)) {
       await revokeProIfIapOnly(admin, userId)
       console.log(`RevenueCat ${event.type}: revoked Pro (IAP-only) for ${userId}`)

@@ -18,7 +18,10 @@ Deno.serve(async (req) => {
     const active = await revenueCatUserHasPro(user.id, ENTITLEMENT_ID)
 
     if (active) {
-      await grantPro(admin, user.id)
+      const granted = await grantPro(admin, user.id, { allowMissing: true })
+      if (!granted) {
+        return jsonResponse({ synced: false, isPro: false, skipped: 'no profile' })
+      }
       return jsonResponse({ synced: true, isPro: true })
     }
 

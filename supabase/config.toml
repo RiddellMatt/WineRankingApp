@@ -1,3 +1,7 @@
 # Stripe sends webhooks without a Supabase JWT.
 [functions.stripe-webhook]
 verify_jwt = false
+
+# Called from the app with the signed-in user's JWT. The function also checks that JWT.
+[functions.delete-account]
+verify_jwt = true

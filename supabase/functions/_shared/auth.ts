@@ -1,17 +1,22 @@
 import { createClient, type SupabaseClient, type User } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { corsHeaders } from './cors.ts'
 
 export interface AuthedContext {
   user: User
   admin: SupabaseClient
 }
 
+function authError(error: string, status: number): Response {
+  return new Response(JSON.stringify({ error }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+}
+
 export async function requireUser(req: Request): Promise<AuthedContext | Response> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'Sign in required.' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return authError('Sign in required.', 401)
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -27,10 +32,7 @@ export async function requireUser(req: Request): Promise<AuthedContext | Respons
   } = await userClient.auth.getUser()
 
   if (userError || !user) {
-    return new Response(JSON.stringify({ error: 'Invalid session.' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return authError('Invalid session.', 401)
   }
 
   const admin = createClient(supabaseUrl, serviceKey)
