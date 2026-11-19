@@ -1,6 +1,10 @@
+import { useState } from 'react'
 import type { RankingPreference, Wine } from '../types'
 import { shopUrl } from '../config'
-import { showsShopLink } from '../lib/platform'
+import { openExternalUrl } from '../lib/openUrl'
+import { nativePlatform } from '../lib/platform'
+import { confirmShopAge, hasShopAgeConfirmation, shopTapAction } from '../lib/shopAge'
+import { ShopAgeGate } from './ShopAgeGate'
 import { compositeScore, isWineFavorite } from '../lib/ranking'
 import { getPairings } from '../pairings'
 import { hasTaste, lookupTaste } from '../tasteData'
@@ -45,6 +49,8 @@ export function WineCard({
   onTagFilter,
   withFriendsLabel = null,
 }: Props) {
+  const [shopGateOpen, setShopGateOpen] = useState(false)
+  const shopHref = shopUrl(wine)
   const medal = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : ''
   const meta = [wine.varietal, wine.region].filter(Boolean).join(' · ')
   const score = compositeScore(wine, rankingPreference)
@@ -55,7 +61,27 @@ export function WineCard({
   const taste = ownTaste ? wine.taste : reference.taste
   const isTypical = !ownTaste || wine.tasteSource === 'typical'
 
+  async function openShop() {
+    await openExternalUrl(shopHref)
+  }
+
+  function onIosShop() {
+    const action = shopTapAction('ios', hasShopAgeConfirmation())
+    if (action === 'open') {
+      void openShop()
+      return
+    }
+    setShopGateOpen(true)
+  }
+
+  function confirmAndOpenShop() {
+    confirmShopAge()
+    setShopGateOpen(false)
+    void openShop()
+  }
+
   return (
+    <>
     <li id={`wine-card-${wine.id}`} className="wine-card">
       <div className={`rank-badge ${medal}`}>{rank}</div>
 
@@ -181,10 +207,20 @@ export function WineCard({
             >
               <IconTrash />
             </button>
-            {showsShopLink() && (
+            {nativePlatform() === 'ios' ? (
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label={`Shop for ${wine.name}`}
+                title="Find this wine online"
+                onClick={onIosShop}
+              >
+                <IconGlobe />
+              </button>
+            ) : (
               <a
                 className="icon-btn"
-                href={shopUrl(wine)}
+                href={shopHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`Shop for ${wine.name}`}
@@ -197,5 +233,13 @@ export function WineCard({
         )}
       </div>
     </li>
+    {shopGateOpen && (
+      <ShopAgeGate
+        wineName={wine.name}
+        onConfirm={confirmAndOpenShop}
+        onClose={() => setShopGateOpen(false)}
+      />
+    )}
+    </>
   )
 }

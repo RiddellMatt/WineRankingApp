@@ -6,7 +6,7 @@ import {
   WINE_STORAGE_KEY,
 } from '../brand'
 
-/** On-device copies of the account. Theme and app icon stay; they are device preferences. */
+/** On-device copies of the account. Theme, app icon, and the iOS 21+ shop confirmation stay; they are device preferences. */
 export const LOCAL_ACCOUNT_KEYS = [
   WINE_STORAGE_KEY,
   LEGACY_WINE_STORAGE_KEY,
