@@ -49,6 +49,7 @@ export function TasteInput({ taste, wineType, onChange }: InputProps) {
             <div className="taste-slider-track">
               <input
                 type="range"
+                tabIndex={-1}
                 min="0"
                 max="100"
                 value={value ?? 50}
@@ -67,6 +68,7 @@ export function TasteInput({ taste, wineType, onChange }: InputProps) {
             </span>
             <button
               type="button"
+              tabIndex={-1}
               className={`icon-btn taste-clear ${isSet ? '' : 'hidden'}`}
               aria-label={`Clear ${a.left}/${a.right}`}
               title="Clear"

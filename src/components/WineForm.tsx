@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { aiLabelToScanResult, LabelScanError, scanLabelWithAi } from '../lib/labelScanApi'
 import {
   baselineFromAiLabel,
@@ -13,8 +13,7 @@ import { hasTaste, lookupTaste } from '../tasteData'
 import { WINE_TYPES, type RankingPreference, type TasteProfile, type Wine, type WineType } from '../types'
 import { catalogTags } from '../lib/tastingTags'
 import { triedWines } from '../lib/wishlist'
-import { isNativeApp } from '../lib/platform'
-import { Keyboard } from '@capacitor/keyboard'
+import { focusNextTextField, isTextField } from '../lib/keyboardInset'
 import { StarInput } from './StarRating'
 import { TasteInput } from './TasteProfile'
 import { TastingTagsInput } from './TastingTagsInput'
@@ -123,61 +122,32 @@ export function WineForm({
     }
   }, [userId, signedIn, cloudConfigured])
 
-  useEffect(() => {
-    const root = document.documentElement
-    const clearInset = () => root.style.setProperty('--keyboard-inset', '0px')
-
-    if (isNativeApp()) {
-      void Keyboard.setScroll({ isDisabled: false })
-      const handles: Array<{ remove: () => void }> = []
-      void Keyboard.addListener('keyboardWillShow', (info) => {
-        root.style.setProperty('--keyboard-inset', `${info.keyboardHeight}px`)
-      }).then((h) => handles.push(h))
-      void Keyboard.addListener('keyboardDidShow', (info) => {
-        root.style.setProperty('--keyboard-inset', `${info.keyboardHeight}px`)
-      }).then((h) => handles.push(h))
-      void Keyboard.addListener('keyboardWillHide', clearInset).then((h) => handles.push(h))
-      void Keyboard.addListener('keyboardDidHide', clearInset).then((h) => handles.push(h))
-      return () => {
-        handles.forEach((h) => h.remove())
-        clearInset()
+  function onFormKeyDown(e: ReactKeyboardEvent<HTMLFormElement>) {
+    if (e.key === 'Tab') {
+      const focusable = [...e.currentTarget.querySelectorAll<HTMLElement>('button, input, select, textarea, [tabindex]')].filter(
+        (el) => !el.hasAttribute('disabled') && el.tabIndex >= 0 && el.getClientRects().length > 0,
+      )
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (!first || !last) return
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
       }
+      return
     }
-
-    const viewport = window.visualViewport
-    if (!viewport) return undefined
-
-    const syncInset = () => {
-      const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
-      root.style.setProperty('--keyboard-inset', `${inset}px`)
+    if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return
+    if (e.target instanceof HTMLSelectElement) {
+      e.preventDefault()
+      return
     }
-    syncInset()
-    viewport.addEventListener('resize', syncInset)
-    viewport.addEventListener('scroll', syncInset)
-    return () => {
-      viewport.removeEventListener('resize', syncInset)
-      viewport.removeEventListener('scroll', syncInset)
-      clearInset()
-    }
-  }, [])
-
-  const formBodyRef = useRef<HTMLDivElement>(null)
-
-  function focusField(el: HTMLElement) {
-    const scrollParent = formBodyRef.current
-    window.setTimeout(() => {
-      if (!scrollParent) {
-        el.scrollIntoView({ block: 'nearest', behavior: 'auto' })
-        return
-      }
-      const parentRect = scrollParent.getBoundingClientRect()
-      const elRect = el.getBoundingClientRect()
-      const margin = 20
-      if (elRect.bottom > parentRect.bottom - margin || elRect.top < parentRect.top + margin) {
-        el.scrollIntoView({ block: 'nearest', behavior: 'auto' })
-      }
-    }, 120)
+    if (!isTextField(e.target) || e.target instanceof HTMLTextAreaElement) return
+    if (focusNextTextField(e.target, e.currentTarget)) e.preventDefault()
   }
+
   const parsedPrice = price ? Number(price) : null
 
   const previewRank = useMemo(
@@ -412,7 +382,7 @@ export function WineForm({
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <ScanPourOverlay open={aiScanning} variant="label" previewUrl={aiPreviewUrl} />
-      <form className="modal wine-form-modal" onSubmit={handleSubmit}>
+      <form className="modal wine-form-modal" onSubmit={handleSubmit} onKeyDown={onFormKeyDown}>
         <div className="modal-header">
           <div className="modal-header-titles">
             <h2>{modalTitle}</h2>
@@ -425,20 +395,7 @@ export function WineForm({
           </button>
         </div>
 
-        <div
-          ref={formBodyRef}
-          className="wine-form-body"
-          onFocusCapture={(e) => {
-            const target = e.target
-            if (
-              target instanceof HTMLInputElement ||
-              target instanceof HTMLTextAreaElement ||
-              target instanceof HTMLSelectElement
-            ) {
-              focusField(target)
-            }
-          }}
-        >
+        <div className="wine-form-body">
         {!initial && (
           <div className="scan-box">
             <button
@@ -479,12 +436,12 @@ export function WineForm({
           <div className="form-rating">
             <label>Enjoyment</label>
             <p className="form-rating-hint">How much did you like it?</p>
-            <StarInput value={ratingEnjoyment} onChange={setRatingEnjoyment} />
+            <StarInput value={ratingEnjoyment} onChange={setRatingEnjoyment} label="Enjoyment" />
           </div>
           <div className="form-rating">
             <label>Value</label>
             <p className="form-rating-hint">Worth the price? Optional.</p>
-            <StarInput value={ratingValue} onChange={setRatingValue} />
+            <StarInput value={ratingValue} onChange={setRatingValue} label="Value" />
           </div>
           {ratingEnjoyment > 0 && (
             <p className="rank-preview">
@@ -502,6 +459,8 @@ export function WineForm({
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Barolo Riserva"
               autoFocus={!initial}
+              enterKeyHint="next"
+              autoComplete="off"
             />
           </label>
           <label className="field">
@@ -510,17 +469,21 @@ export function WineForm({
               value={winery}
               onChange={(e) => setWinery(e.target.value)}
               placeholder="e.g. Marchesi di Barolo"
+              enterKeyHint="next"
+              autoComplete="organization"
             />
           </label>
           <label className="field">
             <span>Vintage</span>
             <input
               type="number"
+              inputMode="numeric"
               min="1900"
               max="2100"
               value={vintage}
               onChange={(e) => setVintage(e.target.value)}
               placeholder="e.g. 2019"
+              enterKeyHint="next"
             />
           </label>
           <label className="field">
@@ -561,11 +524,13 @@ export function WineForm({
             <span>Price ($)</span>
             <input
               type="number"
+              inputMode="decimal"
               min="0"
               step="0.01"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               placeholder="e.g. 45"
+              enterKeyHint="next"
             />
           </label>
           <label className="field span-2">
@@ -573,7 +538,9 @@ export function WineForm({
             <input
               value={purchasedAt}
               onChange={(e) => setPurchasedAt(e.target.value)}
-              placeholder="e.g. Charleston, SC · Rome, Italy · winery visit"
+              placeholder="e.g. Charleston, SC or a winery"
+              enterKeyHint="next"
+              autoComplete="off"
             />
           </label>
         </div>
