@@ -1671,8 +1671,24 @@ a.icon-btn {
   margin-left: auto;
 }
 
-.menu-save-btn {
+.shop-find-btn {
+  padding-left: 0;
+}
+
+.wine-find-again {
+  margin-top: 0.55rem;
+}
+
+.menu-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.85rem;
   margin-top: 0.65rem;
+}
+
+.menu-save-btn {
+  margin-top: 0;
 }
 
 .menu-save-btn.saved {

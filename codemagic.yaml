@@ -21,6 +21,7 @@ workflows:
         # VITE_ADMOB_SHOW_FOR_PRO unset
         # VITE_REVENUECAT_IOS_API_KEY set
         # VITE_IOS_PRO_PRODUCT_ID=decanti_pro_monthly
+        # VITE_WINE_SEARCHER_AFFILIATE_ID=   # optional; bare id or ?Xaff= id
         - decanti_env
       vars:
         XCODE_PROJECT: ios/App/App.xcodeproj
