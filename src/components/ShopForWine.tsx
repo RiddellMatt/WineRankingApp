@@ -15,11 +15,8 @@ interface Props {
 export function ShopForWine({ target, wineName, variant }: Props) {
   const [gateOpen, setGateOpen] = useState(false)
   const href = shopUrl(target)
-  const affiliate = shopLinksAreAffiliate()
   const accessibleName =
-    variant === 'icon'
-      ? `Find ${wineName} on Wine-Searcher${affiliate ? ', affiliate link' : ''}`
-      : `Find a bottle, ${wineName}${affiliate ? ', affiliate link' : ''}`
+    variant === 'icon' ? `Find ${wineName} on Wine-Searcher` : `Find a bottle, ${wineName}`
 
   async function openShop() {
     await openExternalUrl(href)
@@ -35,9 +32,7 @@ export function ShopForWine({ target, wineName, variant }: Props) {
   }
 
   const className = variant === 'icon' ? 'icon-btn' : 'link-btn shop-find-btn'
-  const title = affiliate
-    ? `Find ${wineName} on Wine-Searcher. Affiliate link.`
-    : `Find ${wineName} on Wine-Searcher`
+  const title = `Find ${wineName} on Wine-Searcher`
 
   const control =
     nativePlatform() === 'ios' ? (
@@ -49,7 +44,9 @@ export function ShopForWine({ target, wineName, variant }: Props) {
         className={className}
         href={href}
         target="_blank"
-        rel={affiliate ? 'noopener noreferrer sponsored' : 'noopener noreferrer'}
+        rel={
+          shopLinksAreAffiliate() ? 'noopener noreferrer sponsored' : 'noopener noreferrer'
+        }
         aria-label={accessibleName}
         title={title}
       >
@@ -59,18 +56,10 @@ export function ShopForWine({ target, wineName, variant }: Props) {
 
   return (
     <>
-      {variant === 'text' ? (
-        <span className="shop-find">
-          {control}
-          {affiliate && <span className="shop-affiliate-note">Affiliate link</span>}
-        </span>
-      ) : (
-        control
-      )}
+      {control}
       {gateOpen && (
         <ShopAgeGate
           wineName={wineName}
-          affiliate={affiliate}
           onConfirm={() => {
             confirmShopAge()
             setGateOpen(false)

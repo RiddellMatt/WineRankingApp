@@ -1671,27 +1671,8 @@ a.icon-btn {
   margin-left: auto;
 }
 
-.shop-find {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-
 .shop-find-btn {
   padding-left: 0;
-}
-
-.shop-affiliate-note {
-  font-size: 0.75rem;
-  color: var(--text-faint);
-}
-
-.shop-affiliate-banner {
-  margin: 0 0 0.85rem;
-  font-size: 0.8rem;
-  line-height: 1.4;
-  color: var(--text-faint);
 }
 
 .wine-find-again {

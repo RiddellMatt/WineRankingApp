@@ -2,7 +2,6 @@ import { useRef, useState } from 'react'
 import { isWishlistDuplicate, menuMatchToWishlist } from '../lib/wishlist'
 import { matchMenu, matchParsedMenuWines, type MenuMatch } from '../menuMatch'
 import { ShopForWine } from './ShopForWine'
-import { shopLinksAreAffiliate } from '../lib/shopLink'
 import { MenuScanError, scanMenuWithAi } from '../lib/menuScanApi'
 import type { RankingPreference, Wine } from '../types'
 import { ScanPourOverlay } from './ScanPourOverlay'
@@ -231,12 +230,6 @@ export function MenuScan({
       </section>
 
       {state.phase === 'results' && (
-        <>
-        {shopLinksAreAffiliate() && (
-          <p className="shop-affiliate-banner">
-            Shop links open Wine-Searcher. Decanti may earn a referral fee for that visit.
-          </p>
-        )}
         <ol className="menu-results">
           {state.matches.map((m, i) => {
             const key = matchKey(m, i)
@@ -286,7 +279,6 @@ export function MenuScan({
             )
           })}
         </ol>
-        </>
       )}
     </div>
   )

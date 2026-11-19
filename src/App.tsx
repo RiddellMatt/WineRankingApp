@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type RankingPreference, type SortKey, type Wine, type WineType } from './types'
 import { loadWines, saveWines } from './storage'
 import { FREE_WINE_LIMIT, FREE_WISHLIST_LIMIT } from './config'
-import { shopLinksAreAffiliate } from './lib/shopLink'
 import { syncProSubscription } from './lib/checkoutApi'
 import { activatePro, loadProStatus, syncProFromServer } from './pro'
 import { isCheckoutSuccessUrl } from './lib/authRedirect'
@@ -1524,12 +1523,6 @@ export default function App() {
                 )}
               </section>
             ) : cellarSegment === 'wishlist' ? (
-              <>
-              {shopLinksAreAffiliate() && (
-                <p className="shop-affiliate-banner">
-                  Shop links open Wine-Searcher. Decanti may earn a referral fee for that visit.
-                </p>
-              )}
               <ol className="wishlist-list">
                 {visible.map((wine) => (
                   <WishlistCard
@@ -1553,14 +1546,7 @@ export default function App() {
                   />
                 ))}
               </ol>
-              </>
             ) : (
-              <>
-              {shopLinksAreAffiliate() && (
-                <p className="shop-affiliate-banner">
-                  Shop links open Wine-Searcher. Decanti may earn a referral fee for that visit.
-                </p>
-              )}
               <ol className="wine-list">
                 {visible.map((wine) => (
                   <WineCard
@@ -1581,7 +1567,6 @@ export default function App() {
                   />
                 ))}
               </ol>
-              </>
             )}
           </>
         )}
