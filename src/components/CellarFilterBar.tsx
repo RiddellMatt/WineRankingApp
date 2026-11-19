@@ -119,7 +119,7 @@ export function CellarFilterBar({
           <input
             className="search cellar-search-input"
             type="search"
-            placeholder="Search name, winery, region, tags…"
+            placeholder="Name, winery, region, tags…"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             onKeyDown={(e) => {
