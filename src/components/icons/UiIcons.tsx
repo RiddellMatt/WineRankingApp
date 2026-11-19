@@ -285,22 +285,22 @@ export function IconMenu({ className = 'ui-icon', size = defaultSize }: IconProp
   )
 }
 
-/** Tab: More. Wide ellipsis so each dot matches the other tab icons, not a tiny "…". */
+/** Tab: More. Dots are sized to the same height as the other tab glyphs. */
 export function IconEllipsis({ className = 'ui-icon', size = defaultSize }: IconProps) {
   const height = size
-  const width = Math.round((size * 40) / 22)
+  const width = Math.round((size * 66) / 22)
   return (
     <svg
       className={className}
       width={width}
       height={height}
-      viewBox="0 0 40 22"
+      viewBox="0 0 66 22"
       fill="currentColor"
       aria-hidden
     >
-      <circle cx="7" cy="11" r="5.2" />
-      <circle cx="20" cy="11" r="5.2" />
-      <circle cx="33" cy="11" r="5.2" />
+      <circle cx="11" cy="11" r="10" />
+      <circle cx="33" cy="11" r="10" />
+      <circle cx="55" cy="11" r="10" />
     </svg>
   )
 }

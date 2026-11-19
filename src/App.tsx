@@ -1637,7 +1637,7 @@ export default function App() {
             setView('more')
           }}
         >
-          <IconEllipsis className="tab-icon-svg tab-icon-more" size={27} />
+          <IconEllipsis className="tab-icon-svg tab-icon-more" size={22} />
         </button>
       </nav>
       )}
