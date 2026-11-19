@@ -1,5 +1,7 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { blockUser } from '../lib/blocksDb'
 import { Avatar } from './Avatar'
+import { ReportControl } from './ReportSheet'
 import { ProfileLevelBar } from './ProfileLevelBar'
 import { WineCard } from './WineCard'
 import { computePlayerLevel } from '../lib/playerLevel'
@@ -30,6 +32,9 @@ export interface FriendCellarViewProps {
   completedJourneys?: ReadonlySet<string>
   friendCount?: number
   friendNameById?: Map<string, string>
+  /** Report and block. Omitted on the owner's own preview. */
+  canModerate?: boolean
+  onBlocked?: () => void
 }
 
 export function FriendCellarView({
@@ -49,7 +54,11 @@ export function FriendCellarView({
   completedJourneys = new Set(),
   friendCount = 0,
   friendNameById,
+  canModerate = false,
+  onBlocked,
 }: FriendCellarViewProps) {
+  const [safetyError, setSafetyError] = useState('')
+  const [blockBusy, setBlockBusy] = useState(false)
   const rankById = useMemo(() => {
     const tried = triedWines(wines)
     const ordered = sortWinesByRating(tried, rankingPreference)
@@ -99,6 +108,36 @@ export function FriendCellarView({
         <div className="friend-cellar-identity">
           <h2 className="friend-cellar-title">{possessive} cellar</h2>
           <ProfileLevelBar level={playerLevel} compact />
+          {canModerate && (
+            <div className="friend-cellar-safety">
+              <ReportControl targetUserId={userId} targetName={displayName} />
+              <button
+                type="button"
+                className="link-btn"
+                disabled={blockBusy}
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      `Block ${displayName}? They disappear from your friends, feed, and notifications until you unblock them.`,
+                    )
+                  ) {
+                    return
+                  }
+                  setBlockBusy(true)
+                  setSafetyError('')
+                  void blockUser(userId)
+                    .then(() => onBlocked?.())
+                    .catch((err: unknown) => {
+                      setSafetyError(err instanceof Error ? err.message : 'Could not block this person.')
+                      setBlockBusy(false)
+                    })
+                }}
+              >
+                {blockBusy ? 'Blocking…' : 'Block'}
+              </button>
+            </div>
+          )}
+          {safetyError && <p className="form-error">{safetyError}</p>}
         </div>
       </div>
       {tried.length === 0 && wishlist.length === 0 ? (

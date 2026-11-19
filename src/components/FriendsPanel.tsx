@@ -15,6 +15,7 @@ import {
   type ActivityEvent,
   type WineActivityEventType,
 } from '../lib/activityFeed'
+import { blockUser, listMyBlocks, unblockUser, type BlockedPerson } from '../lib/blocksDb'
 import {
   fetchFriendships,
   findProfileByEmail,
@@ -96,6 +97,7 @@ export function FriendsPanel({
 }: Props) {
   const [tab, setTab] = useState<FriendsTab>('feed')
   const [friendships, setFriendships] = useState<Friendship[]>([])
+  const [blocked, setBlocked] = useState<BlockedPerson[]>([])
   const [friendshipsLoaded, setFriendshipsLoaded] = useState(false)
   const [activity, setActivity] = useState<ActivityEvent[]>([])
   const [activityLoading, setActivityLoading] = useState(false)
@@ -106,8 +108,9 @@ export function FriendsPanel({
   const [busy, setBusy] = useState(false)
 
   const reload = useCallback(async () => {
-    const rows = await fetchFriendships(userId)
+    const [rows, blocks] = await Promise.all([fetchFriendships(userId), listMyBlocks()])
     setFriendships(rows)
+    setBlocked(blocks)
     const count = rows.filter((f) => f.status === 'accepted').length
     onFriendshipsChanged?.(count)
     setFriendshipsLoaded(true)
@@ -243,6 +246,39 @@ export function FriendsPanel({
     try {
       await removeFriendship(id)
       await reload()
+    } catch (e) {
+      setError(String((e as Error).message ?? e))
+    }
+  }
+
+  async function handleBlock(friendId: string, name: string) {
+    if (
+      !window.confirm(
+        `Block ${name}? They disappear from your friends, feed, and notifications until you unblock them.`,
+      )
+    ) {
+      return
+    }
+    setError('')
+    setInfo('')
+    try {
+      await blockUser(friendId)
+      requestNotificationsRefresh()
+      await reload()
+      setInfo(`${name} is blocked.`)
+    } catch (e) {
+      setError(String((e as Error).message ?? e))
+    }
+  }
+
+  async function handleUnblock(person: BlockedPerson) {
+    setError('')
+    setInfo('')
+    try {
+      await unblockUser(person.id)
+      requestNotificationsRefresh()
+      await reload()
+      setInfo(`${person.displayName} is unblocked.`)
     } catch (e) {
       setError(String((e as Error).message ?? e))
     }
@@ -420,6 +456,9 @@ export function FriendsPanel({
                         >
                           View cellar
                         </button>
+                        <button className="btn ghost small" onClick={() => handleBlock(friendId, name)}>
+                          Block
+                        </button>
                         <button className="btn ghost small" onClick={() => handleRemove(f.id)}>
                           Remove
                         </button>
@@ -427,6 +466,34 @@ export function FriendsPanel({
                     </li>
                   )
                 })}
+              </ul>
+            )}
+          </section>
+
+          <section className="friends-section">
+            <h3>Blocked</h3>
+            {blocked.length === 0 ? (
+              <p className="friends-empty">No one is blocked.</p>
+            ) : (
+              <ul className="friends-list">
+                {blocked.map((person) => (
+                  <li className="friends-row" key={person.id}>
+                    <div className="friends-row-main">
+                      <Avatar
+                        displayName={person.displayName}
+                        avatarUrl={person.avatarUrl}
+                        seed={person.id}
+                        size="sm"
+                      />
+                      <div className="friends-identity">
+                        <span className="friends-name">{person.displayName}</span>
+                      </div>
+                    </div>
+                    <button className="btn ghost small" onClick={() => void handleUnblock(person)}>
+                      Unblock
+                    </button>
+                  </li>
+                ))}
               </ul>
             )}
           </section>

@@ -55,6 +55,7 @@ import { Avatar } from './components/Avatar'
 import { FriendsPanel } from './components/FriendsPanel'
 import { NotificationsBell } from './components/NotificationsBell'
 import { FriendCellarView } from './components/FriendCellarView'
+import { requestNotificationsRefresh } from './lib/notificationsRefresh'
 import { ProfileScreen } from './components/ProfileScreen'
 import { SETTINGS_SECTION_TITLES, type AccountSettingsSection } from './components/accountSettings'
 import {
@@ -1292,6 +1293,11 @@ export default function App() {
               completedJourneys={friendCompletedJourneys}
               isWishlistSaved={(wine) => isWishlistDuplicate(wines, wine)}
               wishlistSavingKey={savingFriendWishlistKey}
+              canModerate
+              onBlocked={() => {
+                requestNotificationsRefresh()
+                setFriendView(null)
+              }}
             />
           ) : (
             <FriendsPanel
