@@ -1,32 +1,24 @@
-import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { RANKING_PREFERENCE_OPTIONS } from '../lib/ranking'
 import type { RankingPreference } from '../types'
 
 interface Props {
-  rankingPreference: RankingPreference
-  onRankingPreferenceSaved: (preference: RankingPreference) => Promise<void>
+  value: RankingPreference
+  onChange: (preference: RankingPreference) => void
+  disabled?: boolean
   title?: string
   className?: string
+  children?: ReactNode
 }
 
 export function RankingPreferencePicker({
-  rankingPreference,
-  onRankingPreferenceSaved,
+  value,
+  onChange,
+  disabled = false,
   title = 'Ranking style',
   className = '',
+  children,
 }: Props) {
-  const [busy, setBusy] = useState(false)
-
-  async function choose(preference: RankingPreference) {
-    if (preference === rankingPreference || busy) return
-    setBusy(true)
-    try {
-      await onRankingPreferenceSaved(preference)
-    } finally {
-      setBusy(false)
-    }
-  }
-
   return (
     <section className={`account-section ranking-preference-block ${className}`.trim()}>
       <h3>{title}</h3>
@@ -35,15 +27,17 @@ export function RankingPreferencePicker({
           <button
             key={option.value}
             type="button"
-            className={`ranking-preference-card ${rankingPreference === option.value ? 'active' : ''}`}
-            disabled={busy}
-            onClick={() => void choose(option.value)}
+            className={`ranking-preference-card ${value === option.value ? 'active' : ''}`}
+            disabled={disabled}
+            aria-pressed={value === option.value}
+            onClick={() => onChange(option.value)}
           >
             <span className="ranking-preference-title">{option.title}</span>
             <span className="ranking-preference-desc">{option.description}</span>
           </button>
         ))}
       </div>
+      {children}
     </section>
   )
 }

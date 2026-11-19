@@ -17,12 +17,15 @@ import { purchasePath } from '../lib/purchasePath'
 import { redeemProOnServer } from '../lib/proApi'
 import { updateDisplayName, uploadAvatar, removeAvatar, type UserProfile } from '../lib/profileDb'
 import type { RankingPreference } from '../types'
+import { applyAppIcon, loadStoredAppIcon, type AppIconVariant } from '../lib/appIcon'
+import { applyTheme, loadStoredTheme, previewTheme, type AppTheme } from '../lib/themes'
 import { RankingPreferencePicker } from './RankingPreferencePicker'
 import { APP_NAME_PRO } from '../brand'
 import { Avatar } from './Avatar'
 import { AppIconPicker } from './AppIconPicker'
 import { ThemePicker } from './ThemePicker'
 import { PushNotificationSettings } from './PushNotificationSettings'
+import { SettingsCommitBar } from './SettingsCommitBar'
 import { SettingsMenu } from './SettingsMenu'
 import type { AccountSettingsSection } from './accountSettings'
 
@@ -100,6 +103,25 @@ export function AccountPanel({
   const [iapPriceLabel, setIapPriceLabel] = useState<string | null>(null)
   const [iapSetupHint, setIapSetupHint] = useState<string | null>(null)
   const [iapPreviewLoaded, setIapPreviewLoaded] = useState(false)
+
+  const [draftRanking, setDraftRanking] = useState(rankingPreference)
+  const [rankingBusy, setRankingBusy] = useState(false)
+  const [rankingError, setRankingError] = useState('')
+  const [rankingSaved, setRankingSaved] = useState(false)
+  const rankingSaveLock = useRef(false)
+
+  const [savedTheme, setSavedTheme] = useState<AppTheme>(() => loadStoredTheme())
+  const [draftTheme, setDraftTheme] = useState<AppTheme>(() => loadStoredTheme())
+  const [savedIcon, setSavedIcon] = useState<AppIconVariant>(() => loadStoredAppIcon())
+  const [draftIcon, setDraftIcon] = useState<AppIconVariant>(() => loadStoredAppIcon())
+  const [appearanceBusy, setAppearanceBusy] = useState(false)
+  const [appearanceError, setAppearanceError] = useState('')
+  const [appearanceSaved, setAppearanceSaved] = useState(false)
+  const appearanceSaveLock = useRef(false)
+  const savedThemeRef = useRef(savedTheme)
+  const savedIconRef = useRef(savedIcon)
+  savedThemeRef.current = savedTheme
+  savedIconRef.current = savedIcon
   const priceShown = iapPriceLabel ?? PRO_CONFIG.priceLabel
 
   function subscribeButtonLabel(busy: boolean): string {
@@ -140,6 +162,108 @@ export function AccountPanel({
   useEffect(() => {
     if (highlightSubscription) onSettingsSectionChange('subscription')
   }, [highlightSubscription, onSettingsSectionChange])
+
+  useEffect(() => {
+    setDraftRanking(rankingPreference)
+  }, [rankingPreference])
+
+  useEffect(() => {
+    if (settingsSection === 'ranking') return
+    setDraftRanking(rankingPreference)
+    setRankingError('')
+    setRankingSaved(false)
+  }, [settingsSection, rankingPreference])
+
+  useEffect(() => {
+    if (settingsSection === 'appearance') return
+    setDraftTheme(savedThemeRef.current)
+    setDraftIcon(savedIconRef.current)
+    previewTheme(savedThemeRef.current)
+    setAppearanceError('')
+    setAppearanceSaved(false)
+  }, [settingsSection])
+
+  useEffect(() => {
+    return () => {
+      previewTheme(loadStoredTheme())
+    }
+  }, [])
+
+  function chooseRanking(preference: RankingPreference) {
+    setDraftRanking(preference)
+    setRankingError('')
+    setRankingSaved(false)
+  }
+
+  function cancelRanking() {
+    setDraftRanking(rankingPreference)
+    setRankingError('')
+    setRankingSaved(false)
+  }
+
+  async function saveRanking() {
+    if (draftRanking === rankingPreference || rankingSaveLock.current) return
+    rankingSaveLock.current = true
+    setRankingError('')
+    setRankingSaved(false)
+    setRankingBusy(true)
+    try {
+      await onRankingPreferenceSaved(draftRanking)
+      setRankingSaved(true)
+    } catch (err) {
+      setRankingError(String((err as Error).message ?? err))
+    } finally {
+      rankingSaveLock.current = false
+      setRankingBusy(false)
+    }
+  }
+
+  function chooseTheme(next: AppTheme) {
+    setDraftTheme(next)
+    setAppearanceError('')
+    setAppearanceSaved(false)
+    previewTheme(next)
+  }
+
+  function chooseIcon(next: AppIconVariant) {
+    setDraftIcon(next)
+    setAppearanceError('')
+    setAppearanceSaved(false)
+  }
+
+  function cancelAppearance() {
+    setDraftTheme(savedTheme)
+    setDraftIcon(savedIcon)
+    previewTheme(savedTheme)
+    setAppearanceError('')
+    setAppearanceSaved(false)
+  }
+
+  async function saveAppearance() {
+    const themeChanged = draftTheme !== savedTheme
+    const iconChanged = draftIcon !== savedIcon
+    if ((!themeChanged && !iconChanged) || appearanceSaveLock.current) return
+    appearanceSaveLock.current = true
+    setAppearanceError('')
+    setAppearanceSaved(false)
+    setAppearanceBusy(true)
+    try {
+      if (themeChanged) applyTheme(draftTheme)
+      if (iconChanged) await applyAppIcon(draftIcon)
+      setSavedTheme(draftTheme)
+      setSavedIcon(draftIcon)
+      setAppearanceSaved(true)
+    } catch (err) {
+      setAppearanceError(String((err as Error).message ?? err))
+      previewTheme(savedTheme)
+    } finally {
+      appearanceSaveLock.current = false
+      setAppearanceBusy(false)
+    }
+  }
+
+  const rankingDirty = draftRanking !== rankingPreference
+  const appearanceDirty = draftTheme !== savedTheme || draftIcon !== savedIcon
 
   async function handleSaveProfile(e: FormEvent) {
     e.preventDefault()
@@ -624,13 +748,23 @@ export function AccountPanel({
 
       {settingsSection === 'appearance' && (
         <>
+          <SettingsCommitBar
+            className="settings-commit-leading"
+            hint="The theme previews right away. Save changes keeps the theme and icon."
+            dirty={appearanceDirty}
+            busy={appearanceBusy}
+            saved={appearanceSaved}
+            error={appearanceError}
+            onSave={() => void saveAppearance()}
+            onCancel={cancelAppearance}
+          />
           <section className="account-section">
             <h3>Theme</h3>
-            <ThemePicker />
+            <ThemePicker theme={draftTheme} disabled={appearanceBusy} onChange={chooseTheme} />
           </section>
           <section className="account-section">
             <h3>App icon</h3>
-            <AppIconPicker />
+            <AppIconPicker icon={draftIcon} disabled={appearanceBusy} onChange={chooseIcon} />
           </section>
         </>
       )}
@@ -645,9 +779,20 @@ export function AccountPanel({
 
       {settingsSection === 'ranking' && (
         <RankingPreferencePicker
-          rankingPreference={rankingPreference}
-          onRankingPreferenceSaved={onRankingPreferenceSaved}
-        />
+          value={draftRanking}
+          onChange={chooseRanking}
+          disabled={rankingBusy}
+        >
+          <SettingsCommitBar
+            hint="Save changes to update how your wines are scored."
+            dirty={rankingDirty}
+            busy={rankingBusy}
+            saved={rankingSaved}
+            error={rankingError}
+            onSave={() => void saveRanking()}
+            onCancel={cancelRanking}
+          />
+        </RankingPreferencePicker>
       )}
 
       {!signedIn && settingsSection === 'appearance' && cloudConfigured && offlineMode && (
