@@ -59,11 +59,16 @@ Deno.serve(async (req) => {
           typeof session.subscription === 'string' ? session.subscription : null
 
         if (userId) {
-          await grantPro(admin, userId, {
+          const granted = await grantPro(admin, userId, {
             stripeCustomerId: customerId ?? undefined,
             stripeSubscriptionId: subscriptionId,
+            allowMissing: true,
           })
-          console.log(`Granted Pro via checkout for user ${userId}`)
+          if (granted) {
+            console.log(`Granted Pro via checkout for user ${userId}`)
+          } else {
+            console.warn(`checkout.session.completed: no profile for user ${userId}`)
+          }
         } else if (customerId) {
           await grantProByStripeCustomer(admin, customerId, subscriptionId)
           console.log(`Granted Pro via checkout for Stripe customer ${customerId}`)
@@ -95,10 +100,14 @@ Deno.serve(async (req) => {
 
         if (subscriptionIsActive(subscription.status)) {
           if (userId) {
-            await grantPro(admin, userId, {
+            const granted = await grantPro(admin, userId, {
               stripeCustomerId: customerId ?? undefined,
               stripeSubscriptionId: subscriptionId,
+              allowMissing: true,
             })
+            if (!granted) {
+              console.warn(`customer.subscription.updated: no profile for user ${userId}`)
+            }
           } else if (customerId) {
             await grantProByStripeCustomer(admin, customerId, subscriptionId)
           }

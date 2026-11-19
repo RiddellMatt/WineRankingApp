@@ -12,7 +12,7 @@ const PRIMARY_MENU_ITEMS: MenuItem[] = [
   {
     id: 'profile',
     label: 'Edit profile',
-    detail: 'Name, photo, and email',
+    detail: 'Name, photo, email, and account deletion',
     signedInOnly: true,
   },
   {

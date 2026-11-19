@@ -1003,6 +1003,16 @@ textarea::placeholder {
   border-color: var(--text-faint);
 }
 
+.btn.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .icon-btn {
   background: transparent;
   border: none;
@@ -4833,6 +4843,25 @@ html.show-banner-ad .account-panel {
 
 .account-readonly input {
   color: var(--text-dim);
+}
+
+.account-delete p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+}
+
+.account-delete-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.account-delete-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .account-hint {

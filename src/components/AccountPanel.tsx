@@ -11,6 +11,7 @@ import {
 } from '../lib/revenueCat'
 import { friendlyRevenueCatError } from '../lib/revenueCatErrors'
 import { openExternalUrl } from '../lib/openUrl'
+import { deleteMyAccount } from '../lib/deleteAccount'
 import { redeemProOnServer } from '../lib/proApi'
 import { updateDisplayName, uploadAvatar, removeAvatar, type UserProfile } from '../lib/profileDb'
 import type { RankingPreference } from '../types'
@@ -86,6 +87,10 @@ export function AccountPanel({
   const [checkoutBusy, setCheckoutBusy] = useState(false)
   const [restoreBusy, setRestoreBusy] = useState(false)
   const [billingBusy, setBillingBusy] = useState(false)
+  const [deleteArmed, setDeleteArmed] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [deleteBusy, setDeleteBusy] = useState(false)
   const iosIap = isIosStoreKitConfigured()
   const [iapPriceLabel, setIapPriceLabel] = useState<string | null>(null)
   const [iapSetupHint, setIapSetupHint] = useState<string | null>(null)
@@ -215,8 +220,8 @@ export function AccountPanel({
     }
   }
 
-  async function handleManageBilling() {
-    setCodeError('')
+  async function handleManageBilling(report: (message: string) => void = setCodeError) {
+    report('')
     setBillingBusy(true)
     try {
       if (iosIap) {
@@ -226,9 +231,29 @@ export function AccountPanel({
       const url = await createBillingPortal()
       await openExternalUrl(url)
     } catch (err) {
-      setCodeError(String((err as Error).message ?? err))
+      report(String((err as Error).message ?? err))
     } finally {
       setBillingBusy(false)
+    }
+  }
+
+  function resetDeleteConfirm() {
+    setDeleteArmed(false)
+    setDeleteConfirm('')
+    setDeleteError('')
+  }
+
+  async function handleDeleteAccount(e: FormEvent) {
+    e.preventDefault()
+    if (deleteConfirm !== 'DELETE' || deleteBusy) return
+    setDeleteError('')
+    setDeleteBusy(true)
+    try {
+      await deleteMyAccount()
+      await onSignOut()
+    } catch (err) {
+      setDeleteError(String((err as Error).message ?? err))
+      setDeleteBusy(false)
     }
   }
 
@@ -361,6 +386,78 @@ export function AccountPanel({
               <input value={resolvedEmail} readOnly />
             </label>
           </section>
+
+          <section className="account-section account-delete" id="delete-account">
+            <h3>Delete account</h3>
+            <p id="delete-account-help">
+              This permanently removes your cellar, photos, and sign-in from Decanti. An App Store
+              or Google Play subscription keeps billing until you cancel it with that store.
+            </p>
+            {iosIap ? (
+              <button
+                type="button"
+                className="btn ghost account-manage-billing"
+                disabled={billingBusy || deleteBusy}
+                onClick={() => void handleManageBilling(setDeleteError)}
+              >
+                {billingBusy ? 'Opening…' : 'Manage in App Store'}
+              </button>
+            ) : profile?.hasBilling ? (
+              <button
+                type="button"
+                className="btn ghost account-manage-billing"
+                disabled={billingBusy || deleteBusy}
+                onClick={() => void handleManageBilling(setDeleteError)}
+              >
+                {billingBusy ? 'Opening…' : 'Manage subscription'}
+              </button>
+            ) : null}
+            {deleteArmed ? (
+              <form className="account-delete-form" onSubmit={handleDeleteAccount}>
+                <label className="field">
+                  <span>Type DELETE to confirm</span>
+                  <input
+                    value={deleteConfirm}
+                    onChange={(e) => setDeleteConfirm(e.target.value)}
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    aria-describedby="delete-account-help"
+                    disabled={deleteBusy}
+                  />
+                </label>
+                <div className="account-delete-actions">
+                  <button
+                    type="submit"
+                    className="btn danger"
+                    disabled={deleteConfirm !== 'DELETE' || deleteBusy}
+                  >
+                    {deleteBusy ? 'Deleting…' : 'Delete account'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    disabled={deleteBusy}
+                    onClick={resetDeleteConfirm}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button
+                type="button"
+                className="btn danger"
+                onClick={() => {
+                  setDeleteError('')
+                  setDeleteArmed(true)
+                }}
+              >
+                Delete account
+              </button>
+            )}
+            {deleteError && <p className="form-error">{deleteError}</p>}
+          </section>
         </>
       )}
 
@@ -393,7 +490,7 @@ export function AccountPanel({
               type="button"
               className="btn ghost account-manage-billing"
               disabled={billingBusy}
-              onClick={handleManageBilling}
+              onClick={() => void handleManageBilling()}
             >
               {billingBusy
                 ? 'Opening…'

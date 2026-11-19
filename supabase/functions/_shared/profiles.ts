@@ -3,8 +3,13 @@ import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1
 export async function grantPro(
   admin: SupabaseClient,
   userId: string,
-  opts: { stripeCustomerId?: string; stripeSubscriptionId?: string | null } = {},
-): Promise<void> {
+  opts: {
+    stripeCustomerId?: string
+    stripeSubscriptionId?: string | null
+    /** Webhooks for a deleted account should succeed without recreating the profile. */
+    allowMissing?: boolean
+  } = {},
+): Promise<boolean> {
   const patch: Record<string, unknown> = { is_pro: true }
   if (opts.stripeCustomerId) patch.stripe_customer_id = opts.stripeCustomerId
   if (opts.stripeSubscriptionId !== undefined) {
@@ -13,8 +18,10 @@ export async function grantPro(
   const { data, error } = await admin.from('profiles').update(patch).eq('id', userId).select('id')
   if (error) throw error
   if (!data?.length) {
+    if (opts.allowMissing) return false
     throw new Error(`No profile row for user ${userId}`)
   }
+  return true
 }
 
 export async function revokePro(admin: SupabaseClient, userId: string): Promise<void> {
