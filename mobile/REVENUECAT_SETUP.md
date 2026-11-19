@@ -338,8 +338,8 @@ Do **not** point reviewers to Stripe for Pro on iOS once IAP is live.
 
 ## App behavior (reference)
 
-- **iOS + SDK key in build:** Profile uses Apple IAP; no Stripe checkout.
-- **iOS without SDK key:** falls back to Stripe (not App Review–ready for Pro).
+- **iOS + SDK key in build:** Profile uses Apple IAP. It does not open Stripe.
+- **iOS without SDK key:** Subscribe says purchases are unavailable. It does not open Stripe.
 - **Web/Android:** Stripe unchanged.
 - RevenueCat **`app_user_id`** = Supabase user UUID when signed in.
 

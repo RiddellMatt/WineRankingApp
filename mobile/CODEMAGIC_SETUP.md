@@ -12,7 +12,7 @@ Android Play Store builds are optional in the same `codemagic.yaml` (second work
 | [Codemagic account](https://codemagic.io/) | Free tier available | Cloud Mac CI |
 | App Store Connect app record | — | Bundle ID `com.northline.decanti` |
 
-> **Before App Store review:** Apple expects **In-App Purchase** for digital subscriptions in iOS apps. Stripe Pro is fine for Android testing; plan RevenueCat/StoreKit before iOS production submission.
+> **iOS Pro is In-App Purchase.** A release build uses RevenueCat and StoreKit. Web and Android keep Stripe. iOS does not open a Stripe checkout.
 
 ## 1. Apple Developer + App Store Connect
 
@@ -99,7 +99,7 @@ Then run the **Android Play internal track** workflow.
 
 1. **Now:** Merge Safari testing PR → iPhone testers use GitHub Pages (`mobile/SAFARI_TESTING.md`).
 2. **Next:** Complete this Codemagic setup → TestFlight internal builds.
-3. **Before App Store:** RevenueCat / StoreKit for Pro on iOS.
+3. **iOS Pro:** RevenueCat / StoreKit. Do not point a reviewer at Stripe.
 4. **Android:** Play internal testing (local Android Studio or Codemagic workflow).
 
 ## Troubleshooting
@@ -112,6 +112,6 @@ Then run the **Android Play internal track** workflow.
 | Codemagic post-process **422 export compliance** | App Store Connect → TestFlight → build → **Provide Export Compliance** (standard HTTPS only). Rebuilds with `ITSAppUsesNonExemptEncryption` in `Info.plist` declare this automatically. Keep `submit_to_testflight: false` until you need **External** TestFlight beta review. |
 | `unknown variable group(s): google_play` | Either merge a `codemagic.yaml` without `google_play` (build AAB only) or create personal **Environment variables** group `google_play` with `GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS` |
 | Blank app / no backend | Check `decanti_env` group has both `VITE_*` variables |
-| Stripe Pro on iOS | Works for testing; replace with IAP before App Store review |
+| Stripe checkout opens on iOS | It should not. iOS uses StoreKit, or shows “Purchases are unavailable” when the RevenueCat key is missing |
 
 See also: `mobile/STORE_RELEASE.md`, `mobile/SAFARI_TESTING.md`.

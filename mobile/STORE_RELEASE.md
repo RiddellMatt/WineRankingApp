@@ -82,7 +82,7 @@ The mobile app passes `platform: "mobile"` so Stripe redirects back to:
 - `com.northline.decanti://checkout-success`
 - `com.northline.decanti://account` (billing portal)
 
-> **App Store note:** Apple expects In-App Purchase for digital subscriptions consumed in the app. Stripe checkout works for testing and Android interim; plan **RevenueCat / StoreKit** before iOS App Store submission.
+> **App Store note:** iOS sells Decanti Pro with StoreKit. Stripe stays on web and Android. An iOS build does not open a Stripe checkout.
 
 ## 5. App icons & splash
 
@@ -108,7 +108,7 @@ npm run cap:sync
    - Camera/photo usage strings if using label/menu scan (add to Info.plist when enabling native camera)
    - Privacy policy URL (required for Sign in with Apple + App Store)
 4. **App Store Connect**
-   - Create app record, screenshots (6.7", 6.5", iPad if supporting tablets)
+   - Create app record, screenshots for 6.7-inch iPhone. The archive is iPhone-only, so iPad screenshots are not part of this submission
    - Age rating questionnaire
    - Export compliance (typically "No" for HTTPS-only encryption)
 5. **Build & upload**
@@ -132,7 +132,7 @@ npm run cap:sync
 1. ✓ Capacitor shell + deep links (this PR)
 2. Test auth (Google/Apple) on device simulators
 3. Test Stripe Pro flow on Android (Stripe allowed)
-4. Implement **RevenueCat** for iOS IAP before App Store submission
+4. iOS Pro uses **RevenueCat / StoreKit**. Do not send a reviewer to Stripe
 5. TestFlight / Play internal test → production
 
 ## Bundle identifiers
