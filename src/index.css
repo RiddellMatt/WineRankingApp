@@ -285,7 +285,73 @@ textarea::placeholder {
 }
 
 .brand.brand-theme-logo {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.12rem;
+}
+
+.brand-lockup {
+  display: flex;
   align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.header-inner-wordmark {
+  align-items: flex-start;
+}
+
+.header-inner-wordmark .header-profile,
+.header-inner-wordmark .header-actions {
+  margin-top: 0.95rem;
+}
+
+.brand-lockup .pro-badge {
+  flex: 0 0 auto;
+  transform: none;
+  align-self: flex-start;
+  /* Sit on the wordmark's letters. The glass stem hangs below them. */
+  margin-top: 1.65rem;
+}
+
+/* Remaining header width, to the right of PRO. The cropped wordmark
+   grows to that width and stops at a header-sized cap on wide screens. */
+.brand-wordmark-slot {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.brand-wordmark-slot .decanti-logo-header,
+.brand-wordmark-slot .decanti-logo-classic.decanti-logo-header,
+.brand-wordmark-slot .decanti-logo-light.decanti-logo-header,
+.brand-wordmark-slot .decanti-logo-navy.decanti-logo-header {
+  flex: 0 1 auto;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 7.5rem;
+  object-fit: contain;
+  object-position: left center;
+}
+
+@media (min-width: 720px) {
+  .brand-wordmark-slot .decanti-logo-header,
+  .brand-wordmark-slot .decanti-logo-classic.decanti-logo-header,
+  .brand-wordmark-slot .decanti-logo-light.decanti-logo-header,
+  .brand-wordmark-slot .decanti-logo-navy.decanti-logo-header {
+    max-height: 5.5rem;
+  }
+}
+
+.brand.brand-theme-logo .header-page-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brand.brand-theme-logo .tagline {

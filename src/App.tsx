@@ -1186,7 +1186,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <div className="header-inner">
+        <div className={`header-inner${showThemeLogo ? ' header-inner-wordmark' : ''}`}>
           <button
             type="button"
             className={`header-profile${view === 'profile' ? ' active' : ''}`}
@@ -1203,22 +1203,28 @@ export default function App() {
             />
           </button>
           <div className={`brand${showThemeLogo ? ' brand-theme-logo' : ''}`}>
-            <DecantiLogo context="header" />
-            <div className="brand-text">
-              {showThemeLogo ? (
-                pro && (
-                  <p className="brand-pro-line">
-                    <span className="pro-badge inline">PRO</span>
-                  </p>
-                )
-              ) : (
-                <h1 className="brand-wordmark">
-                  {APP_NAME}
-                  {pro && <span className="pro-badge inline">PRO</span>}
-                </h1>
-              )}
-              <p className="header-page-title">{headerPageTitle}</p>
-            </div>
+            {showThemeLogo ? (
+              <>
+                <div className="brand-lockup">
+                  {pro && <span className="pro-badge">PRO</span>}
+                  <div className="brand-wordmark-slot">
+                    <DecantiLogo context="header" wordmark />
+                  </div>
+                </div>
+                <p className="header-page-title">{headerPageTitle}</p>
+              </>
+            ) : (
+              <>
+                <DecantiLogo context="header" />
+                <div className="brand-text">
+                  <h1 className="brand-wordmark">
+                    {APP_NAME}
+                    {pro && <span className="pro-badge inline">PRO</span>}
+                  </h1>
+                  <p className="header-page-title">{headerPageTitle}</p>
+                </div>
+              </>
+            )}
           </div>
           <div className="header-actions">
             {cloudUser && view === 'friends' && !friendView && (
