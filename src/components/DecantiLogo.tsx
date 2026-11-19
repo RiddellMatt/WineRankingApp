@@ -6,16 +6,23 @@ interface Props {
   className?: string
   /** Compact app header vs larger auth card. */
   context?: 'header' | 'auth'
+  /** Header lockup uses the cropped wordmark instead of the square theme canvas. */
+  wordmark?: boolean
 }
 
-function logoSrcForTheme(theme: ReturnType<typeof useAppTheme>): string | undefined {
-  return THEME_OPTIONS.find((option) => option.id === theme)?.logoSrc
+function logoSrcForTheme(
+  theme: ReturnType<typeof useAppTheme>,
+  wordmark: boolean,
+): string | undefined {
+  const option = THEME_OPTIONS.find((item) => item.id === theme)
+  if (wordmark && option?.wordmarkSrc) return option.wordmarkSrc
+  return option?.logoSrc
 }
 
 /** Theme-aware Decanti mark — wordmark on Red & White themes (see theme logoSrc). */
-export function DecantiLogo({ className = '', context = 'header' }: Props) {
+export function DecantiLogo({ className = '', context = 'header', wordmark = false }: Props) {
   const theme = useAppTheme()
-  const logoSrc = logoSrcForTheme(theme)
+  const logoSrc = logoSrcForTheme(theme, wordmark)
 
   if (logoSrc) {
     return (
