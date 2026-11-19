@@ -89,6 +89,15 @@ function priceLabelFromStoreProduct(product: PurchasesStoreProduct): string | nu
   return price ? `${price}/month` : null
 }
 
+function storeKitProductUnavailableHint(productId: string): string {
+  return (
+    `Apple did not return subscription ${productId} on this device (StoreKit empty). ` +
+    'In App Store Connect: Paid Apps agreement Active; subscription status Ready to Submit (not Waiting for Review); ' +
+    'product ID matches exactly; pricing and localization complete. New products can take a few hours to appear in Sandbox—retry later. ' +
+    'RevenueCat is already configured if you see this on a current TestFlight build.'
+  )
+}
+
 export type DecantiProSubscriptionPreview = {
   priceLabel: string | null
   setupHint: string | null
@@ -127,7 +136,7 @@ export async function loadDecantiProSubscriptionPreview(
 
     return {
       priceLabel: null,
-      setupHint: `Could not load ${productId} from the App Store. In RevenueCat, confirm the product is App Store (not Test Store only), In-App Purchase key is set under Apps → iOS, and remove empty Yearly/Lifetime packages from the default offering.`,
+      setupHint: storeKitProductUnavailableHint(productId),
     }
   } catch (err) {
     return { priceLabel: null, setupHint: friendlyRevenueCatError(err) }
@@ -162,7 +171,9 @@ export async function purchaseDecantiPro(): Promise<string | undefined> {
       ;({ customerInfo } = await Purchases.purchasePackage({ aPackage: pkg }))
     } catch (packageErr) {
       const storeProduct = await fetchStoreProductById(productId)
-      if (!storeProduct) throw packageErr
+      if (!storeProduct) {
+        throw new Error(storeKitProductUnavailableHint(productId))
+      }
       ;({ customerInfo } = await Purchases.purchaseStoreProduct({ product: storeProduct }))
     }
 
