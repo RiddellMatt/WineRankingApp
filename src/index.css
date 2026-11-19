@@ -1671,8 +1671,43 @@ a.icon-btn {
   margin-left: auto;
 }
 
-.menu-save-btn {
+.shop-find {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.shop-find-btn {
+  padding-left: 0;
+}
+
+.shop-affiliate-note {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.shop-affiliate-banner {
+  margin: 0 0 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-faint);
+}
+
+.wine-find-again {
+  margin-top: 0.55rem;
+}
+
+.menu-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.85rem;
   margin-top: 0.65rem;
+}
+
+.menu-save-btn {
+  margin-top: 0;
 }
 
 .menu-save-btn.saved {

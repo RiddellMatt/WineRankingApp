@@ -33,7 +33,7 @@ Record the build number. Walk this on that install.
 - [ ] Subscribe shows **Decanti Pro**, **1 month, auto-renews**, the StoreKit price, and links to the privacy policy and terms. Both links open
 - [ ] iPhone never opens a Stripe checkout for Pro. A build without the RevenueCat key says purchases are unavailable
 - [ ] Sandbox purchase shows `[Environment: Sandbox]`, then Pro survives a force-quit. Restore on a second install of the same Apple ID unlocks Pro. `profiles.is_pro` is set. Cancel the sandbox subscription after
-- [ ] On your own wine card, the globe asks you to confirm you are 21 or older before the first Wine-Searcher open. Not now stays in the app. A friend’s cellar has no globe
+- [ ] On your own wine card, the globe asks you to confirm you are 21 or older before the first Wine-Searcher open. Not now stays in the app. A friend’s cellar has no globe. A favorited wine, a wishlist bottle, and a menu match also offer Find a bottle, and that first open uses the same 21+ check
 - [ ] Report someone from their cellar or the activity feed and see the in-app confirmation. Block them and confirm they disappear. Unblock brings them back
 - [ ] Settings → Edit profile → Delete account, typing DELETE, signs you out. That account cannot sign back into the same data
 - [ ] Free: bottom banner, no `[test env=…]` probe strip. Pro: no banner and no empty gutter

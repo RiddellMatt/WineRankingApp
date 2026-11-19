@@ -1,5 +1,6 @@
 import type { Wine } from '../types'
 import { formatWishlistDate } from '../lib/wishlist'
+import { ShopForWine } from './ShopForWine'
 
 interface Props {
   wine: Wine
@@ -49,6 +50,7 @@ export function WishlistCard({ wine, onMarkTried, onEdit, onDelete }: Props) {
         <button type="button" className="btn ghost small" onClick={onEdit}>
           Edit
         </button>
+        <ShopForWine target={wine} wineName={wine.name} variant="text" />
         <button type="button" className="link-btn wishlist-remove" onClick={onDelete}>
           Remove
         </button>

@@ -1,5 +1,3 @@
-import type { Wine } from './types'
-
 /**
  * Monetization settings. Fill these in when the corresponding accounts exist;
  * everything degrades gracefully while they are empty.
@@ -35,15 +33,10 @@ export const SHOP_CONFIG = {
   /** Retailer search URL. `{query}` is replaced with the wine description. */
   urlTemplate: 'https://www.wine-searcher.com/find/{query}',
   /**
-   * Affiliate/partner tag appended to every shop link, e.g. '?Xaff=YOUR_ID'.
-   * Sign up at https://www.wine-searcher.com/affiliates
+   * Optional fallback when `VITE_WINE_SEARCHER_AFFILIATE_ID` is unset.
+   * Bare id (`abc`) or a full suffix (`?Xaff=abc`).
+   * Wine-Searcher invites affiliates after a site sends them traffic:
+   * https://www.wine-searcher.com/trade/wine-link
    */
   affiliateSuffix: '',
-}
-
-export function shopUrl(wine: Wine): string {
-  const query = encodeURIComponent(
-    [wine.winery, wine.name, wine.vintage ?? ''].filter(Boolean).join(' '),
-  )
-  return SHOP_CONFIG.urlTemplate.replace('{query}', query) + SHOP_CONFIG.affiliateSuffix
 }

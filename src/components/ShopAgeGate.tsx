@@ -3,11 +3,12 @@ import { lockAppScroll } from '../lib/lockAppScroll'
 
 interface Props {
   wineName: string
+  affiliate?: boolean
   onConfirm: () => void
   onClose: () => void
 }
 
-export function ShopAgeGate({ wineName, onConfirm, onClose }: Props) {
+export function ShopAgeGate({ wineName, affiliate = false, onConfirm, onClose }: Props) {
   useEffect(() => lockAppScroll(), [])
 
   return (
@@ -26,6 +27,7 @@ export function ShopAgeGate({ wineName, onConfirm, onClose }: Props) {
         <p>
           Wine-Searcher is a retailer search for {wineName}. Confirm once on this device to open
           it.
+          {affiliate && <> Decanti may earn a referral fee when this link is used.</>}
         </p>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>

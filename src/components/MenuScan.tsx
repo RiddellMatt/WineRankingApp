@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import { isWishlistDuplicate, menuMatchToWishlist } from '../lib/wishlist'
 import { matchMenu, matchParsedMenuWines, type MenuMatch } from '../menuMatch'
+import { ShopForWine } from './ShopForWine'
+import { shopLinksAreAffiliate } from '../lib/shopLink'
 import { MenuScanError, scanMenuWithAi } from '../lib/menuScanApi'
 import type { RankingPreference, Wine } from '../types'
 import { ScanPourOverlay } from './ScanPourOverlay'
@@ -229,6 +231,12 @@ export function MenuScan({
       </section>
 
       {state.phase === 'results' && (
+        <>
+        {shopLinksAreAffiliate() && (
+          <p className="shop-affiliate-banner">
+            Shop links open Wine-Searcher. Decanti may earn a referral fee for that visit.
+          </p>
+        )}
         <ol className="menu-results">
           {state.matches.map((m, i) => {
             const key = matchKey(m, i)
@@ -253,20 +261,32 @@ export function MenuScan({
                     </span>
                   ))}
                 </div>
-                <button
-                  type="button"
-                  className={`btn ghost small menu-save-btn ${saved ? 'saved' : ''}`}
-                  disabled={saved || saving}
-                  onClick={() => handleSaveToWishlist(m, key)}
-                >
-                  {saved ? 'Saved to try ✓' : saving ? 'Saving…' : pro ? '♡ Save to try' : '♡ Save to try · Pro'}
-                </button>
+                <div className="menu-result-actions">
+                  <button
+                    type="button"
+                    className={`btn ghost small menu-save-btn ${saved ? 'saved' : ''}`}
+                    disabled={saved || saving}
+                    onClick={() => handleSaveToWishlist(m, key)}
+                  >
+                    {saved ? 'Saved to try ✓' : saving ? 'Saving…' : pro ? '♡ Save to try' : '♡ Save to try · Pro'}
+                  </button>
+                  <ShopForWine
+                    target={{
+                      name: m.wineName || m.line,
+                      winery: m.winery,
+                      vintage: m.vintage,
+                    }}
+                    wineName={m.wineName || m.line}
+                    variant="text"
+                  />
+                </div>
               </div>
               {m.price && <span className="menu-price">{m.price}</span>}
             </li>
             )
           })}
         </ol>
+        </>
       )}
     </div>
   )

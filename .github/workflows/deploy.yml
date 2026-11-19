@@ -28,6 +28,7 @@ jobs:
           GITHUB_PAGES: 'true'
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_WINE_SEARCHER_AFFILIATE_ID: ${{ secrets.VITE_WINE_SEARCHER_AFFILIATE_ID }}
       # Publishes dist/ to the gh-pages branch; GitHub serves it via Pages.
       - uses: peaceiris/actions-gh-pages@v4
         with:
