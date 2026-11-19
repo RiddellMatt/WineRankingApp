@@ -600,10 +600,10 @@ textarea::placeholder {
   flex-shrink: 0;
 }
 
-/* Ellipsis dots are short by nature; draw them at the same scale as the other tab icons. */
+/* Halfway between the original 13px dots and the 20px full-height dots. */
 .tab-icon-more {
-  width: 3.05rem;
-  height: 1.7rem;
+  width: 3.58rem;
+  height: 1.46rem;
 }
 
 .tab-pro-badge {
@@ -6746,7 +6746,7 @@ html.native-app .tab.tab-icon {
   padding: 0.45rem 0.1rem;
 }
 
-html.native-app .tab-icon-svg {
+html.native-app .tab-icon-svg:not(.tab-icon-more) {
   width: 1.45rem;
   height: 1.45rem;
 }
