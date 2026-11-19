@@ -119,9 +119,9 @@ If `VITE_ADMOB_TEST_MODE=false` and a banner id is missing, the app **will not**
 ### 6. iOS: SKAdNetwork + privacy
 
 1. Open [AdMob iOS quick-start — Info.plist](https://developers.google.com/admob/ios/quick-start#update_your_infoplist).
-2. Replace the minimal `SKAdNetworkItems` in `Info.plist` with Google’s **full** list (many entries). Required for proper attribution on iOS.
-3. **App Store Connect** → your app → **App Privacy**: disclose that you use advertising data / third-party advertising as applicable (match what AdMob and your consent flow collect).
-4. `NSUserTrackingUsageDescription` is already in `Info.plist`; wording should match your real use.
+2. `SKAdNetworkItems` in `Info.plist` is Google’s current AdMob list from [Privacy strategies](https://developers.google.com/admob/ios/privacy/strategies). Keep `GADApplicationIdentifier` as `ca-app-pub-5228268438882570~1709768455`.
+3. **App Store Connect** → your app → **App Privacy**: data used to deliver advertising, **Tracking = No**.
+4. Do not add `NSUserTrackingUsageDescription`. The app does not request App Tracking Transparency, and iOS banner ads are non-personalized.
 
 ### 7. Consent (UMP) — required in EU/UK and similar
 
