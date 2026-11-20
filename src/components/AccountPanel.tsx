@@ -27,6 +27,7 @@ import { ThemePicker } from './ThemePicker'
 import { PushNotificationSettings } from './PushNotificationSettings'
 import { SettingsCommitBar } from './SettingsCommitBar'
 import { SettingsMenu } from './SettingsMenu'
+import { LegalDocLink } from './LegalDocLink'
 import type { AccountSettingsSection } from './accountSettings'
 
 const PRO_FEATURES = [
@@ -98,8 +99,6 @@ export function AccountPanel({
   const [deleteBusy, setDeleteBusy] = useState(false)
   const iosIap = isIosStoreKitConfigured()
   const path = purchasePath(nativePlatform(), iosIap)
-  const privacyHref = `${import.meta.env.BASE_URL}privacy.html`
-  const termsHref = `${import.meta.env.BASE_URL}terms.html`
   const [iapPriceLabel, setIapPriceLabel] = useState<string | null>(null)
   const [iapSetupHint, setIapSetupHint] = useState<string | null>(null)
   const [iapPreviewLoaded, setIapPreviewLoaded] = useState(false)
@@ -636,8 +635,8 @@ export function AccountPanel({
 
           {pro && (
             <p className="account-legal-links">
-              <a href={privacyHref}>Privacy policy</a>
-              <a href={termsHref}>Terms of use</a>
+              <LegalDocLink file="privacy.html">Privacy policy</LegalDocLink>
+              <LegalDocLink file="terms.html">Terms of use</LegalDocLink>
             </p>
           )}
 
@@ -653,8 +652,8 @@ export function AccountPanel({
                 {APP_NAME_PRO} · 1 month, auto-renews · {priceShown}
               </p>
               <p className="account-legal-links">
-                <a href={privacyHref}>Privacy policy</a>
-                <a href={termsHref}>Terms of use</a>
+                <LegalDocLink file="privacy.html">Privacy policy</LegalDocLink>
+                <LegalDocLink file="terms.html">Terms of use</LegalDocLink>
               </p>
 
               {canCheckout && iosIap && iapSetupHint && (

@@ -303,26 +303,23 @@ textarea::placeholder {
   align-items: flex-start;
 }
 
-.header-inner-wordmark .header-profile,
-.header-inner-wordmark .header-actions {
-  margin-top: 0.95rem;
+.header-inner-wordmark .header-profile {
+  margin-top: 0.45rem;
 }
 
 .brand-lockup .pro-badge {
   flex: 0 0 auto;
   transform: none;
   align-self: flex-start;
-  /* Sit on the wordmark's letters. The glass stem hangs below them. */
-  margin-top: 1.65rem;
+  margin-top: 1.05rem;
 }
 
-/* Remaining header width, to the right of PRO. The cropped wordmark
-   grows to that width and stops at a header-sized cap on wide screens. */
+/* Tilted glass stands in for the C. Height shows the bowl, wine, and stem. */
 .brand-wordmark-slot {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
 }
 
@@ -332,20 +329,10 @@ textarea::placeholder {
 .brand-wordmark-slot .decanti-logo-navy.decanti-logo-header {
   flex: 0 1 auto;
   width: auto;
-  height: auto;
+  height: 4rem;
   max-width: 100%;
-  max-height: 7.5rem;
   object-fit: contain;
-  object-position: left center;
-}
-
-@media (min-width: 720px) {
-  .brand-wordmark-slot .decanti-logo-header,
-  .brand-wordmark-slot .decanti-logo-classic.decanti-logo-header,
-  .brand-wordmark-slot .decanti-logo-light.decanti-logo-header,
-  .brand-wordmark-slot .decanti-logo-navy.decanti-logo-header {
-    max-height: 5.5rem;
-  }
+  object-position: left top;
 }
 
 .brand.brand-theme-logo .header-page-title {
