@@ -58,11 +58,19 @@ export function loadStoredTheme(): AppTheme {
   return 'classic'
 }
 
-export function applyTheme(theme: AppTheme): void {
+/** Paint the theme in the document without writing storage or native chrome. */
+export function previewTheme(theme: AppTheme): void {
   document.documentElement.dataset.theme = theme
 
   const meta = document.querySelector('meta[name="theme-color"]')
   meta?.setAttribute('content', THEME_META[theme])
+
+  window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: theme }))
+}
+
+/** Preview the theme and keep it across launches. */
+export function applyTheme(theme: AppTheme): void {
+  previewTheme(theme)
 
   try {
     localStorage.setItem(THEME_STORAGE_KEY, theme)
@@ -73,8 +81,6 @@ export function applyTheme(theme: AppTheme): void {
   if (isNativeApp()) {
     void updateNativeChrome(theme)
   }
-
-  window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: theme }))
 }
 
 async function updateNativeChrome(theme: AppTheme): Promise<void> {

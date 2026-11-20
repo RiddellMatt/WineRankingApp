@@ -5116,6 +5116,29 @@ html.show-banner-ad .account-panel {
   accent-color: var(--accent);
 }
 
+.settings-commit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.settings-commit .account-hint,
+.settings-commit .form-error,
+.settings-commit .auth-info {
+  margin: 0;
+}
+
+.settings-commit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.settings-commit-leading {
+  margin-top: 0;
+}
+
 /* ── Responsive ─────────────────────────────────────── */
 
 @media (max-width: 640px) {

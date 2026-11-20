@@ -1,14 +1,12 @@
-import { useState } from 'react'
-import { applyTheme, loadStoredTheme, THEME_OPTIONS, type AppTheme } from '../lib/themes'
+import { THEME_OPTIONS, type AppTheme } from '../lib/themes'
 
-export function ThemePicker() {
-  const [theme, setTheme] = useState<AppTheme>(() => loadStoredTheme())
+interface Props {
+  theme: AppTheme
+  disabled?: boolean
+  onChange: (theme: AppTheme) => void
+}
 
-  function choose(next: AppTheme) {
-    setTheme(next)
-    applyTheme(next)
-  }
-
+export function ThemePicker({ theme, disabled = false, onChange }: Props) {
   return (
     <div className="theme-picker">
       {THEME_OPTIONS.map((option) => (
@@ -16,8 +14,9 @@ export function ThemePicker() {
           key={option.id}
           type="button"
           className={`theme-option ${theme === option.id ? 'active' : ''}`}
-          onClick={() => choose(option.id)}
+          onClick={() => onChange(option.id)}
           aria-pressed={theme === option.id}
+          disabled={disabled}
         >
           <span className={`theme-preview${option.logoSrc ? ' theme-preview-logo' : ''}`} aria-hidden="true">
             <img src={option.previewSrc} alt="" className="theme-preview-img" />

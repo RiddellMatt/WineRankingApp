@@ -1,17 +1,15 @@
 import { useEffect, useState } from 'react'
-import {
-  APP_ICON_OPTIONS,
-  applyAppIcon,
-  isAppIconChangeSupported,
-  loadStoredAppIcon,
-  type AppIconVariant,
-} from '../lib/appIcon'
+import { APP_ICON_OPTIONS, isAppIconChangeSupported, type AppIconVariant } from '../lib/appIcon'
 import { isNativeApp } from '../lib/platform'
 
-export function AppIconPicker() {
-  const [icon, setIcon] = useState<AppIconVariant>(() => loadStoredAppIcon())
+interface Props {
+  icon: AppIconVariant
+  disabled?: boolean
+  onChange: (icon: AppIconVariant) => void
+}
+
+export function AppIconPicker({ icon, disabled = false, onChange }: Props) {
   const [nativeSupported, setNativeSupported] = useState<boolean | null>(null)
-  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     if (!isNativeApp()) {
@@ -20,17 +18,6 @@ export function AppIconPicker() {
     }
     void isAppIconChangeSupported().then(setNativeSupported)
   }, [])
-
-  async function choose(next: AppIconVariant) {
-    if (next === icon || busy) return
-    setBusy(true)
-    setIcon(next)
-    try {
-      await applyAppIcon(next)
-    } finally {
-      setBusy(false)
-    }
-  }
 
   return (
     <div className="app-icon-picker">
@@ -41,8 +28,8 @@ export function AppIconPicker() {
             type="button"
             className={`theme-option ${icon === option.id ? 'active' : ''}`}
             aria-pressed={icon === option.id}
-            disabled={busy}
-            onClick={() => void choose(option.id)}
+            disabled={disabled}
+            onClick={() => onChange(option.id)}
           >
             <span className="theme-preview theme-preview-logo" aria-hidden="true">
               <img src={option.previewSrc} alt="" className="theme-preview-img" />
