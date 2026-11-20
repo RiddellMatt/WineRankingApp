@@ -300,22 +300,26 @@ textarea::placeholder {
 }
 
 .header-inner-wordmark {
-  align-items: center;
+  align-items: flex-start;
+}
+
+.header-inner-wordmark .header-profile {
+  margin-top: 0.45rem;
 }
 
 .brand-lockup .pro-badge {
   flex: 0 0 auto;
   transform: none;
-  align-self: center;
-  margin-top: 0;
+  align-self: flex-start;
+  margin-top: 1.05rem;
 }
 
-/* The glass is the letter C, so the lockup stays one line tall. */
+/* Tilted glass stands in for the C. Height shows the bowl, wine, and stem. */
 .brand-wordmark-slot {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
 }
 
@@ -325,10 +329,10 @@ textarea::placeholder {
 .brand-wordmark-slot .decanti-logo-navy.decanti-logo-header {
   flex: 0 1 auto;
   width: auto;
-  height: 2.35rem;
+  height: 4rem;
   max-width: 100%;
   object-fit: contain;
-  object-position: left center;
+  object-position: left top;
 }
 
 .brand.brand-theme-logo .header-page-title {

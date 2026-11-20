@@ -25,7 +25,7 @@ export const THEME_OPTIONS: {
     swatches: ['#12080c', '#c41e3a', '#e8b04b'],
     previewSrc: `${brandBase}/logo-red.png`,
     logoSrc: `${brandBase}/logo-red.png`,
-    wordmarkSrc: `${brandBase}/wordmark-red.svg`,
+    wordmarkSrc: `${brandBase}/wordmark-red.png`,
   },
   {
     id: 'light',
@@ -34,7 +34,7 @@ export const THEME_OPTIONS: {
     swatches: ['#ffffff', '#a35447', '#231f20'],
     previewSrc: `${brandBase}/logo-light.png`,
     logoSrc: `${brandBase}/logo-light.png`,
-    wordmarkSrc: `${brandBase}/wordmark-light.svg`,
+    wordmarkSrc: `${brandBase}/wordmark-light.png`,
   },
 ]
 
