@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 108" role="img" aria-label="Decanti">
+  <text x="0" y="78" fill="#f7eef1" font-family="Georgia, 'Times New Roman', serif" font-size="72" font-weight="700">de</text>
+  <g fill="none" stroke="#f7eef1" stroke-linecap="round">
+    <!-- Bowl opens to the right so the glass reads as the letter C. -->
+    <path d="M168 22 C118 22 96 42 96 64 C96 88 120 100 162 96" stroke-width="7"/>
+    <path d="M128 92 v12 M116 104 h24" stroke-width="5.5"/>
+  </g>
+  <path d="M108 70 C112 88 136 96 156 90 C142 86 118 78 108 70 Z" fill="#c41e3a"/>
+  <g fill="#c41e3a">
+    <circle cx="166" cy="16" r="5"/>
+    <circle cx="180" cy="8" r="3.8"/>
+    <circle cx="192" cy="16" r="2.8"/>
+  </g>
+  <text x="210" y="78" fill="#f7eef1" font-family="Georgia, 'Times New Roman', serif" font-size="72" font-weight="700">anti</text>
+</svg>

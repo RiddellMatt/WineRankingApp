@@ -300,24 +300,17 @@ textarea::placeholder {
 }
 
 .header-inner-wordmark {
-  align-items: flex-start;
-}
-
-.header-inner-wordmark .header-profile,
-.header-inner-wordmark .header-actions {
-  margin-top: 0.95rem;
+  align-items: center;
 }
 
 .brand-lockup .pro-badge {
   flex: 0 0 auto;
   transform: none;
-  align-self: flex-start;
-  /* Sit on the wordmark's letters. The glass stem hangs below them. */
-  margin-top: 1.65rem;
+  align-self: center;
+  margin-top: 0;
 }
 
-/* Remaining header width, to the right of PRO. The cropped wordmark
-   grows to that width and stops at a header-sized cap on wide screens. */
+/* The glass is the letter C, so the lockup stays one line tall. */
 .brand-wordmark-slot {
   flex: 1 1 auto;
   min-width: 0;
@@ -332,20 +325,10 @@ textarea::placeholder {
 .brand-wordmark-slot .decanti-logo-navy.decanti-logo-header {
   flex: 0 1 auto;
   width: auto;
-  height: auto;
+  height: 2.35rem;
   max-width: 100%;
-  max-height: 7.5rem;
   object-fit: contain;
   object-position: left center;
-}
-
-@media (min-width: 720px) {
-  .brand-wordmark-slot .decanti-logo-header,
-  .brand-wordmark-slot .decanti-logo-classic.decanti-logo-header,
-  .brand-wordmark-slot .decanti-logo-light.decanti-logo-header,
-  .brand-wordmark-slot .decanti-logo-navy.decanti-logo-header {
-    max-height: 5.5rem;
-  }
 }
 
 .brand.brand-theme-logo .header-page-title {
