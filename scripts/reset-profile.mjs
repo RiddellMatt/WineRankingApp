@@ -8,9 +8,10 @@
  *
  * Dry-run by default. Nothing is deleted until you pass --yes.
  *
- *   npm run profile:reset -- ada@example.com
- *   npm run profile:reset -- ada@example.com --yes
- *   npm run profile:reset -- --id <uuid> --yes --keep-friends
+ * Set TARGET_EMAIL below, then:
+ *   npm run profile:reset
+ *   npm run profile:reset -- --yes
+ * A CLI email or --id overrides TARGET_EMAIL.
  *
  * Reads VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY from the environment
  * or from .env.local / .env. Do not pass the service role key as an argument.
@@ -27,6 +28,9 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createClient } from '@supabase/supabase-js'
+
+/** Account to reset. A CLI email or --id overrides this. */
+const TARGET_EMAIL = ''
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -89,8 +93,11 @@ function helpText() {
   return `Reset a Decanti profile's cellar, badges, journeys, points, and activity.
 
 Usage:
-  npm run profile:reset -- <email> [--yes] [--keep-friends]
-  npm run profile:reset -- --id <uuid> [--yes] [--keep-friends]
+  Set TARGET_EMAIL at the top of scripts/reset-profile.mjs, then:
+    npm run profile:reset -- --yes
+  Or pass the email once on the command line:
+    npm run profile:reset -- ada@example.com --yes
+    npm run profile:reset -- --id <uuid> --yes --keep-friends
 
 --yes           delete. Without it, the script only prints counts.
 --keep-friends  leave friendships in place. Friend-count badges still show,
@@ -317,7 +324,13 @@ async function main() {
     return
   }
   if (!args.email && !args.id) {
-    console.error('Pass the account email, or --id <uuid>.\n')
+    const configured = TARGET_EMAIL.trim()
+    if (configured && configured.toLowerCase() !== 'change_me@example.com') {
+      args.email = configured
+    }
+  }
+  if (!args.email && !args.id) {
+    console.error('Set TARGET_EMAIL at the top of scripts/reset-profile.mjs, or pass an email.\n')
     console.error(helpText())
     process.exit(1)
   }

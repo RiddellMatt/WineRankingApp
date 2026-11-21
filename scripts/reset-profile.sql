@@ -1,46 +1,9 @@
--- Completely reset one profile's progress. Run the whole file in the
--- Supabase SQL editor (Dashboard → SQL Editor). It runs as one transaction.
---
--- Wipes:
---   cellar and wishlist (wines), earned badge tiers, journey completions,
---   points (those three are what points are computed from — nothing else stores them),
---   activity events, reactions, notifications to or from this profile,
---   menu/label scan usage and AI scan metrics, scan upload files,
---   friendships (unless keep_friends is true), blocks this profile created,
---   reports this profile filed, and the ranking-preference answer.
---
--- Keeps:
---   the login, display name, email, avatar, Pro, Stripe ids, push tokens,
---   push preferences, and reports filed against this profile.
---
--- Friend-count badges are computed from live friendships. Leaving friends in
--- place means those badges still show. keep_friends defaults to false.
---
--- After it commits, reload the app on each device. progress_generation makes
--- that launch drop the on-device cellar, badges, and journeys instead of
--- uploading them back. Apply this file even if the migration was already run;
--- the column add is idempotent.
-
-alter table public.profiles
-  add column if not exists progress_generation bigint not null default 0;
-
-drop policy if exists profiles_update on public.profiles;
-create policy profiles_update on public.profiles
-  for update to authenticated
-  using (auth.uid() = id)
-  with check (
-    auth.uid() = id
-    and is_pro is not distinct from (
-      select p.is_pro from public.profiles p where p.id = auth.uid()
-    )
-    and progress_generation is not distinct from (
-      select p.progress_generation from public.profiles p where p.id = auth.uid()
-    )
-  );
+-- Edit the email, then run this whole file in the Supabase SQL editor.
+-- One transaction. Wipes cellar, badges, journeys, and points for that profile.
+-- keep_friends true leaves friendships in place. Login, name, avatar, and Pro stay.
 
 do $reset$
 declare
-  -- Change this email. Match is case-insensitive against auth.users, then profiles.
   target_email text := 'CHANGE_ME@example.com';
   keep_friends boolean := false;
   uid uuid;
@@ -53,8 +16,25 @@ begin
     or btrim(target_email) = ''
     or lower(btrim(target_email)) = 'change_me@example.com'
   then
-    raise exception 'Set target_email at the top of the DO block before running this script.';
+    raise exception 'Set target_email at the top of this file before running it.';
   end if;
+
+  alter table public.profiles
+    add column if not exists progress_generation bigint not null default 0;
+
+  drop policy if exists profiles_update on public.profiles;
+  create policy profiles_update on public.profiles
+    for update to authenticated
+    using (auth.uid() = id)
+    with check (
+      auth.uid() = id
+      and is_pro is not distinct from (
+        select p.is_pro from public.profiles p where p.id = auth.uid()
+      )
+      and progress_generation is not distinct from (
+        select p.progress_generation from public.profiles p where p.id = auth.uid()
+      )
+    );
 
   select count(*) into match_count
   from auth.users u

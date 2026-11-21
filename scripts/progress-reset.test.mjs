@@ -81,4 +81,10 @@ test('reset plan covers cellar, badges, and journeys and leaves the account row'
   const sql = readFileSync(new URL('./reset-profile.sql', import.meta.url), 'utf8')
   const sqlTables = [...sql.matchAll(/delete from public\.(\w+)/g)].map((match) => match[1])
   assert.deepEqual(sqlTables, tables)
+
+  const emailHits = sql.split("'CHANGE_ME@example.com'")
+  assert.equal(emailHits.length, 2)
+  const emailAt = sql.indexOf("target_email text := 'CHANGE_ME@example.com'")
+  const alterAt = sql.indexOf('alter table public.profiles')
+  assert.ok(emailAt >= 0 && emailAt < alterAt)
 })
