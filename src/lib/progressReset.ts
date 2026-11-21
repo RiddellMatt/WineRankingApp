@@ -22,7 +22,7 @@ function readMap(): GenerationMap {
   }
 }
 
-function readLocalGeneration(userId: string): number {
+export function localProgressGeneration(userId: string): number {
   const value = readMap()[userId]
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
@@ -65,7 +65,7 @@ async function fetchProgressGeneration(userId: string): Promise<number | null> {
 
 async function discardOnce(userId: string): Promise<boolean> {
   const server = await fetchProgressGeneration(userId)
-  if (!progressGenerationIsNewer(server, readLocalGeneration(userId))) return false
+  if (!progressGenerationIsNewer(server, localProgressGeneration(userId))) return false
   clearLocalProgressData()
   writeLocalGeneration(userId, server as number)
   return true
