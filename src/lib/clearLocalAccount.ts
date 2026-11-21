@@ -25,14 +25,28 @@ export const LOCAL_ACCOUNT_KEYS = [
 
 const PROFILE_PROMPT_KEY = `${STORAGE_PREFIX}.profile-name-prompt`
 
-export function clearLocalAccountData(): void {
-  for (const key of LOCAL_ACCOUNT_KEYS) {
+/** Progress cache only. Pro stays; the server flag is restored on the next profile load. */
+const LOCAL_PROGRESS_KEYS = LOCAL_ACCOUNT_KEYS.filter(
+  (key) => key !== PRO_STORAGE_KEY && key !== LEGACY_PRO_STORAGE_KEY,
+)
+
+function removeKeys(keys: readonly string[]): void {
+  for (const key of keys) {
     try {
       localStorage.removeItem(key)
     } catch {
       // Private mode or a blocked storage API.
     }
   }
+}
+
+/** Drop cached cellar, badges, journeys, and ranking setup. Keeps Pro and device preferences. */
+export function clearLocalProgressData(): void {
+  removeKeys(LOCAL_PROGRESS_KEYS)
+}
+
+export function clearLocalAccountData(): void {
+  removeKeys(LOCAL_ACCOUNT_KEYS)
   try {
     sessionStorage.removeItem(PROFILE_PROMPT_KEY)
   } catch {

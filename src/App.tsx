@@ -102,6 +102,7 @@ import {
 } from './lib/journeyDb'
 import type { BadgeInput } from './lib/badges'
 import { fetchMyProfile, updateRankingPreference, type UserProfile } from './lib/profileDb'
+import { discardLocalProgressIfReset } from './lib/progressReset'
 import { isSupabaseConfigured } from './lib/supabase'
 import {
   applyCompositeRating,
@@ -194,6 +195,7 @@ export default function App() {
   } | null>(null)
   const [cellarLoading, setCellarLoading] = useState(false)
   const [cellarReady, setCellarReady] = useState(false)
+  const [progressResetTick, setProgressResetTick] = useState(0)
   const [pro, setPro] = useState<boolean>(loadProStatus)
   const [view, setView] = useState<View>('cellar')
   const [accountHighlight, setAccountHighlight] = useState(false)
@@ -538,9 +540,12 @@ export default function App() {
     let cancelled = false
     setCellarLoading(true)
     ;(async () => {
+      let discarded = false
       try {
+        discarded = await discardLocalProgressIfReset(cloudUser.id)
+        if (discarded && !cancelled) setProgressResetTick((tick) => tick + 1)
         const cloud = await fetchWines(cloudUser.id)
-        const local = loadWines()
+        const local = discarded ? [] : loadWines()
         if (!cancelled && cloud.length === 0 && local.length > 0) {
           const upload = window.confirm(
             `Upload ${local.length} wine${local.length === 1 ? '' : 's'} to your account?`,
@@ -555,7 +560,7 @@ export default function App() {
       } catch (e) {
         if (!cancelled) {
           window.alert(`Could not load your cellar: ${(e as Error).message}`)
-          setWines(loadWines())
+          setWines(discarded ? [] : loadWines())
         }
       } finally {
         if (!cancelled) {
@@ -655,9 +660,11 @@ export default function App() {
     let cancelled = false
     ;(async () => {
       try {
-        const localBadges = loadEarnedBadgeTiers()
+        const discarded = await discardLocalProgressIfReset(cloudUser.id)
+        if (discarded && !cancelled) setProgressResetTick((tick) => tick + 1)
+        const localBadges = discarded ? null : loadEarnedBadgeTiers()
         const syncedBadges = await syncEarnedBadgeTiersWithCellar(cloudUser.id, localBadges)
-        const localJourneys = loadCompletedJourneysLocal()
+        const localJourneys = discarded ? new Set<string>() : loadCompletedJourneysLocal()
         const syncedJourneys = await syncJourneyCompletions(cloudUser.id, localJourneys)
         if (!cancelled) {
           earnedBadgeTiersRef.current = syncedBadges
@@ -735,7 +742,7 @@ export default function App() {
         profilePending: Boolean(cloudUser) && !profileLoaded,
       }),
     )
-  }, [profile?.rankingPreference, cloudUser, profileLoaded])
+  }, [profile?.rankingPreference, cloudUser, profileLoaded, progressResetTick])
 
   useEffect(() => {
     if (!configured || !cloudUser?.id) {

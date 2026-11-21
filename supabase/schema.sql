@@ -15,6 +15,9 @@ create table public.profiles (
     ranking_preference is null
     or ranking_preference in ('taste_first', 'balanced', 'value_first')
   ),
+  -- Bumped by scripts/reset-profile.sql. A newer value tells the app to drop
+  -- cached cellar, badges, and journeys instead of uploading them again.
+  progress_generation bigint not null default 0,
   created_at timestamptz not null default now()
 );
 
@@ -166,6 +169,9 @@ create policy profiles_update on public.profiles
     auth.uid() = id
     and is_pro is not distinct from (
       select p.is_pro from public.profiles p where p.id = auth.uid()
+    )
+    and progress_generation is not distinct from (
+      select p.progress_generation from public.profiles p where p.id = auth.uid()
     )
   );
 
