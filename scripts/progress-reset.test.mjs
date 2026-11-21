@@ -84,7 +84,7 @@ test('reset plan covers cellar, badges, and journeys and leaves the account row'
 
   const emailHits = sql.split("'CHANGE_ME@example.com'")
   assert.equal(emailHits.length, 2)
-  const emailAt = sql.indexOf("target_email text := 'CHANGE_ME@example.com'")
-  const alterAt = sql.indexOf('alter table public.profiles')
-  assert.ok(emailAt >= 0 && emailAt < alterAt)
+  const emailAt = sql.indexOf("'CHANGE_ME@example.com'")
+  const doAt = sql.indexOf('do $reset$')
+  assert.ok(emailAt >= 0 && doAt > emailAt)
 })
