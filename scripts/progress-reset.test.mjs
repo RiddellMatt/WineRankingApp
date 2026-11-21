@@ -81,10 +81,7 @@ test('reset plan covers cellar, badges, and journeys and leaves the account row'
   const sql = readFileSync(new URL('./reset-profile.sql', import.meta.url), 'utf8')
   const sqlTables = [...sql.matchAll(/delete from public\.(\w+)/g)].map((match) => match[1])
   assert.deepEqual(sqlTables, tables)
-
-  const emailHits = sql.split("'CHANGE_ME@example.com'")
-  assert.equal(emailHits.length, 2)
-  const emailAt = sql.indexOf("'CHANGE_ME@example.com'")
-  const doAt = sql.indexOf('do $reset$')
-  assert.ok(emailAt >= 0 && doAt > emailAt)
+  assert.match(sql, /function private\.reset_profile\(\s*target_email text/i)
+  assert.match(sql, /revoke all on function private\.reset_profile\(text, boolean\) from public/i)
+  assert.equal(sql.includes('delete from storage.objects'), false)
 })

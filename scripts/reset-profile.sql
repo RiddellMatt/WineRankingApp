@@ -1,43 +1,37 @@
--- Change the email, then run this whole file in the Supabase SQL editor.
--- keep_friends true leaves friendships in place. Login, name, avatar, and Pro stay.
+-- Install once in the Supabase SQL editor, then reset a profile with:
+--
+--   select * from private.reset_profile('you@example.com');
+--
+-- Pass true to leave friendships in place:
+--
+--   select * from private.reset_profile('you@example.com', true);
+--
+-- Wipes cellar, wishlist, badges, journeys, and points (those are computed from
+-- wines, badge tiers, and journeys), plus activity, reactions, notifications,
+-- scan history, blocks this profile created, and reports it filed.
+-- Keeps the login, display name, email, avatar, Pro, Stripe ids, and push tokens.
+-- Not granted to anon or authenticated.
 
-drop table if exists pg_temp.reset_profile_args;
-create temporary table reset_profile_args (
-  target_email text not null,
-  keep_friends boolean not null
-);
+create schema if not exists private;
 
-insert into reset_profile_args (target_email, keep_friends)
-values ('CHANGE_ME@example.com', false);
-
-drop table if exists pg_temp.reset_profile_report;
-drop sequence if exists pg_temp.reset_profile_report_ord;
-create temporary sequence reset_profile_report_ord;
-create temporary table reset_profile_report (
-  ord int primary key default nextval('reset_profile_report_ord'),
-  step text not null,
-  detail text not null
-);
-
-do $reset$
+create or replace function private.reset_profile(
+  target_email text,
+  keep_friends boolean default false
+)
+returns table (step text, detail text)
+language plpgsql
+security invoker
+set search_path = public
+as $fn$
 declare
-  target_email text;
-  keep_friends boolean;
   uid uuid;
   match_count int;
   deleted int;
   next_generation bigint;
   profile_label text;
 begin
-  select a.target_email, a.keep_friends
-  into target_email, keep_friends
-  from reset_profile_args a;
-
-  if target_email is null
-    or btrim(target_email) = ''
-    or lower(btrim(target_email)) = 'change_me@example.com'
-  then
-    raise exception 'Set the email in the insert at the top of this file before running it.';
+  if target_email is null or btrim(target_email) = '' then
+    raise exception 'Pass the account email.';
   end if;
 
   alter table public.profiles
@@ -89,111 +83,125 @@ begin
   from public.profiles p
   where p.id = uid;
 
-  raise notice 'Resetting % (%)', profile_label, uid;
-  insert into reset_profile_report (step, detail) values ('profile', profile_label);
+  step := 'profile';
+  detail := profile_label;
+  return next;
 
   if to_regclass('public.notifications') is not null then
     delete from public.notifications where recipient_id = uid or actor_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'notifications: %', deleted;
-    insert into reset_profile_report (step, detail) values ('notifications', deleted::text);
+    step := 'notifications';
+    detail := deleted::text;
+    return next;
   end if;
 
   if to_regclass('public.activity_reactions') is not null then
     delete from public.activity_reactions where reactor_id = uid or target_user_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'activity_reactions: %', deleted;
-    insert into reset_profile_report (step, detail) values ('activity_reactions', deleted::text);
+    step := 'activity_reactions';
+    detail := deleted::text;
+    return next;
   end if;
 
   if to_regclass('public.activity_milestone_reactions') is not null then
     delete from public.activity_milestone_reactions where reactor_id = uid or target_user_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'activity_milestone_reactions: %', deleted;
-    insert into reset_profile_report (step, detail) values ('activity_milestone_reactions', deleted::text);
+    step := 'activity_milestone_reactions';
+    detail := deleted::text;
+    return next;
   end if;
 
   if to_regclass('public.activity_events') is not null then
     delete from public.activity_events where user_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'activity_events: %', deleted;
-    insert into reset_profile_report (step, detail) values ('activity_events', deleted::text);
+    step := 'activity_events';
+    detail := deleted::text;
+    return next;
   end if;
 
   if to_regclass('public.user_badge_tiers') is not null then
     delete from public.user_badge_tiers where user_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'user_badge_tiers: %', deleted;
-    insert into reset_profile_report (step, detail) values ('user_badge_tiers', deleted::text);
+    step := 'user_badge_tiers';
+    detail := deleted::text;
+    return next;
   end if;
 
   if to_regclass('public.user_journey_completions') is not null then
     delete from public.user_journey_completions where user_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'user_journey_completions: %', deleted;
-    insert into reset_profile_report (step, detail) values ('user_journey_completions', deleted::text);
+    step := 'user_journey_completions';
+    detail := deleted::text;
+    return next;
   end if;
 
   if to_regclass('public.user_reports') is not null then
     delete from public.user_reports where reporter_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'user_reports: %', deleted;
-    insert into reset_profile_report (step, detail) values ('user_reports', deleted::text);
+    step := 'user_reports';
+    detail := deleted::text;
+    return next;
   end if;
 
   if to_regclass('public.wines') is not null then
     delete from public.wines where user_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'wines: %', deleted;
-    insert into reset_profile_report (step, detail) values ('wines', deleted::text);
+    step := 'wines';
+    detail := deleted::text;
+    return next;
   end if;
 
   if to_regclass('public.menu_scan_usage') is not null then
     delete from public.menu_scan_usage where user_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'menu_scan_usage: %', deleted;
-    insert into reset_profile_report (step, detail) values ('menu_scan_usage', deleted::text);
+    step := 'menu_scan_usage';
+    detail := deleted::text;
+    return next;
   end if;
 
   if to_regclass('public.label_scan_usage') is not null then
     delete from public.label_scan_usage where user_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'label_scan_usage: %', deleted;
-    insert into reset_profile_report (step, detail) values ('label_scan_usage', deleted::text);
+    step := 'label_scan_usage';
+    detail := deleted::text;
+    return next;
   end if;
 
   if to_regclass('public.ai_scan_events') is not null then
     delete from public.ai_scan_events where user_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'ai_scan_events: %', deleted;
-    insert into reset_profile_report (step, detail) values ('ai_scan_events', deleted::text);
+    step := 'ai_scan_events';
+    detail := deleted::text;
+    return next;
   end if;
 
   if to_regclass('public.ai_scan_corrections') is not null then
     delete from public.ai_scan_corrections where user_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'ai_scan_corrections: %', deleted;
-    insert into reset_profile_report (step, detail) values ('ai_scan_corrections', deleted::text);
+    step := 'ai_scan_corrections';
+    detail := deleted::text;
+    return next;
   end if;
 
   if not keep_friends and to_regclass('public.friendships') is not null then
     delete from public.friendships where requester_id = uid or addressee_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'friendships: %', deleted;
-    insert into reset_profile_report (step, detail) values ('friendships', deleted::text);
+    step := 'friendships';
+    detail := deleted::text;
+    return next;
   end if;
 
   if to_regclass('public.user_blocks') is not null then
     delete from public.user_blocks where blocker_id = uid;
     get diagnostics deleted = row_count;
-    raise notice 'user_blocks: %', deleted;
-    insert into reset_profile_report (step, detail) values ('user_blocks', deleted::text);
+    step := 'user_blocks';
+    detail := deleted::text;
+    return next;
   end if;
 
-  -- Supabase rejects DELETE on storage.objects (storage.protect_delete). Scan
-  -- images are temporary and are not part of cellar, badges, or points.
-  raise notice 'ai-scan-uploads: skipped';
-  insert into reset_profile_report (step, detail) values ('ai-scan-uploads', 'skipped');
+  step := 'ai-scan-uploads';
+  detail := 'skipped';
+  return next;
 
   update public.profiles
   set ranking_preference = null,
@@ -201,13 +209,24 @@ begin
   where id = uid
   returning progress_generation into next_generation;
 
-  raise notice 'Done. % is reset. progress_generation is now %. Reload the app on each device.',
-    profile_label, next_generation;
-  insert into reset_profile_report (step, detail)
-  values ('progress_generation', next_generation::text);
+  step := 'progress_generation';
+  detail := next_generation::text;
+  return next;
 end
-$reset$;
+$fn$;
 
-select step, detail
-from reset_profile_report
-order by ord;
+revoke all on function private.reset_profile(text, boolean) from public;
+
+do $grants$
+begin
+  if exists (select 1 from pg_roles where rolname = 'anon') then
+    execute 'revoke all on function private.reset_profile(text, boolean) from anon';
+  end if;
+  if exists (select 1 from pg_roles where rolname = 'authenticated') then
+    execute 'revoke all on function private.reset_profile(text, boolean) from authenticated';
+  end if;
+end
+$grants$;
+
+comment on function private.reset_profile(text, boolean) is
+  'Wipes one profile cellar, badges, journeys, and points. Callable from the SQL editor, not from anon or authenticated.';
