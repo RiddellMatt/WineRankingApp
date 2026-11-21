@@ -16,9 +16,9 @@
  * Reads VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY from the environment
  * or from .env.local / .env. Do not pass the service role key as an argument.
  *
- * For a single database transaction, run scripts/reset-profile.sql in the
- * Supabase SQL editor instead. This script calls the API once per table and
- * is safe to re-run if it stops halfway.
+ * For one database transaction, install scripts/reset-profile.sql in the
+ * Supabase SQL editor, then call private.reset_profile(email). This script
+ * calls the API once per table and is safe to re-run if it stops halfway.
  *
  * Requires profiles.progress_generation (supabase/migrations/20261121_profile_progress_generation.sql).
  * The SQL script applies that column itself. After either path, reload the app

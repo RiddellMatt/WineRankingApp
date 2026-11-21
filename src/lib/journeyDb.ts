@@ -1,5 +1,6 @@
 import type { PostgrestError } from '@supabase/supabase-js'
 import { STORAGE_PREFIX } from '../brand'
+import { localProgressGeneration } from './progressReset'
 import { getSupabase } from './supabase'
 
 const COMPLETED_KEY = `${STORAGE_PREFIX}.journey-completions.v1`
@@ -85,6 +86,7 @@ export async function markJourneyComplete(userId: string, journeyId: string): Pr
         user_id: userId,
         journey_id: journeyId,
         completed_at: new Date().toISOString(),
+        earned_generation: localProgressGeneration(userId),
       },
       { onConflict: 'user_id,journey_id' },
     )
@@ -101,10 +103,12 @@ export async function markJourneysComplete(
 ): Promise<void> {
   if (journeyIds.length === 0) return
   const now = new Date().toISOString()
+  const earnedGeneration = localProgressGeneration(userId)
   const rows = journeyIds.map((journeyId) => ({
     user_id: userId,
     journey_id: journeyId,
     completed_at: now,
+    earned_generation: earnedGeneration,
   }))
 
   const { error } = await getSupabase().from('user_journey_completions').upsert(rows, {

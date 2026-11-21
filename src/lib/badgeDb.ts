@@ -4,6 +4,7 @@ import {
   type BadgeTier,
 } from './badges'
 import { lockedBadgeSnapshot, maxTierSnapshot, type BadgeTierSnapshot } from './badgeUnlocks'
+import { localProgressGeneration } from './progressReset'
 import { getSupabase } from './supabase'
 
 interface BadgeTierRow {
@@ -11,6 +12,7 @@ interface BadgeTierRow {
   badge_id: string
   tier: BadgeTier
   updated_at: string
+  earned_generation?: number
 }
 
 export function isMissingBadgeTiersTable(error: PostgrestError | null): boolean {
@@ -33,11 +35,13 @@ function snapshotFromRows(rows: BadgeTierRow[]): BadgeTierSnapshot {
 }
 
 function rowsFromSnapshot(userId: string, snapshot: BadgeTierSnapshot): BadgeTierRow[] {
+  const earnedGeneration = localProgressGeneration(userId)
   return BADGE_DEFINITIONS.map((def) => ({
     user_id: userId,
     badge_id: def.id,
     tier: snapshot[def.id] ?? 'locked',
     updated_at: new Date().toISOString(),
+    earned_generation: earnedGeneration,
   })).filter((row) => row.tier !== 'locked')
 }
 

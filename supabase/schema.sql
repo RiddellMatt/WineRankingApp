@@ -18,6 +18,8 @@ create table public.profiles (
   -- Bumped by scripts/reset-profile.sql. A newer value tells the app to drop
   -- cached cellar, badges, and journeys instead of uploading them again.
   progress_generation bigint not null default 0,
+  -- Set by the same reset. Bottles logged before this time are not accepted back.
+  progress_reset_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -170,10 +172,13 @@ create policy profiles_update on public.profiles
     and is_pro is not distinct from (
       select p.is_pro from public.profiles p where p.id = auth.uid()
     )
-    and progress_generation is not distinct from (
-      select p.progress_generation from public.profiles p where p.id = auth.uid()
-    )
-  );
+      and progress_generation is not distinct from (
+        select p.progress_generation from public.profiles p where p.id = auth.uid()
+      )
+      and progress_reset_at is not distinct from (
+        select p.progress_reset_at from public.profiles p where p.id = auth.uid()
+      )
+    );
 
 -- Wines: full access to own; read-only for friends
 create policy wines_select on public.wines
@@ -373,6 +378,7 @@ create table public.user_badge_tiers (
   badge_id text not null,
   tier text not null check (tier in ('locked', 'bronze', 'silver', 'gold', 'diamond')),
   updated_at timestamptz not null default now(),
+  earned_generation bigint not null default 0,
   primary key (user_id, badge_id)
 );
 
@@ -400,6 +406,7 @@ create table public.user_journey_completions (
   user_id uuid not null references auth.users (id) on delete cascade,
   journey_id text not null,
   completed_at timestamptz not null default now(),
+  earned_generation bigint not null default 0,
   primary key (user_id, journey_id)
 );
 
@@ -417,6 +424,77 @@ create policy user_journey_completions_select on public.user_journey_completions
 create policy user_journey_completions_insert on public.user_journey_completions
   for insert to authenticated
   with check (user_id = auth.uid());
+
+create schema if not exists private;
+
+create or replace function private.reject_restored_cellar()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $cellar$
+declare
+  reset_at timestamptz;
+begin
+  select p.progress_reset_at into reset_at
+  from public.profiles p
+  where p.id = NEW.user_id;
+
+  if reset_at is null then
+    return NEW;
+  end if;
+
+  if NEW.added_at is null
+     or to_timestamp(NEW.added_at / 1000.0) < reset_at - interval '15 minutes' then
+    raise exception 'Cellar was reset. This bottle was not added again.';
+  end if;
+
+  return NEW;
+end
+$cellar$;
+
+create or replace function private.reject_restored_points()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $points$
+declare
+  current_gen bigint;
+begin
+  select p.progress_generation into current_gen
+  from public.profiles p
+  where p.id = NEW.user_id;
+
+  if coalesce(current_gen, 0) = 0 then
+    return NEW;
+  end if;
+
+  if coalesce(NEW.earned_generation, 0) < current_gen then
+    raise exception 'Points were reset. Open the app again before earning more.';
+  end if;
+
+  return NEW;
+end
+$points$;
+
+drop trigger if exists wines_reject_restored_cellar on public.wines;
+create trigger wines_reject_restored_cellar
+  before insert or update on public.wines
+  for each row execute function private.reject_restored_cellar();
+
+drop trigger if exists user_badge_tiers_reject_restored_points on public.user_badge_tiers;
+create trigger user_badge_tiers_reject_restored_points
+  before insert or update on public.user_badge_tiers
+  for each row execute function private.reject_restored_points();
+
+drop trigger if exists user_journey_completions_reject_restored_points on public.user_journey_completions;
+create trigger user_journey_completions_reject_restored_points
+  before insert or update on public.user_journey_completions
+  for each row execute function private.reject_restored_points();
+
+revoke all on function private.reject_restored_cellar() from public;
+revoke all on function private.reject_restored_points() from public;
 
 create table public.activity_events (
   id uuid primary key default gen_random_uuid(),
