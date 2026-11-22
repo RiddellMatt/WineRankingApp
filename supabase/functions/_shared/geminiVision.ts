@@ -63,12 +63,14 @@ interface ModelPrior {
  * start at the back and only move up after they actually complete.
  */
 const MODEL_PRIORS: Record<string, ModelPrior> = {
-  'gemini-3.6-flash': { completion: 0.9, successMs: 5_000, failureMs: 4_000 },
-  'gemini-flash-lite-latest': { completion: 0.62, successMs: 4_000, failureMs: 2_500 },
-  'gemini-3.8-flash': { completion: 0.7, successMs: 5_500, failureMs: 4_000 },
-  'gemini-3.5-flash-lite': { completion: 0.42, successMs: 4_500, failureMs: 3_000 },
+  // Measured on a real-sized label photo: these two returned the wine in about 1–2s.
+  'gemini-3.6-flash': { completion: 0.92, successMs: 1_800, failureMs: 4_000 },
+  'gemini-3.5-flash-lite': { completion: 0.84, successMs: 1_200, failureMs: 5_000 },
+  // This alias sometimes accepts a photo and never answers. Keep it behind the two above.
+  'gemini-flash-lite-latest': { completion: 0.5, successMs: 1_500, failureMs: 12_000 },
+  'gemini-3.8-flash': { completion: 0.35, successMs: 6_000, failureMs: 12_000 },
   'gemini-3.7-flash': { completion: 0.08, successMs: 8_000, failureMs: 20_000 },
-  'gemini-flash-latest': { completion: 0.08, successMs: 4_000, failureMs: 600 },
+  'gemini-flash-latest': { completion: 0.08, successMs: 4_000, failureMs: 8_000 },
 }
 
 /** A GEMINI_MODEL pin we have no history for. Strong enough to earn a backup slot, not the lead. */
@@ -92,14 +94,87 @@ export interface VisionAttemptSample {
 }
 
 /**
- * iOS WKWebView aborts a fetch that receives no response bytes for about 60s
- * ("Fetch is aborted"). The whole vision race must finish well inside that,
- * or the phone gives up while this function is still waiting on Gemini.
+ * iOS WKWebView aborts a fetch that receives no response bytes for about 60s.
+ * A healthy label read comes back in 1–2s. A request still silent at 10s is
+ * stuck, and waiting the old 22s is how the phone gives up before a later
+ * model gets a real chance. The whole race still ends well inside 60s.
  */
-export const VISION_ATTEMPT_TIMEOUT_MS = 22_000
-export const VISION_HEDGE_DELAY_MS = 4_000
+export const VISION_ATTEMPT_TIMEOUT_MS = 10_000
+export const VISION_HEDGE_DELAY_MS = 2_500
 export const VISION_DEADLINE_MS = 45_000
 const MAX_IN_FLIGHT = 2
+
+/**
+ * Room for a short JSON label or a multi-wine menu, plus a little thinking.
+ * This cap includes thought tokens, so it stays well above a normal answer.
+ */
+export const VISION_MAX_OUTPUT_TOKENS = 8_192
+
+/**
+ * Gemini 3 thinks at medium or high when this is omitted, and a temperature
+ * below 1 can make that loop until the request is aborted. Label reading is
+ * extraction, so ask for the lowest level every model in the pool accepts.
+ */
+export function labelGenerationConfig(): {
+  maxOutputTokens: number
+  responseMimeType: string
+  thinkingConfig: { thinkingLevel: 'LOW' }
+} {
+  return {
+    maxOutputTokens: VISION_MAX_OUTPUT_TOKENS,
+    responseMimeType: 'application/json',
+    thinkingConfig: { thinkingLevel: 'LOW' },
+  }
+}
+
+export function probeGenerationConfig(): {
+  maxOutputTokens: number
+  thinkingConfig: { thinkingLevel: 'LOW' }
+} {
+  return {
+    maxOutputTokens: 8,
+    thinkingConfig: { thinkingLevel: 'LOW' },
+  }
+}
+
+/** Drop one unsupported knob after a 400, so an older alias can still answer. */
+export function relaxGenerationConfig(
+  config: Record<string, unknown>,
+  status: number,
+  detail: string,
+): Record<string, unknown> | null {
+  if (status !== 400) return null
+  if (config.thinkingConfig && /thinking/i.test(detail)) {
+    const { thinkingConfig: _drop, ...rest } = config
+    return rest
+  }
+  if (config.responseMimeType && /mime|response_schema|responseMime/i.test(detail)) {
+    const { responseMimeType: _drop, ...rest } = config
+    return rest
+  }
+  return null
+}
+
+/** The answer text. Thought parts are reasoning, not the label JSON. */
+export function textFromGeminiResponse(json: unknown): string {
+  if (!json || typeof json !== 'object') return ''
+  const candidates = (json as { candidates?: unknown }).candidates
+  if (!Array.isArray(candidates)) return ''
+  const texts: string[] = []
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== 'object') continue
+    const parts = (candidate as { content?: { parts?: unknown } }).content?.parts
+    if (!Array.isArray(parts)) continue
+    for (const part of parts) {
+      if (!part || typeof part !== 'object') continue
+      const record = part as { thought?: unknown; text?: unknown }
+      if (record.thought === true) continue
+      if (typeof record.text === 'string' && record.text.trim()) texts.push(record.text.trim())
+    }
+    if (texts.length > 0) break
+  }
+  return texts.join('\n')
+}
 
 export function classifyVisionOutcome(detail: string): VisionOutcome {
   if (/404|no longer available|not found|not_found/i.test(detail)) return 'unavailable'
@@ -391,7 +466,8 @@ export function raceVisionModels(options: VisionRaceOptions): Promise<GeminiVisi
             return
           }
           const detail = attempt.ok ? 'No response from vision model.' : attempt.detail
-          report(classifyVisionOutcome(detail))
+          // The deadline or a winner aborted this call. That is not evidence the model is down.
+          if (detail !== 'cancelled') report(classifyVisionOutcome(detail))
           errors.push(detail)
           console.error(`Gemini ${model}:`, detail.slice(0, 300))
           if (!attempt.ok && attempt.fatal) {
@@ -411,7 +487,7 @@ export function raceVisionModels(options: VisionRaceOptions): Promise<GeminiVisi
           inFlight -= 1
           if (settled) return
           const thrown = error instanceof Error ? error.message : String(error)
-          report(classifyVisionOutcome(thrown))
+          if (thrown !== 'cancelled') report(classifyVisionOutcome(thrown))
           errors.push(thrown)
           console.error(`Gemini ${model}:`, thrown.slice(0, 300))
           if (parent.signal.aborted || (nextIndex >= models.length && inFlight === 0)) {
@@ -437,6 +513,47 @@ export function raceVisionModels(options: VisionRaceOptions): Promise<GeminiVisi
   })
 }
 
+type GeneratePart = { text: string } | { inline_data: { mime_type: string; data: string } }
+
+async function postGenerateContent(
+  apiKey: string,
+  model: string,
+  parts: GeneratePart[],
+  generationConfig: Record<string, unknown>,
+  signal: AbortSignal,
+): Promise<{ ok: true; json: unknown } | { ok: false; detail: string; fatal?: boolean }> {
+  let config = generationConfig
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        signal,
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: config,
+        }),
+      },
+    )
+    if (res.ok) return { ok: true, json: await res.json() }
+    const detail = await res.text()
+    if (res.status === 401 || res.status === 403) {
+      return { ok: false, detail, fatal: true }
+    }
+    const relaxed = relaxGenerationConfig(config, res.status, detail)
+    if (relaxed) {
+      config = relaxed
+      continue
+    }
+    return { ok: false, detail: `${res.status} ${detail.slice(0, 180)}` }
+  }
+  return { ok: false, detail: '400 generation config rejected' }
+}
+
 async function callModel(
   apiKey: string,
   model: string,
@@ -449,43 +566,24 @@ async function callModel(
   const timeoutId = setTimeout(() => timeout.abort(), VISION_ATTEMPT_TIMEOUT_MS)
   const signalCombined = anySignal([signal, timeout.signal])
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        signal: signalCombined,
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt },
-                { inline_data: { mime_type: mimeType, data: imageBase64 } },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.2,
-          },
-        }),
-      },
+    const posted = await postGenerateContent(
+      apiKey,
+      model,
+      [
+        { text: prompt },
+        { inline_data: { mime_type: mimeType, data: imageBase64 } },
+      ],
+      labelGenerationConfig(),
+      signalCombined,
     )
-
-    if (res.ok) {
-      const json = await res.json()
-      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
-      if (typeof text === 'string' && text.trim()) return { ok: true, text }
-      return { ok: false, detail: 'No response from vision model.' }
+    if (!posted.ok) {
+      return posted.fatal
+        ? { ok: false, detail: posted.detail, fatal: true }
+        : { ok: false, detail: posted.detail }
     }
-
-    const detail = await res.text()
-    if (res.status === 401 || res.status === 403) {
-      return { ok: false, detail, fatal: true }
-    }
-    return { ok: false, detail: `${res.status} ${detail.slice(0, 180)}` }
+    const text = textFromGeminiResponse(posted.json)
+    if (text) return { ok: true, text }
+    return { ok: false, detail: 'No response from vision model.' }
   } catch (error) {
     if (signal.aborted) return { ok: false, detail: 'cancelled' }
     if (timeout.signal.aborted) return { ok: false, detail: `timed out after ${VISION_ATTEMPT_TIMEOUT_MS}ms` }
@@ -506,7 +604,10 @@ export async function callGeminiVision(
     onSample?: (sample: VisionAttemptSample) => void
   },
 ): Promise<GeminiVisionResult> {
-  const models = options?.models?.length ? options.models : geminiModelsToTry()
+  const ranked = options?.models?.length ? options.models : geminiModelsToTry()
+  // One silent call is often a stuck request. Run the list a second time so a
+  // new call can land while the first one is still hung.
+  const models = ranked.length > 1 ? [...ranked, ...ranked] : ranked
   console.log(`Vision models: ${models.join(', ')}`)
   const result = await raceVisionModels({
     models,
@@ -557,49 +658,32 @@ async function probeOneModel(
   const combined = signal ? anySignal([signal, timeout.signal]) : timeout.signal
   const started = Date.now()
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        signal: combined,
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: 'Reply with the single word ok.' },
-                { inline_data: { mime_type: 'image/jpeg', data: PROBE_JPEG } },
-              ],
-            },
-          ],
-          generationConfig: { temperature: 0, maxOutputTokens: 8 },
-        }),
-      },
+    const posted = await postGenerateContent(
+      apiKey,
+      model,
+      [
+        { text: 'Reply with the single word ok.' },
+        { inline_data: { mime_type: 'image/jpeg', data: PROBE_JPEG } },
+      ],
+      probeGenerationConfig(),
+      combined,
     )
     const durationMs = Date.now() - started
-    if (res.ok) {
-      const json = await res.json()
-      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
-      const outcome: VisionOutcome =
-        typeof text === 'string' && text.trim() ? 'success' : 'error'
-      return { sample: { model, outcome, durationMs, atMs, source: 'probe' } }
+    if (!posted.ok) {
+      if (posted.fatal) return { sample: null, fatal: true, detail: posted.detail }
+      return {
+        sample: {
+          model,
+          outcome: classifyVisionOutcome(posted.detail),
+          durationMs,
+          atMs,
+          source: 'probe',
+        },
+      }
     }
-    const detail = await res.text()
-    if (res.status === 401 || res.status === 403) {
-      return { sample: null, fatal: true, detail }
-    }
-    return {
-      sample: {
-        model,
-        outcome: classifyVisionOutcome(`${res.status} ${detail.slice(0, 180)}`),
-        durationMs,
-        atMs,
-        source: 'probe',
-      },
-    }
+    const text = textFromGeminiResponse(posted.json)
+    const outcome: VisionOutcome = text ? 'success' : 'error'
+    return { sample: { model, outcome, durationMs, atMs, source: 'probe' } }
   } catch (error) {
     if (signal?.aborted) return { sample: null }
     const durationMs = Date.now() - started
