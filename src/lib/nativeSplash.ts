@@ -68,8 +68,10 @@ async function waitForMinLaunchVisible(): Promise<void> {
 }
 
 /**
- * Dismiss native Capacitor splash, then fade the in-app launch overlay.
- * Honors minimum visible time so fast loads still show the transition.
+ * Reveal the wordmark overlay immediately, hold it for the minimum launch
+ * time, then fade it out. The system splash is only a stand-in until this
+ * overlay is painted — waiting out the hold first left the wine glass up
+ * and flashed the logo as it disappeared.
  */
 export async function hideNativeSplashOnce(): Promise<void> {
   if (!isNativeApp() || splashHidden) return
@@ -77,16 +79,18 @@ export async function hideNativeSplashOnce(): Promise<void> {
 
   hideInFlight = (async () => {
     await waitForOverlayBridge()
-    await waitForMinLaunchVisible()
     await waitForNextPaint()
 
     try {
-      await SplashScreen.hide({ fadeOutDuration: 300 })
+      await Promise.race([
+        SplashScreen.hide({ fadeOutDuration: 0 }),
+        waitMs(400),
+      ])
     } catch {
       // Plugin unavailable in web preview.
     }
 
-    await waitMs(100)
+    await waitForMinLaunchVisible()
     launchOverlay?.exit()
     await waitMs(FADE_MS)
 
