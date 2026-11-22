@@ -7,6 +7,7 @@ create table if not exists public.gemini_model_samples (
   model text not null,
   outcome text not null check (outcome in ('success', 'overload', 'timeout', 'error', 'unavailable')),
   duration_ms int not null check (duration_ms >= 0),
+  source text not null default 'vision' check (source in ('vision', 'probe')),
   created_at timestamptz not null default now()
 );
 

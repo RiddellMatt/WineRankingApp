@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  blendSamplesForRanking,
+  ENOUGH_VISION_SAMPLES,
   modelsForScan,
+  modelsToProbe,
   raceVisionModels,
   rankVisionModels,
   type ModelSample,
@@ -229,6 +232,88 @@ test('an aborted loser is not recorded as a model failure', async () => {
     samples.map((sample) => sample.outcome),
     ['success'],
   )
+})
+
+test('a thin scan history asks the models themselves, then stops once there are enough photos', () => {
+  const now = 1_700_000_000_000
+  const vision: ModelSample = {
+    model: 'gemini-3.6-flash',
+    outcome: 'success',
+    durationMs: 4_000,
+    atMs: now - 1_000,
+    source: 'vision',
+  }
+  const probe: ModelSample = {
+    model: 'gemini-3.7-flash',
+    outcome: 'overload',
+    durationMs: 180,
+    atMs: now - 30_000,
+    source: 'probe',
+  }
+  const thin = blendSamplesForRanking([vision, probe], now)
+  assert.equal(thin.needsLiveProbe, false)
+  assert.equal(thin.visionCount, 1)
+  assert.equal(thin.samples.some((sample) => sample.source === 'probe'), true)
+
+  const staleProbe = { ...probe, atMs: now - 10 * 60 * 1000 }
+  const stale = blendSamplesForRanking([vision, staleProbe], now)
+  assert.equal(stale.needsLiveProbe, true)
+  assert.equal(stale.samples.some((sample) => sample.source === 'probe'), false)
+
+  const enough = Array.from({ length: ENOUGH_VISION_SAMPLES }, (_, index) => ({
+    ...vision,
+    atMs: now - index * 1_000,
+  }))
+  const full = blendSamplesForRanking([...enough, probe], now)
+  assert.equal(full.needsLiveProbe, false)
+  assert.equal(full.visionCount, ENOUGH_VISION_SAMPLES)
+  assert.equal(full.samples.every((sample) => (sample.source ?? 'vision') === 'vision'), true)
+})
+
+test('a live overload is blended into the order while photo history is thin', () => {
+  const now = 1_700_000_000_000
+  const samples: ModelSample[] = [
+    {
+      model: 'gemini-3.6-flash',
+      outcome: 'overload',
+      durationMs: 220,
+      atMs: now,
+      source: 'probe',
+    },
+    {
+      model: 'gemini-3.6-flash',
+      outcome: 'overload',
+      durationMs: 240,
+      atMs: now,
+      source: 'probe',
+    },
+    {
+      model: 'gemini-flash-lite-latest',
+      outcome: 'success',
+      durationMs: 400,
+      atMs: now,
+      source: 'probe',
+    },
+  ]
+  const ranked = rankVisionModels({ samples, nowMs: now })
+  assert.equal(ranked[0]?.model, 'gemini-flash-lite-latest')
+  const tired = ranked.find((entry) => entry.model === 'gemini-3.6-flash')
+  assert.equal(tired?.exhausted, true)
+})
+
+test('retired models are not probed again', () => {
+  const now = 1_700_000_000_000
+  const models = modelsToProbe('gemini-3.7-flash', [
+    {
+      model: 'gemini-3.7-flash',
+      outcome: 'unavailable',
+      durationMs: 40,
+      atMs: now - 1_000,
+      source: 'vision',
+    },
+  ], now)
+  assert.equal(models.includes('gemini-3.7-flash'), false)
+  assert.equal(models.includes('gemini-3.6-flash'), true)
 })
 
 test('label scan rotates through 50 distinct wine facts', () => {

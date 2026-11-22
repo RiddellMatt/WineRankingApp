@@ -26,6 +26,18 @@ export const VISION_SAMPLE_WINDOW_MS = 30 * 60 * 1000
 /** Two failures in this window, and no success, means the model is under load right now. */
 export const VISION_EXHAUSTED_WINDOW_MS = 10 * 60 * 1000
 
+/**
+ * Below this many real label/menu attempts in the window, ask the models
+ * themselves who is up before trusting the thin scan history.
+ */
+export const ENOUGH_VISION_SAMPLES = 8
+
+/** Reuse a live check for a few minutes so a second bottle does not probe again. */
+export const PROBE_REUSE_MS = 3 * 60 * 1000
+
+/** A hung model must not hold the probe open. The photo call starts after this. */
+export const PROBE_TIMEOUT_MS = 2_000
+
 export type VisionOutcome = 'success' | 'overload' | 'timeout' | 'error' | 'unavailable'
 
 export interface ModelSample {
@@ -33,6 +45,8 @@ export interface ModelSample {
   outcome: VisionOutcome
   durationMs: number
   atMs: number
+  /** vision = a real label or menu photo. probe = a tiny live check. */
+  source?: 'vision' | 'probe'
 }
 
 interface ModelPrior {
@@ -108,6 +122,47 @@ function candidateModels(configured: string | undefined): string[] {
     models.push(model)
   }
   return models
+}
+
+/**
+ * While real scans are scarce, mix in a recent live check.
+ * Once there are enough photo attempts, those attempts are the whole score.
+ */
+export function blendSamplesForRanking(
+  samples: ModelSample[],
+  nowMs: number,
+): { samples: ModelSample[]; needsLiveProbe: boolean; visionCount: number } {
+  const vision = samples.filter((sample) => (sample.source ?? 'vision') === 'vision')
+  const freshProbes = samples.filter((sample) => {
+    if (sample.source !== 'probe') return false
+    const age = nowMs - sample.atMs
+    return age >= 0 && age <= PROBE_REUSE_MS
+  })
+  const needsLiveProbe = vision.length < ENOUGH_VISION_SAMPLES && freshProbes.length === 0
+  return {
+    visionCount: vision.length,
+    needsLiveProbe,
+    samples: vision.length >= ENOUGH_VISION_SAMPLES ? vision : [...vision, ...freshProbes],
+  }
+}
+
+/** Skip models a real scan already proved are retired. */
+export function modelsToProbe(
+  configured: string | undefined,
+  visionSamples: ModelSample[],
+  nowMs: number,
+): string[] {
+  const retired = new Set(
+    visionSamples
+      .filter((sample) => {
+        if ((sample.source ?? 'vision') !== 'vision') return false
+        if (sample.outcome !== 'unavailable') return false
+        const age = nowMs - sample.atMs
+        return age >= 0 && age <= VISION_SAMPLE_WINDOW_MS
+      })
+      .map((sample) => sample.model),
+  )
+  return candidateModels(configured).filter((model) => !retired.has(model))
 }
 
 /**
@@ -462,4 +517,107 @@ export async function callGeminiVision(
   })
   console.log(`Gemini success via ${result.model} after ${result.attempts} attempt(s)`)
   return result
+}
+
+/** One-pixel JPEG. Large enough for the vision endpoint, small enough to be a load check. */
+const PROBE_JPEG =
+  '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERXRTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA//2Q=='
+
+/**
+ * Ask every candidate model with a tiny image, in parallel, and stop at 2s.
+ * This is the live load check used until real scans fill the window.
+ */
+export async function probeGeminiModels(
+  apiKey: string,
+  models: string[],
+  signal?: AbortSignal,
+): Promise<ModelSample[]> {
+  if (signal?.aborted || models.length === 0) return []
+  const atMs = Date.now()
+  const results = await Promise.all(
+    models.map((model) => probeOneModel(apiKey, model, signal, atMs)),
+  )
+  const fatal = results.find((result) => result.fatal)
+  if (fatal?.detail) {
+    throw new Error(`Vision API auth failed: ${fatal.detail.slice(0, 200)}`)
+  }
+  return results.flatMap((result) =>
+    result.sample && !signal?.aborted ? [result.sample] : [],
+  )
+}
+
+async function probeOneModel(
+  apiKey: string,
+  model: string,
+  signal: AbortSignal | undefined,
+  atMs: number,
+): Promise<{ sample: ModelSample | null; fatal?: boolean; detail?: string }> {
+  const timeout = new AbortController()
+  const timeoutId = setTimeout(() => timeout.abort(), PROBE_TIMEOUT_MS)
+  const combined = signal ? anySignal([signal, timeout.signal]) : timeout.signal
+  const started = Date.now()
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        signal: combined,
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: 'Reply with the single word ok.' },
+                { inline_data: { mime_type: 'image/jpeg', data: PROBE_JPEG } },
+              ],
+            },
+          ],
+          generationConfig: { temperature: 0, maxOutputTokens: 8 },
+        }),
+      },
+    )
+    const durationMs = Date.now() - started
+    if (res.ok) {
+      const json = await res.json()
+      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
+      const outcome: VisionOutcome =
+        typeof text === 'string' && text.trim() ? 'success' : 'error'
+      return { sample: { model, outcome, durationMs, atMs, source: 'probe' } }
+    }
+    const detail = await res.text()
+    if (res.status === 401 || res.status === 403) {
+      return { sample: null, fatal: true, detail }
+    }
+    return {
+      sample: {
+        model,
+        outcome: classifyVisionOutcome(`${res.status} ${detail.slice(0, 180)}`),
+        durationMs,
+        atMs,
+        source: 'probe',
+      },
+    }
+  } catch (error) {
+    if (signal?.aborted) return { sample: null }
+    const durationMs = Date.now() - started
+    const detail = timeout.signal.aborted
+      ? `timed out after ${PROBE_TIMEOUT_MS}ms`
+      : error instanceof Error
+        ? error.message
+        : String(error)
+    return {
+      sample: {
+        model,
+        outcome: classifyVisionOutcome(detail),
+        durationMs,
+        atMs,
+        source: 'probe',
+      },
+    }
+  } finally {
+    clearTimeout(timeoutId)
+  }
 }
