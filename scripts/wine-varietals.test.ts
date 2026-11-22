@@ -24,6 +24,35 @@ test('Bordeaux Blanc is one dropdown row for the white Bordeaux spellings', () =
   assert.equal(names.includes('White Bordeaux'), false)
 })
 
+test('the varietal list for a type leaves out grapes of another color', () => {
+  const white: string[] = varietals.varietalsForType('White')
+  const red: string[] = varietals.varietalsForType('Red')
+  assert.equal(white.includes('Chardonnay'), true)
+  assert.equal(white.includes('Bordeaux Blanc'), true)
+  assert.equal(white.includes('Merlot'), false)
+  assert.equal(white.includes('Cabernet Sauvignon'), false)
+  assert.equal(red.includes('Merlot'), true)
+  assert.equal(red.includes('Chardonnay'), false)
+  assert.equal(varietals.varietalFitsType('Merlot', 'White'), false)
+  assert.equal(varietals.varietalFitsType('Chardonnay', 'White'), true)
+  assert.equal(varietals.varietalFitsType('house blend', 'White'), true)
+  const rose: string[] = varietals.varietalsForType('Rosé')
+  assert.equal(rose.includes('Pinot Noir'), true)
+  assert.equal(rose.includes('Chardonnay'), false)
+  const orange: string[] = varietals.varietalsForType('Orange')
+  assert.equal(orange.includes('Chardonnay'), true)
+  assert.equal(orange.includes('Merlot'), false)
+  const sparkling: string[] = varietals.varietalsForType('Sparkling')
+  assert.equal(sparkling.includes('Prosecco'), true)
+  assert.equal(sparkling.includes('Merlot'), false)
+  const dessert: string[] = varietals.varietalsForType('Dessert')
+  assert.equal(dessert.includes('Riesling'), true)
+  assert.equal(dessert.includes('Merlot'), false)
+  const fortified: string[] = varietals.varietalsForType('Fortified')
+  assert.equal(fortified.includes('Port'), true)
+  assert.equal(fortified.includes('Merlot'), false)
+})
+
 test('the varietal list keeps common grapes and does not repeat spellings', () => {
   const names: string[] = varietals.WINE_VARIETAL_OPTIONS
   const expected = [

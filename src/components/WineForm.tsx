@@ -15,7 +15,7 @@ import { WINE_TYPES, type RankingPreference, type TasteProfile, type Wine, type 
 import { catalogTags } from '../lib/tastingTags'
 import { triedWines } from '../lib/wishlist'
 import { dismissKeyboard, focusNextTextField, isTextField } from '../lib/keyboardInset'
-import { canonicalVarietal, isListedVarietal, typeForVarietal } from '../lib/wineVarietals'
+import { canonicalVarietal, isListedVarietal, typeForVarietal, varietalFitsType } from '../lib/wineVarietals'
 import { StarInput } from './StarRating'
 import { TasteInput } from './TasteProfile'
 import { TastingTagsInput } from './TastingTagsInput'
@@ -230,24 +230,32 @@ export function WineForm({
           ? canonicalVarietal(scan.name)
           : ''
       : ''
-    if (scannedVarietal) {
-      setVarietal(scannedVarietal)
-      found.push('varietal')
-    }
     if (scan.region && !region.trim()) {
       setRegion(scan.region)
       found.push('region')
     }
+    let nextType = type
     if (scan.type && !initial) {
-      setType(scan.type)
+      nextType = scan.type
       found.push('type')
     } else if (!initial && !scan.type && scannedVarietal) {
       const inferred = typeForVarietal(scannedVarietal)
       if (inferred) {
-        setType(inferred)
+        nextType = inferred
         found.push('type')
       }
     }
+    if (!initial && scannedVarietal && !varietalFitsType(scannedVarietal, nextType)) {
+      const inferred = typeForVarietal(scannedVarietal)
+      if (inferred) nextType = inferred
+    }
+    const varietalToApply =
+      scannedVarietal && varietalFitsType(scannedVarietal, nextType) ? scannedVarietal : ''
+    if (varietalToApply) {
+      setVarietal(varietalToApply)
+      found.push('varietal')
+    }
+    if (nextType !== type) setType(nextType)
     if (found.length === 0) {
       setScanState('failed')
       setScanSummary("Couldn't read anything useful — try a straighter, closer photo in good light.")
@@ -499,7 +507,14 @@ export function WineForm({
           </label>
           <label className="field">
             <span>Type</span>
-            <select value={type} onChange={(e) => setType(e.target.value as WineType)}>
+            <select
+              value={type}
+              onChange={(e) => {
+                const next = e.target.value as WineType
+                setType(next)
+                setVarietal((current) => (varietalFitsType(current, next) ? current : ''))
+              }}
+            >
               {WINE_TYPES.map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -509,7 +524,7 @@ export function WineForm({
           </label>
           <label className="field">
             <span>Varietal</span>
-            <VarietalSelect value={varietal} onChange={setVarietal} />
+            <VarietalSelect value={varietal} wineType={type} onChange={setVarietal} />
           </label>
           <label className="field">
             <span>Region</span>
