@@ -117,3 +117,39 @@ export function typeForVarietal(value: string): WineType | undefined {
   if (!isListedVarietal(listed)) return undefined
   return CATALOG.types.get(canonicalKey(listed))
 }
+
+/**
+ * Which catalog types belong in the picker for a wine type.
+ * Rosé is made from red grapes, orange wine from white grapes, and dessert
+ * bottles are usually a white grape or a named dessert style.
+ */
+function catalogTypesFor(type: WineType): readonly WineType[] {
+  switch (type) {
+    case 'Rosé':
+      return ['Rosé', 'Red']
+    case 'Orange':
+      return ['White']
+    case 'Dessert':
+      return ['Dessert', 'White']
+    default:
+      return [type]
+  }
+}
+
+/** Varietal labels that make sense for the selected wine type, in list order. */
+export function varietalsForType(type: WineType): string[] {
+  const allowed = new Set(catalogTypesFor(type))
+  return WINE_VARIETAL_OPTIONS.filter((option) => {
+    const grapeType = CATALOG.types.get(canonicalKey(option))
+    return grapeType != null && allowed.has(grapeType)
+  })
+}
+
+/** Custom text is always kept. A listed grape must belong to the wine type. */
+export function varietalFitsType(value: string, type: WineType): boolean {
+  const trimmed = value.trim()
+  if (!trimmed || !isListedVarietal(trimmed)) return true
+  const grapeType = typeForVarietal(trimmed)
+  if (!grapeType) return true
+  return catalogTypesFor(type).includes(grapeType)
+}
