@@ -191,14 +191,20 @@ Deno.serve(async (req) => {
 
     let vision
     try {
-      vision = await callGeminiVision(geminiKey, mimeType, imageBase64, MENU_PROMPT)
+      vision = await callGeminiVision(geminiKey, mimeType, imageBase64, MENU_PROMPT, req.signal)
       metrics.model = vision.model
       metrics.fallbackAttempts = Math.max(0, vision.attempts - 1)
       metrics.durationMsGemini = vision.durationMs
     } catch (e) {
+      if (req.signal.aborted) {
+        metrics.errorCode = 'client_aborted'
+        await flushMetrics('error')
+        return new Response(null, { status: 499 })
+      }
       metrics.errorCode = 'gemini_failed'
       await flushMetrics('error')
-      return jsonResponse({ error: String(e) }, 502)
+      const message = e instanceof Error && e.message ? e.message : String(e)
+      return jsonResponse({ error: message }, 502)
     } finally {
       await deleteScanUpload(admin, cleanupPath)
     }
@@ -234,6 +240,12 @@ Deno.serve(async (req) => {
     const status = wines.length === 0 ? 'no_data' : 'success'
     if (wines.length === 0) {
       metrics.errorCode = 'no_wines'
+    }
+
+    if (req.signal.aborted) {
+      metrics.errorCode = 'client_aborted'
+      await flushMetrics('error')
+      return new Response(null, { status: 499 })
     }
 
     await admin.from('menu_scan_usage').insert({ user_id: user.id })

@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { lockAppScroll } from '../lib/lockAppScroll'
+import { WINE_FACTS } from '../lib/wineFacts'
 import { ScanPourGlass } from './ScanPourGlass'
 
 export type ScanPourVariant = 'menu' | 'label'
 
-const STAGE_LINES: Record<ScanPourVariant, readonly string[]> = {
-  menu: ['Scanning the list…', 'Comparing your cellar…', 'Picking standouts…'],
-  label: ['Reading the label…', 'Pulling producer & vintage…', 'Filling your form…'],
-}
+const MENU_LINES = ['Scanning the list…', 'Comparing your cellar…', 'Picking standouts…'] as const
 
-const STAGE_MS = 2400
+const MENU_STAGE_MS = 2400
+const WINE_FACT_MS = 8_000
 const RING_R = 54
 const RING_C = 2 * Math.PI * RING_R
 
@@ -26,7 +25,8 @@ interface Props {
 /** Full-screen loading overlay while AI reads a label or menu photo. */
 export function ScanPourOverlay({ open, variant, previewUrl, progress }: Props) {
   const [stageIndex, setStageIndex] = useState(0)
-  const lines = STAGE_LINES[variant]
+  const lines = variant === 'label' ? WINE_FACTS : MENU_LINES
+  const intervalMs = variant === 'label' ? WINE_FACT_MS : MENU_STAGE_MS
   const message = lines[stageIndex % lines.length] ?? lines[0]
 
   useEffect(() => {
@@ -39,11 +39,13 @@ export function ScanPourOverlay({ open, variant, previewUrl, progress }: Props) 
       setStageIndex(0)
       return
     }
+    const start = variant === 'label' ? Math.floor(Math.random() * lines.length) : 0
+    setStageIndex(start)
     const id = window.setInterval(() => {
       setStageIndex((i) => (i + 1) % lines.length)
-    }, STAGE_MS)
+    }, intervalMs)
     return () => window.clearInterval(id)
-  }, [open, lines.length])
+  }, [open, variant, lines.length, intervalMs])
 
   if (!open) return null
 

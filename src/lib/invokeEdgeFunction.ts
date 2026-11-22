@@ -1,5 +1,9 @@
 import { getSupabase } from './supabase'
 
+/**
+ * Backstop for browsers that wait. iOS WKWebView aborts a response that sends
+ * no bytes for about 60s, so scan functions have to finish well inside this.
+ */
 const DEFAULT_INVOKE_TIMEOUT_MS = 120_000
 
 /** Invoke a Supabase Edge Function with a fresh session JWT (mobile-safe). */

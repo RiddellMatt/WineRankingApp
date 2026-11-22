@@ -3120,6 +3120,9 @@ button.tasting-tag-pill-btn.active {
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  /* The pour starts above the glass and was painting a speck outside the ring. */
+  overflow: hidden;
 }
 
 .scan-pour-ring {
@@ -3179,6 +3182,8 @@ button.tasting-tag-pill-btn.active {
 
 .scan-pour-message {
   margin: 0;
+  max-width: 18rem;
+  min-height: 2.8em;
   font-size: 0.95rem;
   font-weight: 600;
   color: #f7eef1;

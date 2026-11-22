@@ -262,14 +262,20 @@ Deno.serve(async (req) => {
 
     let vision
     try {
-      vision = await callGeminiVision(geminiKey, mimeType, imageBase64, LABEL_PROMPT)
+      vision = await callGeminiVision(geminiKey, mimeType, imageBase64, LABEL_PROMPT, req.signal)
       metrics.model = vision.model
       metrics.fallbackAttempts = Math.max(0, vision.attempts - 1)
       metrics.durationMsGemini = vision.durationMs
     } catch (e) {
+      if (req.signal.aborted) {
+        metrics.errorCode = 'client_aborted'
+        await flushMetrics('error')
+        return new Response(null, { status: 499 })
+      }
       metrics.errorCode = 'gemini_failed'
       await flushMetrics('error')
-      return jsonResponse({ error: String(e) }, 502)
+      const message = e instanceof Error && e.message ? e.message : String(e)
+      return jsonResponse({ error: message }, 502)
     } finally {
       await deleteScanUpload(admin, cleanupPath)
     }
@@ -308,6 +314,12 @@ Deno.serve(async (req) => {
         { error: 'Could not read anything useful from that label photo.', code: 'no_data' },
         422,
       )
+    }
+
+    if (req.signal.aborted) {
+      metrics.errorCode = 'client_aborted'
+      await flushMetrics('error')
+      return new Response(null, { status: 499 })
     }
 
     await admin.from('label_scan_usage').insert({ user_id: user.id })
