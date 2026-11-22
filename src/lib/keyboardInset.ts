@@ -79,6 +79,13 @@ export function revealFocusedField(): void {
   else window.scrollBy(0, delta)
 }
 
+/** Close the software keyboard. A finished scan should leave the fields visible, not covered. */
+export function dismissKeyboard(): void {
+  const active = document.activeElement
+  if (active instanceof HTMLElement && active !== document.body) active.blur()
+  if (isNativeApp()) void Keyboard.hide()
+}
+
 export function focusNextTextField(current: HTMLElement, root: ParentNode = document): boolean {
   const fields = [...root.querySelectorAll<HTMLElement>('input, textarea')].filter((el) => {
     if (!isTextField(el)) return false

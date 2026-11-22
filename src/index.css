@@ -3716,7 +3716,8 @@ button.tasting-tag-pill-btn.active {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  margin-bottom: 1.1rem;
+  margin-top: 1.15rem;
+  margin-bottom: 0.35rem;
 }
 
 .form-ratings .form-rating {

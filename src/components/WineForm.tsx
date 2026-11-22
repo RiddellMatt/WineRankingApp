@@ -14,7 +14,8 @@ import { hasTaste, lookupTaste } from '../tasteData'
 import { WINE_TYPES, type RankingPreference, type TasteProfile, type Wine, type WineType } from '../types'
 import { catalogTags } from '../lib/tastingTags'
 import { triedWines } from '../lib/wishlist'
-import { focusNextTextField, isTextField } from '../lib/keyboardInset'
+import { dismissKeyboard, focusNextTextField, isTextField } from '../lib/keyboardInset'
+import { canonicalVarietal, isListedVarietal, typeForVarietal } from '../lib/wineVarietals'
 import { StarInput } from './StarRating'
 import { TasteInput } from './TasteProfile'
 import { TastingTagsInput } from './TastingTagsInput'
@@ -95,9 +96,16 @@ export function WineForm({
   const [scanSummary, setScanSummary] = useState('')
   const [aiPreviewUrl, setAiPreviewUrl] = useState<string | null>(null)
   const scanInputRef = useRef<HTMLInputElement>(null)
+  const formBodyRef = useRef<HTMLDivElement>(null)
   const aiScanBaselineRef = useRef<LabelScanBaseline | null>(null)
   const aiAvailable = pro && signedIn && cloudConfigured
   const triedCellar = useMemo(() => triedWines(cellarWines), [cellarWines])
+
+  useEffect(() => {
+    if (scanState !== 'done' && scanState !== 'failed') return
+    dismissKeyboard()
+    formBodyRef.current?.scrollTo({ top: 0 })
+  }, [scanState])
 
   useEffect(() => {
     if (!autoOpenScan || initial) return
@@ -215,8 +223,15 @@ export function WineForm({
       setVintage(String(scan.vintage))
       found.push('vintage')
     }
-    if (scan.varietal && !varietal.trim()) {
-      setVarietal(scan.varietal)
+    const scannedVarietal = !varietal.trim()
+      ? scan.varietal
+        ? canonicalVarietal(scan.varietal)
+        : scan.name && isListedVarietal(scan.name)
+          ? canonicalVarietal(scan.name)
+          : ''
+      : ''
+    if (scannedVarietal) {
+      setVarietal(scannedVarietal)
       found.push('varietal')
     }
     if (scan.region && !region.trim()) {
@@ -226,6 +241,12 @@ export function WineForm({
     if (scan.type && !initial) {
       setType(scan.type)
       found.push('type')
+    } else if (!initial && !scan.type && scannedVarietal) {
+      const inferred = typeForVarietal(scannedVarietal)
+      if (inferred) {
+        setType(inferred)
+        found.push('type')
+      }
     }
     if (found.length === 0) {
       setScanState('failed')
@@ -406,7 +427,7 @@ export function WineForm({
           </button>
         </div>
 
-        <div className="wine-form-body">
+        <div className="wine-form-body" ref={formBodyRef}>
         {!initial && (
           <div className="scan-box">
             <button
@@ -442,26 +463,6 @@ export function WineForm({
           </div>
         )}
 
-        {!wishlistForm && (
-          <div className="form-ratings">
-          <div className="form-rating">
-            <label>Enjoyment</label>
-            <p className="form-rating-hint">How much did you like it?</p>
-            <StarInput value={ratingEnjoyment} onChange={setRatingEnjoyment} label="Enjoyment" />
-          </div>
-          <div className="form-rating">
-            <label>Value</label>
-            <p className="form-rating-hint">Worth the price? Optional.</p>
-            <StarInput value={ratingValue} onChange={setRatingValue} label="Value" />
-          </div>
-          {ratingEnjoyment > 0 && (
-            <p className="rank-preview">
-              Your rank: <strong>{previewRank.toFixed(1)}</strong>
-            </p>
-          )}
-        </div>
-        )}
-
         <div className="form-grid">
           <label className="field span-2">
             <span>Wine name *</span>
@@ -469,7 +470,6 @@ export function WineForm({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Barolo Riserva"
-              autoFocus={!initial}
               enterKeyHint="next"
               autoComplete="off"
             />
@@ -555,6 +555,26 @@ export function WineForm({
             />
           </label>
         </div>
+
+        {!wishlistForm && (
+          <div className="form-ratings">
+            <div className="form-rating">
+              <label>Enjoyment</label>
+              <p className="form-rating-hint">How much did you like it?</p>
+              <StarInput value={ratingEnjoyment} onChange={setRatingEnjoyment} label="Enjoyment" />
+            </div>
+            <div className="form-rating">
+              <label>Value</label>
+              <p className="form-rating-hint">Worth the price? Optional.</p>
+              <StarInput value={ratingValue} onChange={setRatingValue} label="Value" />
+            </div>
+            {ratingEnjoyment > 0 && (
+              <p className="rank-preview">
+                Your rank: <strong>{previewRank.toFixed(1)}</strong>
+              </p>
+            )}
+          </div>
+        )}
 
         {!wishlistForm && (
           <>
