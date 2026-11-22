@@ -33,9 +33,6 @@ export function ScanPourGlass() {
   const pourWisp =
     'M100 -39C98 -20 89 0 76 23L71 27C85 4 94 -14 96 -36Z'
 
-  /** Bottle lip hint above the frame. */
-  const bottleLip = 'M106 -46L112 -44L110 -40L102 -41Z'
-
   return (
     <svg
       className="scan-pour-glass-svg"
@@ -143,13 +140,6 @@ export function ScanPourGlass() {
       />
 
       <g className="scan-pour-svg-stream-group">
-        <path
-          d={bottleLip}
-          fill="#d8d0d2"
-          opacity="0.55"
-          transform={`rotate(${pourAngle - 8} 106 -43)`}
-        />
-
         <ellipse
           cx={sourceX}
           cy={sourceY}
@@ -172,7 +162,7 @@ export function ScanPourGlass() {
           <path d={pourRibbon} fill={`url(#${pourGrad})`} opacity="0.97" />
           <path d={pourWisp} fill="#a84438" opacity="0.28" />
           <path
-            d="M101 -39C95 -14 84 4 75 24"
+            d="M79 14C76 19 74 23 72 26"
             fill="none"
             stroke="#fff"
             strokeWidth="1.1"
