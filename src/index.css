@@ -7587,3 +7587,81 @@ html.native-ios-tab-bar .ad-banner-probe {
 .mkt-foot a {
   color: var(--text-dim);
 }
+
+/* ── First-run guide ────────────────────────────────── */
+
+.user-guide-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 180;
+  background: color-mix(in srgb, #000 48%, transparent);
+}
+
+.user-guide-card {
+  position: fixed;
+  z-index: 220;
+  left: max(0.75rem, var(--safe-left));
+  right: max(0.75rem, var(--safe-right));
+  bottom: calc(var(--tab-bar-height) + max(0.85rem, var(--safe-bottom)) + 0.7rem);
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 1.05rem 1.1rem 1rem;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+  background: var(--surface);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.38);
+}
+
+.user-guide-kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.user-guide-card h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+}
+
+.user-guide-body {
+  margin: 0 0 0.95rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.user-guide-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.user-guide-actions-stack {
+  flex-direction: column;
+}
+
+.user-guide-actions-stack .btn {
+  width: 100%;
+}
+
+html.user-guide-open .tabs.tabs-dock {
+  pointer-events: none;
+}
+
+html.user-guide-open .tabs.tabs-dock .tab:not(.tour-target) {
+  opacity: 0.45;
+}
+
+.tour-target {
+  position: relative;
+  z-index: 210;
+  box-shadow: 0 0 0 3px var(--accent);
+  border-radius: 16px;
+}
+
+html.native-ios-tab-bar .user-guide-card {
+  bottom: calc(max(4.5rem, var(--safe-bottom) + 3.6rem));
+}

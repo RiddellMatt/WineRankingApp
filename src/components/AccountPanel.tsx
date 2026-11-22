@@ -57,6 +57,7 @@ interface Props {
   onSettingsSectionChange: (section: AccountSettingsSection) => void
   onBack?: () => void
   backLabel?: string
+  onReplayGuide?: () => void
 }
 
 export function AccountPanel({
@@ -78,6 +79,7 @@ export function AccountPanel({
   onSettingsSectionChange,
   onBack,
   backLabel = '← Back',
+  onReplayGuide,
 }: Props) {
   const subscriptionRef = useRef<HTMLElement>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
@@ -460,6 +462,7 @@ export function AccountPanel({
           onThemeChange={applyMenuTheme}
           onSignOut={signedIn ? onSignOut : undefined}
           onSignIn={!signedIn && cloudConfigured ? onSignIn : undefined}
+          onReplayGuide={onReplayGuide}
         />
       )}
 

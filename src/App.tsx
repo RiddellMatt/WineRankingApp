@@ -72,6 +72,12 @@ import {
 } from './components/XpFeedbackToasts'
 import { computePlayerXpDelta } from './lib/playerXpFeedback'
 import { RankingPreferenceModal } from './components/RankingPreferenceModal'
+import { UserGuide } from './components/UserGuide'
+import {
+  hasSeenUserGuide,
+  markUserGuideSeen,
+  USER_GUIDE_STEPS,
+} from './lib/userGuide'
 import { APP_NAME_PRO, STORAGE_PREFIX } from './brand'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
 import { fetchFriendships, type FriendProfile } from './lib/friendsDb'
@@ -212,6 +218,13 @@ export default function App() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileLoaded, setProfileLoaded] = useState(false)
   const [launchComplete, setLaunchComplete] = useState(() => !isNativeApp())
+  const [guideOpen, setGuideOpen] = useState(false)
+  const [guideStep, setGuideStep] = useState(0)
+  const guideBootedRef = useRef(false)
+  const guideOpenRef = useRef(false)
+  guideOpenRef.current = guideOpen
+  const forceGuide =
+    import.meta.env.DEV && new URLSearchParams(window.location.search).has('guide')
   const [enteredApp, setEnteredApp] = useState(shouldOpenAppDirectly)
   const [rankingSetupOpen, setRankingSetupOpen] = useState(false)
   const [rankingSetupBusy, setRankingSetupBusy] = useState(false)
@@ -276,6 +289,7 @@ export default function App() {
   useEffect(() => {
     if (!isNativeIosTabBar()) return
     setNativeTabBarSelectHandler((id) => {
+      if (guideOpenRef.current) return
       setFriendView(null)
       if (id === 'more') {
         setProfileSettingsSection('menu')
@@ -643,7 +657,10 @@ export default function App() {
     progressSyncedRef.current = false
     setProgressSynced(false)
     badgeCellarBaselineRef.current = null
-    setCellarReady(false)
+    // A signed-in cellar load sets this false, then true when the fetch finishes.
+    // Clearing it here for an offline cellar leaves it false, because that load
+    // is synchronous and already ran in an earlier effect.
+    if (cloudUser?.id) setCellarReady(false)
   }, [cloudUser?.id, offlineMode])
 
   useEffect(() => {
@@ -726,11 +743,11 @@ export default function App() {
     const emailPrefix = cloudUser.email.split('@')[0]?.toLowerCase()
     if (!emailPrefix || profile.displayName.toLowerCase() !== emailPrefix) return
     const key = `${STORAGE_PREFIX}.profile-name-prompt`
-    if (sessionStorage.getItem(key)) return
+    if (sessionStorage.getItem(key) || guideOpen) return
     sessionStorage.setItem(key, '1')
     setFriendView(null)
     setView('profile')
-  }, [cloudUser?.email, profile?.displayName])
+  }, [cloudUser?.email, profile?.displayName, guideOpen])
 
   useEffect(() => {
     setRankingSetupOpen(
@@ -739,6 +756,58 @@ export default function App() {
       }),
     )
   }, [profile?.rankingPreference, cloudUser, profileLoaded, progressResetTick])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('user-guide-open', guideOpen)
+    return () => document.documentElement.classList.remove('user-guide-open')
+  }, [guideOpen])
+
+  useEffect(() => {
+    if (!guideOpen) return
+    const step = USER_GUIDE_STEPS[guideStep]
+    if (!step) return
+    setFriendView(null)
+    setProfileSettingsSection('menu')
+    setView(step.tab)
+    if (step.segment) setCellarSegment(step.segment)
+  }, [guideOpen, guideStep])
+
+  useEffect(() => {
+    if (guideBootedRef.current) return
+    if (!mainAppShell || authGateScreen) return
+    if (cloudUser && !profileLoaded) return
+    if (!forceGuide && !cellarReady) return
+    const rankingPending =
+      rankingSetupOpen ||
+      needsRankingPreferenceSetup(profile?.rankingPreference, {
+        profilePending: Boolean(cloudUser) && !profileLoaded,
+      })
+    if (rankingPending) return
+    guideBootedRef.current = true
+    if (forceGuide) {
+      setGuideStep(0)
+      setGuideOpen(true)
+      return
+    }
+    if (!cloudUser) return
+    if (hasSeenUserGuide(cloudUser.id)) return
+    if (wines.length > 0) {
+      markUserGuideSeen(cloudUser.id)
+      return
+    }
+    setGuideStep(0)
+    setGuideOpen(true)
+  }, [
+    mainAppShell,
+    authGateScreen,
+    rankingSetupOpen,
+    cellarReady,
+    profileLoaded,
+    cloudUser,
+    wines.length,
+    forceGuide,
+    profile?.rankingPreference,
+  ])
 
   useEffect(() => {
     if (!configured || !cloudUser?.id) {
@@ -939,6 +1008,25 @@ export default function App() {
     setFormMode('tried')
     setEditing(wine)
     setFormOpen(true)
+  }
+
+  function finishGuide() {
+    if (cloudUser) markUserGuideSeen(cloudUser.id)
+    setGuideOpen(false)
+  }
+
+  function replayUserGuide() {
+    setFriendView(null)
+    setAddWineChooserOpen(false)
+    setFormOpen(false)
+    setAutoOpenScan(false)
+    setGuideStep(0)
+    setGuideOpen(true)
+  }
+
+  function guideScan(destination: AddWineDestination) {
+    finishGuide()
+    startAddWine(destination, true)
   }
 
   function startAddWine(destination: AddWineDestination, openScan: boolean) {
@@ -1188,6 +1276,8 @@ export default function App() {
     return <AuthScreen />
   }
 
+  const activeGuide = guideOpen ? USER_GUIDE_STEPS[guideStep] : undefined
+
   return (
     <div className="app">
       <header className="header">
@@ -1261,12 +1351,13 @@ export default function App() {
             }}
             onSignOut={() => signOut()}
             onSignIn={() => exitOffline()}
+            onReplayGuide={cloudUser ? replayUserGuide : undefined}
             onViewFriendCellar={(id, name, avatarUrl) => {
               void viewFriendCellar(id, name, avatarUrl)
             }}
           />
-        ) : view === 'friends' && cloudUser ? (
-          friendView ? (
+        ) : view === 'friends' ? (
+          cloudUser && friendView ? (
             <FriendCellarView
               displayName={friendView.name}
               avatarUrl={friendView.avatarUrl}
@@ -1287,7 +1378,7 @@ export default function App() {
                 setFriendView(null)
               }}
             />
-          ) : (
+          ) : cloudUser ? (
             <FriendsPanel
               userId={cloudUser.id}
               userEmail={cloudUser.email}
@@ -1303,6 +1394,11 @@ export default function App() {
               requestedTab={friendsRequestedTab}
               onRequestedTabHandled={() => setFriendsRequestedTab(null)}
             />
+          ) : (
+            <section className="empty">
+              <h2>Social</h2>
+              <p>Sign in to see what friends are drinking, and save a bottle onto your want-to-try list.</p>
+            </section>
           )
         ) : view === 'scan' ? (
           <ScanHub
@@ -1341,7 +1437,7 @@ export default function App() {
             <section className="cellar-segment" aria-label="Cellar view">
               <button
                 type="button"
-                className={`cellar-segment-btn ${cellarSegment === 'tried' ? 'active' : ''}`}
+                className={`cellar-segment-btn ${cellarSegment === 'tried' ? 'active' : ''}${activeGuide?.segment === 'tried' ? ' tour-target' : ''}`}
                 onClick={() => {
                   setCellarSegment('tried')
                 }}
@@ -1350,7 +1446,7 @@ export default function App() {
               </button>
               <button
                 type="button"
-                className={`cellar-segment-btn ${cellarSegment === 'wishlist' ? 'active' : ''}`}
+                className={`cellar-segment-btn ${cellarSegment === 'wishlist' ? 'active' : ''}${activeGuide?.segment === 'wishlist' ? ' tour-target' : ''}`}
                 onClick={() => {
                   setCellarSegment('wishlist')
                   setTagFilter(null)
@@ -1564,7 +1660,7 @@ export default function App() {
       <nav className="tabs tabs-dock" aria-label="Main">
         <button
           type="button"
-          className={`tab tab-icon ${view === 'cellar' ? 'active' : ''}`}
+          className={`tab tab-icon ${view === 'cellar' ? 'active' : ''}${activeGuide?.tab === 'cellar' ? ' tour-target' : ''}`}
           aria-label="Cellar"
           aria-current={view === 'cellar' ? 'page' : undefined}
           onClick={() => {
@@ -1574,10 +1670,10 @@ export default function App() {
         >
           <IconCellarList className="tab-icon-svg" size={22} />
         </button>
-        {cloudUser && (
+        {(cloudUser || activeGuide?.tab === 'friends') && (
           <button
             type="button"
-            className={`tab tab-icon ${view === 'friends' ? 'active' : ''}`}
+            className={`tab tab-icon ${view === 'friends' ? 'active' : ''}${activeGuide?.tab === 'friends' ? ' tour-target' : ''}`}
             aria-label="Social"
             aria-current={view === 'friends' ? 'page' : undefined}
             onClick={() => {
@@ -1590,7 +1686,7 @@ export default function App() {
         )}
         <button
           type="button"
-          className={`tab tab-icon tab-fab ${view === 'scan' ? 'active' : ''}`}
+          className={`tab tab-icon tab-fab ${view === 'scan' ? 'active' : ''}${activeGuide?.tab === 'scan' ? ' tour-target' : ''}`}
           aria-label="Add"
           aria-current={view === 'scan' ? 'page' : undefined}
           onClick={() => {
@@ -1621,7 +1717,7 @@ export default function App() {
         </button>
         <button
           type="button"
-          className={`tab tab-icon ${view === 'more' ? 'active' : ''}`}
+          className={`tab tab-icon ${view === 'more' ? 'active' : ''}${activeGuide?.tab === 'more' ? ' tour-target' : ''}`}
           aria-label="More"
           aria-current={view === 'more' ? 'page' : undefined}
           onClick={() => {
@@ -1669,6 +1765,19 @@ export default function App() {
 
       {rankingSetupOpen && (
         <RankingPreferenceModal onChoose={handleRankingPreferenceChoose} busy={rankingSetupBusy} />
+      )}
+
+      {activeGuide && (
+        <UserGuide
+          step={activeGuide}
+          index={guideStep}
+          total={USER_GUIDE_STEPS.length}
+          onBack={() => setGuideStep((step) => Math.max(0, step - 1))}
+          onNext={() => setGuideStep((step) => Math.min(USER_GUIDE_STEPS.length - 1, step + 1))}
+          onDismiss={finishGuide}
+          onTried={() => guideScan('tried')}
+          onWishlist={() => guideScan('wishlist')}
+        />
       )}
 
       <BadgeUnlockToasts items={badgeToastItems} onDismiss={dismissBadgeToast} />
