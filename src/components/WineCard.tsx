@@ -10,6 +10,39 @@ import { WineTypePill } from './WineTypePill'
 import { IconHeart, IconMapPin, IconPencil, IconTrash } from './icons/UiIcons'
 import { ShopForWine } from './ShopForWine'
 
+function WineScore({
+  score,
+  taste,
+  value,
+}: {
+  score: number
+  taste: number
+  value?: number | null
+}) {
+  const showParts = taste > 0 && (value ?? 0) > 0
+
+  return (
+    <div className="wine-rating">
+      <div className="wine-rating-overall">
+        <StarDisplay value={score} />
+        <span className="rating-number">{score.toFixed(1)}</span>
+      </div>
+      {showParts && (
+        <div className="rating-breakdown">
+          <span className="rating-part">
+            <span className="rating-part-label">Taste</span>
+            <StarDisplay value={taste} size={12} />
+          </span>
+          <span className="rating-part">
+            <span className="rating-part-label">Value</span>
+            <StarDisplay value={value ?? 0} size={12} />
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface Props {
   wine: Wine
   rank: number
@@ -157,15 +190,11 @@ export function WineCard({
       </div>
 
       <div className="wine-side">
-        <div className="wine-rating">
-          <StarDisplay value={score} />
-          <span className="rating-number">{score.toFixed(1)}</span>
-          {(wine.ratingValue ?? 0) > 0 && (
-            <span className="rating-breakdown">
-              T {wine.ratingEnjoyment.toFixed(1)} · V {wine.ratingValue!.toFixed(1)}
-            </span>
-          )}
-        </div>
+        <WineScore
+          score={score}
+          taste={wine.ratingEnjoyment}
+          value={wine.ratingValue}
+        />
         {wine.price != null && <span className="wine-price">${wine.price.toFixed(0)}</span>}
         {readOnly ? (
           <div className="wine-readonly-actions">
