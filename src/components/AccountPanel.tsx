@@ -26,7 +26,7 @@ import { AppIconPicker } from './AppIconPicker'
 import { ThemePicker } from './ThemePicker'
 import { PushNotificationSettings } from './PushNotificationSettings'
 import { SettingsCommitBar } from './SettingsCommitBar'
-import { SettingsMenu } from './SettingsMenu'
+import { SettingsMenu, type SettingsGroupId } from './SettingsMenu'
 import { LegalDocLink } from './LegalDocLink'
 import type { AccountSettingsSection } from './accountSettings'
 
@@ -109,6 +109,7 @@ export function AccountPanel({
   const [rankingSaved, setRankingSaved] = useState(false)
   const rankingSaveLock = useRef(false)
 
+  const [openSettingsGroups, setOpenSettingsGroups] = useState<SettingsGroupId[]>([])
   const [savedTheme, setSavedTheme] = useState<AppTheme>(() => loadStoredTheme())
   const [draftTheme, setDraftTheme] = useState<AppTheme>(() => loadStoredTheme())
   const [savedIcon, setSavedIcon] = useState<AppIconVariant>(() => loadStoredAppIcon())
@@ -222,6 +223,14 @@ export function AccountPanel({
     setAppearanceError('')
     setAppearanceSaved(false)
     previewTheme(next)
+  }
+
+  function applyMenuTheme(next: AppTheme) {
+    setDraftTheme(next)
+    setSavedTheme(next)
+    setAppearanceError('')
+    setAppearanceSaved(false)
+    applyTheme(next)
   }
 
   function chooseIcon(next: AppIconVariant) {
@@ -443,8 +452,14 @@ export function AccountPanel({
         <SettingsMenu
           signedIn={signedIn}
           pro={pro}
+          cloudConfigured={cloudConfigured}
+          theme={savedTheme}
+          openGroups={openSettingsGroups}
+          onOpenGroupsChange={setOpenSettingsGroups}
           onSelect={(section) => onSettingsSectionChange(section)}
+          onThemeChange={applyMenuTheme}
           onSignOut={signedIn ? onSignOut : undefined}
+          onSignIn={!signedIn && cloudConfigured ? onSignIn : undefined}
         />
       )}
 
