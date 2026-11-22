@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts'
-import { loadRecentVisionSamples, saveVisionSamples } from '../_shared/geminiModelHealth.ts'
-import { callGeminiVision, rankVisionModels, type VisionAttemptSample } from '../_shared/geminiVision.ts'
+import { rankModelsForScan, saveVisionSamples } from '../_shared/geminiModelHealth.ts'
+import { callGeminiVision, type VisionAttemptSample } from '../_shared/geminiVision.ts'
 import { recordScanEvent } from '../_shared/scanMetrics.ts'
 import { assertProAndScanQuota, ScanPreflightError } from '../_shared/scanPreflight.ts'
 import { deleteScanUpload, resolveScanImageFromBody } from '../_shared/scanImage.ts'
@@ -264,17 +264,11 @@ Deno.serve(async (req) => {
     let vision
     const attemptSamples: VisionAttemptSample[] = []
     try {
-      const ranked = rankVisionModels({
-        configured: Deno.env.get('GEMINI_MODEL'),
-        samples: await loadRecentVisionSamples(admin),
-      })
-      console.log(
-        `Vision rank: ${ranked
-          .map(
-            (entry) =>
-              `${entry.model} p=${entry.completion.toFixed(2)} ${Math.round(entry.expectedAttemptMs)}ms${entry.exhausted ? ' tired' : ''}`,
-          )
-          .join(' | ')}`,
+      const ranked = await rankModelsForScan(
+        admin,
+        geminiKey,
+        Deno.env.get('GEMINI_MODEL'),
+        req.signal,
       )
       vision = await callGeminiVision(geminiKey, mimeType, imageBase64, LABEL_PROMPT, req.signal, {
         models: ranked.map((entry) => entry.model),
