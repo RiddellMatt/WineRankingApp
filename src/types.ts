@@ -62,6 +62,10 @@ export interface Wine {
   /** Accepted friends tagged on this pour (Beli-style "with you"). */
   withFriendIds?: string[]
   purchasedAt: string
+  /** Calendar day the bottle was tasted, YYYY-MM-DD. Optional. */
+  triedOn?: string | null
+  /** Photo URLs or local data URLs. Optional. */
+  photos?: string[]
   taste: TasteProfile
   /** Whether taste came from the reference dataset or was tuned by the user. */
   tasteSource?: 'typical' | 'custom'

@@ -4,6 +4,8 @@ import { withSupabaseAuthRetry } from './supabaseAuthRetry'
 import { getSupabase, type WineRow } from './supabase'
 import { assertCleanText } from './contentFilter'
 import { applyCompositeRating, resolveRankingPreference, wineEnjoyment } from './ranking'
+import { normalizeTriedOn, normalizeWinePhotos } from './wineMoments'
+import { persistWinePhotos, removeWinePhotoFolder } from './winePhotos'
 
 function wineStatusFromRow(raw: string | null | undefined): WineStatus {
   return raw === 'wishlist' ? 'wishlist' : 'tried'
@@ -36,6 +38,8 @@ export function wineFromRow(row: WineRow): Wine {
     tastingTags: Array.isArray(row.tasting_tags) ? row.tasting_tags : [],
     withFriendIds: normalizeWithFriendIds(row.with_friend_ids),
     purchasedAt: row.purchased_at,
+    triedOn: normalizeTriedOn(row.tried_on),
+    photos: normalizeWinePhotos(row.photo_urls),
     taste: (row.taste ?? {}) as TasteProfile,
     tasteSource: row.taste_source === 'custom' ? 'custom' : row.taste_source === 'typical' ? 'typical' : undefined,
     status: wineStatusFromRow(row.status),
@@ -68,6 +72,8 @@ export function wineToRow(
     tasting_tags: normalized.tastingTags ?? [],
     with_friend_ids: normalizeWithFriendIds(normalized.withFriendIds),
     purchased_at: normalized.purchasedAt,
+    tried_on: normalizeTriedOn(normalized.triedOn),
+    photo_urls: normalizeWinePhotos(normalized.photos),
     taste: (normalized.taste ?? {}) as Record<string, number>,
     taste_source: normalized.tasteSource ?? null,
     status: normalized.status === 'wishlist' ? 'wishlist' : 'tried',
@@ -89,7 +95,7 @@ export async function fetchWines(userId: string): Promise<Wine[]> {
 
 export async function upsertWine(userId: string, wine: Wine, pref?: RankingPreference): Promise<Wine> {
   assertCleanText(wine.notes)
-  const normalized = ensureWineId(wine)
+  const normalized = await persistWinePhotos(userId, ensureWineId(wine))
   const resolved = pref ?? resolveRankingPreference()
   const row = wineToRow(userId, normalized, resolved)
   const { error } = await getSupabase().from('wines').upsert(row)
@@ -98,8 +104,18 @@ export async function upsertWine(userId: string, wine: Wine, pref?: RankingPrefe
 }
 
 export async function deleteWine(wineId: string): Promise<void> {
+  const {
+    data: { user },
+  } = await getSupabase().auth.getUser()
   const { error } = await getSupabase().from('wines').delete().eq('id', wineId)
   if (error) throw error
+  if (user) {
+    try {
+      await removeWinePhotoFolder(user.id, wineId)
+    } catch {
+      // The bottle is already gone. A leftover file can be cleaned up later.
+    }
+  }
 }
 
 export async function bulkUpsertWines(
@@ -109,7 +125,11 @@ export async function bulkUpsertWines(
 ): Promise<Wine[]> {
   if (wines.length === 0) return []
   for (const wine of wines) assertCleanText(wine.notes)
-  const normalized = wines.map(ensureWineId)
+  const prepared = wines.map(ensureWineId)
+  const normalized: Wine[] = []
+  for (const wine of prepared) {
+    normalized.push(await persistWinePhotos(userId, wine))
+  }
   const resolved = pref ?? resolveRankingPreference()
   const rows = normalized.map((w) => wineToRow(userId, w, resolved))
   const { error } = await getSupabase().from('wines').upsert(rows)

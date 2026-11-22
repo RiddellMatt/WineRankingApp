@@ -18,6 +18,8 @@ import { focusNextTextField, isTextField } from '../lib/keyboardInset'
 import { StarInput } from './StarRating'
 import { TasteInput } from './TasteProfile'
 import { TastingTagsInput } from './TastingTagsInput'
+import { TriedOnField } from './TriedOnField'
+import { WinePhotoField } from './WinePhotoField'
 import { VarietalSelect } from './VarietalSelect'
 import { RegionPicker } from './RegionPicker'
 import { ScanPourOverlay } from './ScanPourOverlay'
@@ -67,6 +69,8 @@ export function WineForm({
   const [region, setRegion] = useState(initial?.region ?? '')
   const [price, setPrice] = useState(initial?.price?.toString() ?? '')
   const [purchasedAt, setPurchasedAt] = useState(initial?.purchasedAt ?? '')
+  const [triedOn, setTriedOn] = useState<string | null>(initial?.triedOn ?? null)
+  const [photos, setPhotos] = useState<string[]>(initial?.photos ?? [])
   const [ratingEnjoyment, setRatingEnjoyment] = useState(
     initial?.ratingEnjoyment ?? initial?.rating ?? 0,
   )
@@ -330,6 +334,8 @@ export function WineForm({
             : tastingTags.filter((id) => catalogTags(false).some((t) => t.id === id)),
         withFriendIds: wishlistForm ? [] : normalizeWithFriendIds(withFriendIds),
         purchasedAt: purchasedAt.trim(),
+        triedOn: wishlistForm ? null : triedOn,
+        photos: wishlistForm ? [] : photos,
         taste: wishlistForm ? {} : taste,
         tasteSource: wishlistForm ? undefined : tasteTouched ? 'custom' : 'typical',
         status: wishlistForm ? 'wishlist' : 'tried',
@@ -549,6 +555,13 @@ export function WineForm({
             />
           </label>
         </div>
+
+        {!wishlistForm && (
+          <>
+            <TriedOnField value={triedOn} onChange={setTriedOn} />
+            <WinePhotoField photos={photos} onChange={setPhotos} />
+          </>
+        )}
 
         {!wishlistForm && (
           <div className="taste-section">

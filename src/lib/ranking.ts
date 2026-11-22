@@ -1,5 +1,6 @@
 import type { RankingPreference, Wine } from '../types'
 import { STORAGE_PREFIX } from '../brand'
+import { normalizeTriedOn, normalizeWinePhotos } from './wineMoments'
 
 export const RANKING_PREFERENCE_OPTIONS: {
   value: RankingPreference
@@ -124,6 +125,8 @@ export function normalizeWine(raw: Partial<Wine>): Wine {
     tastingTags: Array.isArray(raw.tastingTags) ? raw.tastingTags : [],
     withFriendIds: Array.isArray(raw.withFriendIds) ? raw.withFriendIds : [],
     purchasedAt: raw.purchasedAt ?? '',
+    triedOn: normalizeTriedOn(raw.triedOn),
+    photos: normalizeWinePhotos(raw.photos),
     taste: raw.taste ?? {},
     tasteSource: raw.tasteSource,
     status: raw.status === 'wishlist' ? 'wishlist' : 'tried',

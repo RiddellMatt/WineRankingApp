@@ -39,6 +39,8 @@ create table public.wines (
   rating_buy_again numeric,
   notes text not null default '',
   purchased_at text not null default '',
+  tried_on date,
+  photo_urls text[] not null default '{}',
   taste jsonb not null default '{}',
   taste_source text,
   status text not null default 'tried' check (status in ('tried', 'wishlist')),
