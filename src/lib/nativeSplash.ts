@@ -2,7 +2,7 @@ import { SplashScreen } from '@capacitor/splash-screen'
 import { isNativeApp } from './platform'
 
 /** Branded splash stays up at least this long (ms). */
-export const MIN_LAUNCH_VISIBLE_MS = 4000
+export const MIN_LAUNCH_VISIBLE_MS = 3500
 const FADE_MS = 500
 
 let splashHidden = false
