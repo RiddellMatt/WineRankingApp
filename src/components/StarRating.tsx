@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 
 interface StarProps {
   fill: number // 0, 0.5, or 1
@@ -6,17 +6,22 @@ interface StarProps {
 }
 
 function Star({ fill, size }: StarProps) {
-  const id = `grad-${fill}`
+  const reactId = useId().replace(/[^a-zA-Z0-9]/g, '')
+  const gradientId = `star-fill-${reactId}`
+  const partial = fill > 0 && fill < 1
+  const fillPaint = fill >= 1 ? 'var(--star)' : fill <= 0 ? 'var(--star-empty)' : `url(#${gradientId})`
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <defs>
-        <linearGradient id={id}>
-          <stop offset={`${fill * 100}%`} stopColor="var(--star)" />
-          <stop offset={`${fill * 100}%`} stopColor="var(--star-empty)" />
-        </linearGradient>
-      </defs>
+      {partial && (
+        <defs>
+          <linearGradient id={gradientId}>
+            <stop offset={`${fill * 100}%`} stopColor="var(--star)" />
+            <stop offset={`${fill * 100}%`} stopColor="var(--star-empty)" />
+          </linearGradient>
+        </defs>
+      )}
       <path
-        fill={`url(#${id})`}
+        fill={fillPaint}
         stroke="var(--star)"
         strokeWidth="1"
         d="M12 2.5l2.9 6.26 6.6.72-4.9 4.55 1.32 6.47L12 17.25 6.08 20.5 7.4 14.03 2.5 9.48l6.6-.72z"
