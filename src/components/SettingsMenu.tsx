@@ -27,7 +27,7 @@ interface LinkRow {
 
 interface ActionRow {
   kind: 'action'
-  id: 'sign-out' | 'sign-in'
+  id: 'sign-out' | 'sign-in' | 'tour'
   label: string
   detail?: string
   icon: ReactNode
@@ -48,6 +48,7 @@ interface Props {
   onThemeChange: (theme: AppTheme) => void
   onSignOut?: () => void
   onSignIn?: () => void
+  onReplayGuide?: () => void
 }
 
 export function SettingsMenu({
@@ -61,6 +62,7 @@ export function SettingsMenu({
   onThemeChange,
   onSignOut,
   onSignIn,
+  onReplayGuide,
 }: Props) {
   const cellarRows: MenuRow[] = [
     ...(signedIn
@@ -127,6 +129,17 @@ export function SettingsMenu({
   ]
 
   const helpRows: MenuRow[] = [
+    ...(signedIn && onReplayGuide
+      ? [
+          {
+            kind: 'action' as const,
+            id: 'tour' as const,
+            label: 'App tour',
+            detail: 'A quick walk through the screens',
+            icon: <IconRoute />,
+          },
+        ]
+      : []),
     {
       kind: 'link',
       id: 'terms',
@@ -152,6 +165,7 @@ export function SettingsMenu({
   function runAction(id: ActionRow['id']) {
     if (id === 'sign-out') onSignOut?.()
     if (id === 'sign-in') onSignIn?.()
+    if (id === 'tour') onReplayGuide?.()
   }
 
   return (
@@ -472,6 +486,16 @@ function IconDoc() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M7 3.5h7l4.5 4.5V20a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5Z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
       <path d="M14 3.5V8h4.5M8.5 12.5h7M8.5 16h5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconRoute() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="6" cy="6" r="2.2" stroke="currentColor" strokeWidth="1.75" />
+      <circle cx="18" cy="18" r="2.2" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M8 7.2C12 7.2 12 16.8 16 16.8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
     </svg>
   )
 }
