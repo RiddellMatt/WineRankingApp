@@ -1,5 +1,6 @@
 /**
- * Native splash: white background + Decanti wine glass (app icon art).
+ * Native splash: theme-matched Decanti wordmark, not the wine-glass mark.
+ * Classic burgundy matches the in-app launch overlay and the iOS webview underlay.
  */
 import sharp from 'sharp'
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs'
@@ -7,19 +8,9 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const glassSrc = join(root, 'resources/app-icons/white-source.jpg')
-const markPath = join(root, 'public/brand/decanti-glass.png')
+const wordmarkPath = join(root, 'public/brand/wordmark-red.png')
 
-const SPLASH_BG = '#ffffff'
-const MARK_WIDTH_RATIO = 0.22
-
-async function ensureGlassAsset() {
-  await sharp(glassSrc)
-    .rotate()
-    .resize(512, 512, { fit: 'contain', background: SPLASH_BG })
-    .png()
-    .toFile(markPath)
-}
+const SPLASH_BG = '#12080c'
 
 const iosSplashDir = join(root, 'ios/App/App/Assets.xcassets/Splash.imageset')
 
@@ -37,16 +28,25 @@ const androidTargets = [
   ['drawable-land-xxxhdpi', 2560, 1440],
 ]
 
+function markWidthFor(width, height) {
+  const shorter = Math.min(width, height)
+  const longer = Math.max(width, height)
+  const square = longer / shorter < 1.15
+  // Square iOS splash is aspect-filled, so only the center strip is visible on a phone.
+  const ratio = square ? 0.38 : 0.78
+  return Math.round(shorter * ratio)
+}
+
 async function composeSplash(width, height) {
-  const markWidth = Math.round(Math.min(width, height) * MARK_WIDTH_RATIO)
-  const mark = await sharp(markPath)
-    .resize(markWidth, markWidth, { fit: 'inside' })
+  const targetWidth = markWidthFor(width, height)
+  const mark = await sharp(wordmarkPath)
+    .resize({ width: targetWidth, fit: 'inside' })
     .png()
     .toBuffer()
 
   const meta = await sharp(mark).metadata()
-  const markW = meta.width ?? markWidth
-  const markH = meta.height ?? markWidth
+  const markW = meta.width ?? targetWidth
+  const markH = meta.height ?? Math.round(targetWidth / 2.4)
   const left = Math.round((width - markW) / 2)
   const top = Math.round((height - markH) / 2)
 
@@ -54,7 +54,7 @@ async function composeSplash(width, height) {
     create: {
       width,
       height,
-      channels: 3,
+      channels: 4,
       background: SPLASH_BG,
     },
   })
@@ -83,7 +83,6 @@ async function writeAndroid() {
   }
 }
 
-await ensureGlassAsset()
 await writeIos()
 await writeAndroid()
-console.log('Decanti splash assets written (white + wine glass).')
+console.log('Decanti splash assets written (wordmark on burgundy).')
