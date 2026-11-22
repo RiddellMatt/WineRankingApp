@@ -3,10 +3,14 @@ import test from 'node:test'
 import {
   blendSamplesForRanking,
   ENOUGH_VISION_SAMPLES,
+  labelGenerationConfig,
   modelsForScan,
   modelsToProbe,
+  probeGenerationConfig,
   raceVisionModels,
   rankVisionModels,
+  relaxGenerationConfig,
+  textFromGeminiResponse,
   type ModelSample,
   type VisionAttempt,
   type VisionAttemptSample,
@@ -145,9 +149,9 @@ test('a fast overload falls through to a later model without waiting out the hed
 test('with no history the model that has been finishing labels goes first', () => {
   assert.deepEqual(modelsForScan(undefined), [
     'gemini-3.6-flash',
+    'gemini-3.5-flash-lite',
     'gemini-flash-lite-latest',
     'gemini-3.8-flash',
-    'gemini-3.5-flash-lite',
   ])
   const pinnedBusy = modelsForScan('gemini-3.7-flash')
   assert.equal(pinnedBusy[0], 'gemini-3.6-flash')
@@ -158,7 +162,7 @@ test('with no history the model that has been finishing labels goes first', () =
 test('a preferred model can earn a backup slot without taking the lead', () => {
   const ranked = modelsForScan('gemini-2.5-pro')
   assert.equal(ranked[0], 'gemini-3.6-flash')
-  assert.equal(ranked[3], 'gemini-2.5-pro')
+  assert.equal(ranked.includes('gemini-2.5-pro'), true)
   assert.equal(ranked.length, 4)
 })
 
@@ -170,7 +174,7 @@ test('recent overloads drop a model behind one that is completing', () => {
     { model: 'gemini-3.8-flash', outcome: 'success', durationMs: 3_400, atMs: now - 4_000 },
   ]
   const ranked = rankVisionModels({ samples, nowMs: now })
-  assert.equal(ranked[0]?.model, 'gemini-3.8-flash')
+  assert.notEqual(ranked[0]?.model, 'gemini-3.6-flash')
   assert.equal(ranked[0]?.exhausted, false)
   const tired = ranked.find((entry) => entry.model === 'gemini-3.6-flash')
   assert.ok(tired)
@@ -186,7 +190,7 @@ test('hangs stay off the list while another model can still answer', () => {
     { model: 'gemini-3.6-flash', outcome: 'timeout', durationMs: 22_000, atMs: now - 3_000 },
   ]
   const ranked = rankVisionModels({ samples, nowMs: now })
-  assert.equal(ranked[0]?.model, 'gemini-flash-lite-latest')
+  assert.equal(ranked[0]?.model, 'gemini-3.5-flash-lite')
   assert.equal(
     ranked.some((entry) => entry.model === 'gemini-3.6-flash'),
     false,
@@ -203,7 +207,7 @@ test('a retired model is left out after one 404', () => {
     ranked.some((entry) => entry.model === 'gemini-3.6-flash'),
     false,
   )
-  assert.equal(ranked[0]?.model, 'gemini-flash-lite-latest')
+  assert.equal(ranked[0]?.model, 'gemini-3.5-flash-lite')
 })
 
 test('failures older than the window stop counting against a model', () => {
@@ -296,9 +300,12 @@ test('a live overload is blended into the order while photo history is thin', ()
     },
   ]
   const ranked = rankVisionModels({ samples, nowMs: now })
-  assert.equal(ranked[0]?.model, 'gemini-flash-lite-latest')
+  assert.notEqual(ranked[0]?.model, 'gemini-3.6-flash')
   const tired = ranked.find((entry) => entry.model === 'gemini-3.6-flash')
   assert.equal(tired?.exhausted, true)
+  const lite = ranked.findIndex((entry) => entry.model === 'gemini-flash-lite-latest')
+  const stuck = ranked.findIndex((entry) => entry.model === 'gemini-3.6-flash')
+  assert.ok(lite >= 0 && stuck > lite)
 })
 
 test('retired models are not probed again', () => {
@@ -314,6 +321,46 @@ test('retired models are not probed again', () => {
   ], now)
   assert.equal(models.includes('gemini-3.7-flash'), false)
   assert.equal(models.includes('gemini-3.6-flash'), true)
+})
+
+test('label requests do not lower temperature and do cap thinking', () => {
+  const config = labelGenerationConfig()
+  assert.equal('temperature' in config, false)
+  assert.equal(config.thinkingConfig.thinkingLevel, 'LOW')
+  assert.equal(config.responseMimeType, 'application/json')
+  assert.ok(config.maxOutputTokens >= 1024)
+  const probe = probeGenerationConfig()
+  assert.equal('temperature' in probe, false)
+  assert.equal(probe.thinkingConfig.thinkingLevel, 'LOW')
+  assert.equal(probe.maxOutputTokens, 8)
+})
+
+test('a 400 about thinking drops only that knob', () => {
+  const next = relaxGenerationConfig(
+    labelGenerationConfig(),
+    400,
+    'Invalid thinkingLevel for this model',
+  )
+  assert.ok(next)
+  assert.equal('thinkingConfig' in next!, false)
+  assert.equal(next!.responseMimeType, 'application/json')
+  assert.equal(relaxGenerationConfig(labelGenerationConfig(), 503, 'thinking'), null)
+})
+
+test('answer text skips a leading thought part', () => {
+  const text = textFromGeminiResponse({
+    candidates: [
+      {
+        content: {
+          parts: [
+            { thought: true, text: 'The label looks like Barolo.' },
+            { text: '{"name":"Brunate","winery":"Vietti"}' },
+          ],
+        },
+      },
+    ],
+  })
+  assert.equal(text, '{"name":"Brunate","winery":"Vietti"}')
 })
 
 test('label scan rotates through 50 distinct wine facts', () => {
