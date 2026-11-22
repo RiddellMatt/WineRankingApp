@@ -12,5 +12,5 @@ export const SETTINGS_SECTION_TITLES: Record<AccountSettingsSection, string> = {
   subscription: 'Manage subscription',
   appearance: 'Appearance',
   notifications: 'Notification settings',
-  ranking: 'Ranking',
+  ranking: 'Ranking preference',
 }

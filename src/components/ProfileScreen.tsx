@@ -47,6 +47,7 @@ export function ProfileScreen({
         <ProfilePanel
           profile={profile}
           email={accountProps.email}
+          pro={accountProps.pro}
           wines={wines}
           completedJourneys={completedJourneys}
           rankingPreference={rankingPreference}

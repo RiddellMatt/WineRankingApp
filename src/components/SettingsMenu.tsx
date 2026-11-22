@@ -77,7 +77,7 @@ export function SettingsMenu({
     {
       kind: 'nav',
       id: 'ranking',
-      label: 'Ranking',
+      label: 'Ranking preference',
       detail: 'How wines are scored',
       icon: <IconRank />,
     },

@@ -15,7 +15,7 @@ export function RankingPreferencePicker({
   value,
   onChange,
   disabled = false,
-  title = 'Ranking style',
+  title = 'Ranking preference',
   className = '',
   children,
 }: Props) {

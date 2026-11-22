@@ -23,6 +23,7 @@ type ProfileTab = 'activity' | 'badges' | 'passport'
 interface Props {
   profile: UserProfile
   email?: string
+  pro?: boolean
   wines: Wine[]
   completedJourneys: Set<string>
   rankingPreference: RankingPreference
@@ -32,6 +33,7 @@ interface Props {
 export function ProfilePanel({
   profile,
   email,
+  pro = false,
   wines,
   completedJourneys,
   rankingPreference,
@@ -110,7 +112,10 @@ export function ProfilePanel({
           size="md"
         />
         <div className="profile-panel-identity">
-          <h2 className="profile-panel-name">{displayName}</h2>
+          <div className="profile-panel-name-row">
+            <h2 className="profile-panel-name">{displayName}</h2>
+            {pro && <span className="pro-badge">PRO</span>}
+          </div>
           {(profile.email ?? email) && (
             <p className="profile-panel-email">{profile.email ?? email}</p>
           )}

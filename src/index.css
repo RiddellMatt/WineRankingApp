@@ -204,9 +204,9 @@ textarea::placeholder {
 /* ── Header ─────────────────────────────────────────── */
 
 .header {
-  padding: 0.7rem 0 0.45rem;
+  padding: 0.4rem 0 0.3rem;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 0.65rem;
+  margin-bottom: 0.45rem;
   order: 1;
 }
 
@@ -218,11 +218,10 @@ textarea::placeholder {
 }
 
 .header-inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2.55rem minmax(0, 1fr) 2.55rem;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: 0.65rem;
   min-width: 0;
   max-width: 100%;
 }
@@ -284,67 +283,6 @@ textarea::placeholder {
   object-position: center;
 }
 
-.brand.brand-theme-logo {
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: center;
-  gap: 0.12rem;
-}
-
-.brand-lockup {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  min-width: 0;
-  width: 100%;
-}
-
-.header-inner-wordmark {
-  align-items: flex-start;
-}
-
-.header-inner-wordmark .header-profile {
-  margin-top: 0.45rem;
-}
-
-.brand-lockup .pro-badge {
-  flex: 0 0 auto;
-  transform: none;
-  align-self: flex-start;
-  margin-top: 1.05rem;
-}
-
-/* Tilted glass stands in for the C. Height shows the bowl, wine, and stem. */
-.brand-wordmark-slot {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-}
-
-.brand-wordmark-slot .decanti-logo-header,
-.brand-wordmark-slot .decanti-logo-classic.decanti-logo-header,
-.brand-wordmark-slot .decanti-logo-light.decanti-logo-header,
-.brand-wordmark-slot .decanti-logo-navy.decanti-logo-header {
-  flex: 0 1 auto;
-  width: auto;
-  height: 4rem;
-  max-width: 100%;
-  object-fit: contain;
-  object-position: left top;
-}
-
-.brand.brand-theme-logo .header-page-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.brand.brand-theme-logo .tagline {
-  margin-top: 0.1rem;
-}
-
 .brand-text {
   min-width: 0;
   display: flex;
@@ -354,12 +292,17 @@ textarea::placeholder {
 
 .header-page-title {
   margin: 0;
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-dim);
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-align: center;
+  color: var(--text);
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brand-pro-line {
@@ -455,11 +398,7 @@ textarea::placeholder {
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
-  flex-shrink: 0;
-}
-
-.header-actions:not(:empty) {
-  min-width: 2.35rem;
+  min-width: 0;
 }
 
 /* ── Notifications bell ───────────────────────────────── */
@@ -782,13 +721,25 @@ textarea::placeholder {
   min-width: 0;
 }
 
+.profile-panel-name-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.45rem;
+  min-width: 0;
+}
+
 .profile-panel-name {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.25rem;
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   line-height: 1.25;
+}
+
+.profile-panel-name-row .pro-badge {
+  flex: 0 0 auto;
 }
 
 .profile-panel-email {
@@ -2721,6 +2672,13 @@ button.tasting-tag-pill-btn.active {
 
 .wine-rating {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.28rem;
+}
+
+.wine-rating-overall {
+  display: flex;
   align-items: center;
   gap: 0.45rem;
 }
@@ -3262,8 +3220,15 @@ button.tasting-tag-pill-btn.active {
   pointer-events: none;
 }
 
-.app-launch-mark {
+.app-launch-mark,
+.app-launch-logo {
   animation: app-launch-mark-in 0.7s ease-out both;
+}
+
+.app-launch-logo {
+  width: min(84vw, 28rem);
+  height: auto;
+  object-fit: contain;
 }
 
 @keyframes app-launch-mark-in {
@@ -3529,10 +3494,25 @@ button.tasting-tag-pill-btn.active {
 }
 
 .rating-breakdown {
-  display: block;
-  font-size: 0.72rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.12rem;
+}
+
+.rating-part {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.rating-part-label {
+  min-width: 2.45rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1;
+  text-align: right;
   color: var(--text-dim);
-  margin-top: 0.15rem;
 }
 
 .buy-again-chip {
@@ -5287,9 +5267,9 @@ html.show-banner-ad .account-panel {
   }
 
   .header {
-    padding-top: max(0.55rem, var(--safe-top));
-    padding-bottom: 0.4rem;
-    margin-bottom: 0.6rem;
+    padding-top: max(0.35rem, var(--safe-top));
+    padding-bottom: 0.25rem;
+    margin-bottom: 0.4rem;
     border-bottom: none;
   }
 
@@ -5310,11 +5290,8 @@ html.show-banner-ad .account-panel {
   }
 
   .header-inner {
-    flex-direction: row;
     align-items: center;
-    justify-content: space-between;
     gap: 0.65rem;
-    flex-wrap: nowrap;
   }
 
   .brand h1 {
@@ -5344,7 +5321,7 @@ html.show-banner-ad .account-panel {
 
   .notifications-panel {
     position: fixed;
-    top: calc(var(--safe-top) + 3.15rem);
+    top: calc(var(--safe-top) + 3.35rem);
     left: max(0.75rem, var(--safe-left));
     right: max(0.75rem, var(--safe-right));
     width: auto;
@@ -5450,10 +5427,43 @@ html.show-banner-ad .account-panel {
   }
 
   .wine-side {
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'overall price actions'
+      'parts parts parts';
     align-items: center;
+    column-gap: 0.45rem;
+    row-gap: 0.28rem;
     width: 100%;
-    justify-content: space-between;
+  }
+
+  .wine-rating {
+    display: contents;
+  }
+
+  .wine-rating-overall {
+    grid-area: overall;
+    justify-self: start;
+  }
+
+  .rating-breakdown {
+    grid-area: parts;
+    align-items: flex-start;
+    justify-self: start;
+  }
+
+  .wine-price {
+    grid-area: price;
+  }
+
+  .wine-actions,
+  .wine-readonly-actions {
+    grid-area: actions;
+  }
+
+  .rating-part-label {
+    text-align: left;
   }
 
   .wine-actions {
@@ -6935,18 +6945,15 @@ html.show-banner-ad.native-app:not(.native-ios-tab-bar) .content {
 }
 
 html.native-app .header {
-  padding-top: max(0.5rem, var(--safe-top));
-  padding-bottom: 0.35rem;
-  margin-bottom: 0.55rem;
+  padding-top: max(0.35rem, var(--safe-top));
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.4rem;
   border-bottom: none;
 }
 
 html.native-app .header-inner {
-  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
   gap: 0.65rem;
-  flex-wrap: nowrap;
 }
 
 html.native-app .brand {
