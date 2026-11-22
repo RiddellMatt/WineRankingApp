@@ -1,21 +1,81 @@
-const DEFAULT_FALLBACKS = [
-  // gemini-3.6-flash is the model that has actually been returning labels.
-  // gemini-3.7-flash is currently 503ing and sometimes hangs for minutes, so it
-  // stays later in the list instead of blocking the scan.
+/**
+ * Pool we are willing to send a label or menu photo to.
+ * Order here does not matter; rankVisionModels picks from recent results.
+ */
+const VISION_POOL = [
   'gemini-3.6-flash',
-  'gemini-3.5-flash-lite',
-  'gemini-flash-latest',
   'gemini-flash-lite-latest',
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
+  'gemini-3.8-flash',
+  'gemini-3.5-flash-lite',
   'gemini-3.7-flash',
-  'gemini-3.1-flash-lite',
-  'gemini-3-flash-preview',
-  'gemini-2.5-pro',
+  'gemini-flash-latest',
 ] as const
 
-/** When GEMINI_MODEL is set, use at most one emergency fallback to limit latency and cost. */
-const PINNED_EMERGENCY_FALLBACK = 'gemini-flash-latest'
+/** How many distinct models one scan will call. */
+const MAX_MODELS_PER_SCAN = 4
+
+/** Pretend we already saw this many scans, so one lucky call cannot rewrite the order. */
+const PRIOR_WEIGHT = 3
+
+/** A result from 8 minutes ago counts half as much as one from just now. */
+const HALF_LIFE_MS = 8 * 60 * 1000
+
+/** Ignore anything older than this when scoring. */
+export const VISION_SAMPLE_WINDOW_MS = 30 * 60 * 1000
+
+/** Two failures in this window, and no success, means the model is under load right now. */
+export const VISION_EXHAUSTED_WINDOW_MS = 10 * 60 * 1000
+
+export type VisionOutcome = 'success' | 'overload' | 'timeout' | 'error' | 'unavailable'
+
+export interface ModelSample {
+  model: string
+  outcome: VisionOutcome
+  durationMs: number
+  atMs: number
+}
+
+interface ModelPrior {
+  /** Chance a call returns usable text, before we have fresh samples. */
+  completion: number
+  successMs: number
+  failureMs: number
+}
+
+/**
+ * Starting belief, used until real scans replace it.
+ * gemini-3.6-flash is the one that has been finishing labels.
+ * gemini-3.7-flash and gemini-flash-latest are slow or fast 503s, so they
+ * start at the back and only move up after they actually complete.
+ */
+const MODEL_PRIORS: Record<string, ModelPrior> = {
+  'gemini-3.6-flash': { completion: 0.9, successMs: 5_000, failureMs: 4_000 },
+  'gemini-flash-lite-latest': { completion: 0.62, successMs: 4_000, failureMs: 2_500 },
+  'gemini-3.8-flash': { completion: 0.7, successMs: 5_500, failureMs: 4_000 },
+  'gemini-3.5-flash-lite': { completion: 0.42, successMs: 4_500, failureMs: 3_000 },
+  'gemini-3.7-flash': { completion: 0.08, successMs: 8_000, failureMs: 20_000 },
+  'gemini-flash-latest': { completion: 0.08, successMs: 4_000, failureMs: 600 },
+}
+
+/** A GEMINI_MODEL pin we have no history for. Strong enough to earn a backup slot, not the lead. */
+const DEFAULT_PRIOR: ModelPrior = { completion: 0.62, successMs: 6_000, failureMs: 4_000 }
+
+export interface RankedVisionModel {
+  model: string
+  /** Estimated chance this call returns text. */
+  completion: number
+  /** Estimated time until we know whether it worked. */
+  expectedAttemptMs: number
+  /** completion / expectedAttemptMs. Higher is a better first try. */
+  score: number
+  exhausted: boolean
+}
+
+export interface VisionAttemptSample {
+  model: string
+  outcome: VisionOutcome
+  durationMs: number
+}
 
 /**
  * iOS WKWebView aborts a fetch that receives no response bytes for about 60s
@@ -23,19 +83,130 @@ const PINNED_EMERGENCY_FALLBACK = 'gemini-flash-latest'
  * or the phone gives up while this function is still waiting on Gemini.
  */
 export const VISION_ATTEMPT_TIMEOUT_MS = 22_000
-export const VISION_HEDGE_DELAY_MS = 8_000
+export const VISION_HEDGE_DELAY_MS = 4_000
 export const VISION_DEADLINE_MS = 45_000
 const MAX_IN_FLIGHT = 2
 
-export function geminiModelsToTry(): string[] {
-  const configured = Deno.env.get('GEMINI_MODEL')?.trim()
-  if (configured) {
-    if (configured === PINNED_EMERGENCY_FALLBACK) {
-      return [configured]
-    }
-    return [configured, PINNED_EMERGENCY_FALLBACK]
+export function classifyVisionOutcome(detail: string): VisionOutcome {
+  if (/404|no longer available|not found|not_found/i.test(detail)) return 'unavailable'
+  if (/503|429|high demand|resource exhausted/i.test(detail)) return 'overload'
+  if (/timed out|timeout|cancelled|aborted/i.test(detail)) return 'timeout'
+  return 'error'
+}
+
+function priorFor(model: string): ModelPrior {
+  return MODEL_PRIORS[model] ?? DEFAULT_PRIOR
+}
+
+function candidateModels(configured: string | undefined): string[] {
+  const pin = configured?.trim() ?? ''
+  const seen = new Set<string>()
+  const models: string[] = []
+  for (const model of pin ? [pin, ...VISION_POOL] : VISION_POOL) {
+    if (!model || seen.has(model)) continue
+    seen.add(model)
+    models.push(model)
   }
-  return [...DEFAULT_FALLBACKS]
+  return models
+}
+
+/**
+ * Pick the models for this scan.
+ *
+ * Score is the chance of a finished read divided by how long we expect to
+ * wait to find out. A model that answers quickly and usually works goes
+ * first. A model that 503s or hangs is pushed behind anything that is
+ * still healthy, and its score falls as those failures pile up.
+ */
+export function rankVisionModels(options: {
+  configured?: string
+  samples?: ModelSample[]
+  nowMs?: number
+  limit?: number
+}): RankedVisionModel[] {
+  const nowMs = options.nowMs ?? Date.now()
+  const samples = options.samples ?? []
+  const limit = options.limit ?? MAX_MODELS_PER_SCAN
+
+  const ranked = candidateModels(options.configured).map((model) => {
+    const prior = priorFor(model)
+    let weightSum = 0
+    let successWeight = 0
+    let successLatency = 0
+    let failureLatency = 0
+    let recentCount = 0
+    let recentSuccess = 0
+    let unavailable = false
+
+    for (const sample of samples) {
+      if (sample.model !== model) continue
+      const age = nowMs - sample.atMs
+      if (age < 0 || age > VISION_SAMPLE_WINDOW_MS) continue
+      const weight = Math.exp(-age / HALF_LIFE_MS)
+      weightSum += weight
+      if (sample.outcome === 'success') {
+        successWeight += weight
+        successLatency += weight * sample.durationMs
+      } else {
+        failureLatency += weight * sample.durationMs
+      }
+      if (sample.outcome === 'unavailable') unavailable = true
+      if (age <= VISION_EXHAUSTED_WINDOW_MS) {
+        recentCount += 1
+        if (sample.outcome === 'success') recentSuccess += 1
+      }
+    }
+
+    const completion =
+      (successWeight + prior.completion * PRIOR_WEIGHT) / (weightSum + PRIOR_WEIGHT)
+    const successMs = successWeight > 0 ? successLatency / successWeight : prior.successMs
+    const failureWeight = weightSum - successWeight
+    const failureMs = failureWeight > 0 ? failureLatency / failureWeight : prior.failureMs
+    const retired = unavailable
+    const expectedAttemptMs = retired
+      ? 60_000
+      : completion * successMs + (1 - completion) * failureMs
+    const exhausted = retired || (recentCount >= 2 && recentSuccess === 0)
+    return {
+      model,
+      completion,
+      expectedAttemptMs,
+      score: expectedAttemptMs > 0 ? completion / expectedAttemptMs : 0,
+      exhausted,
+    }
+  })
+
+  const byUsefulness = (a: RankedVisionModel, b: RankedVisionModel) =>
+    b.score - a.score || a.model.localeCompare(b.model)
+  const fresh = ranked.filter((entry) => !entry.exhausted).sort(byUsefulness)
+  const tired = ranked.filter((entry) => entry.exhausted).sort(byUsefulness)
+  // A model that just failed twice stays off the lead. If those failures were
+  // quick, keep it as the last slot so a short blip does not erase it. A model
+  // that is hanging stays out: spending 20s on it is how scans miss the phone's
+  // deadline.
+  const affordable = tired.filter((entry) => entry.expectedAttemptMs <= 8_000)
+  const picked = fresh.slice(0, limit)
+  if (picked.length === 0) return tired.slice(0, limit)
+  if (picked.length < limit) {
+    picked.push(...affordable.slice(0, limit - picked.length))
+  } else if (affordable[0]) {
+    picked[limit - 1] = affordable[0]
+  }
+  return picked
+}
+
+/** Order models for one scan. `configured` is the GEMINI_MODEL secret, if set. */
+export function modelsForScan(
+  configured: string | undefined,
+  samples: ModelSample[] = [],
+  nowMs = Date.now(),
+): string[] {
+  return rankVisionModels({ configured, samples, nowMs }).map((entry) => entry.model)
+}
+
+export function geminiModelsToTry(): string[] {
+  const configured = typeof Deno !== 'undefined' ? Deno.env.get('GEMINI_MODEL') : undefined
+  return modelsForScan(configured)
 }
 
 export interface GeminiVisionResult {
@@ -56,6 +227,7 @@ export interface VisionRaceOptions {
   hedgeDelayMs?: number
   deadlineMs?: number
   maxInFlight?: number
+  onSample?: (sample: VisionAttemptSample) => void
 }
 
 function anySignal(signals: AbortSignal[]): AbortSignal {
@@ -134,13 +306,23 @@ export function raceVisionModels(options: VisionRaceOptions): Promise<GeminiVisi
       nextIndex += 1
       inFlight += 1
       attempts += 1
+      const attemptStarted = Date.now()
+      const report = (outcome: VisionOutcome) => {
+        options.onSample?.({
+          model,
+          outcome,
+          durationMs: Math.max(0, Date.now() - attemptStarted),
+        })
+      }
       void Promise.resolve()
         .then(() => options.call(model, parent.signal))
         .then(
         (attempt) => {
           inFlight -= 1
+          // A winner already aborted this call. That is not a failure of the model.
           if (settled) return
           if (attempt.ok && attempt.text.trim()) {
+            report('success')
             settled = true
             const result: GeminiVisionResult = {
               text: attempt.text,
@@ -154,6 +336,7 @@ export function raceVisionModels(options: VisionRaceOptions): Promise<GeminiVisi
             return
           }
           const detail = attempt.ok ? 'No response from vision model.' : attempt.detail
+          report(classifyVisionOutcome(detail))
           errors.push(detail)
           console.error(`Gemini ${model}:`, detail.slice(0, 300))
           if (!attempt.ok && attempt.fatal) {
@@ -173,6 +356,7 @@ export function raceVisionModels(options: VisionRaceOptions): Promise<GeminiVisi
           inFlight -= 1
           if (settled) return
           const thrown = error instanceof Error ? error.message : String(error)
+          report(classifyVisionOutcome(thrown))
           errors.push(thrown)
           console.error(`Gemini ${model}:`, thrown.slice(0, 300))
           if (parent.signal.aborted || (nextIndex >= models.length && inFlight === 0)) {
@@ -262,10 +446,17 @@ export async function callGeminiVision(
   imageBase64: string,
   prompt: string,
   signal?: AbortSignal,
+  options?: {
+    models?: string[]
+    onSample?: (sample: VisionAttemptSample) => void
+  },
 ): Promise<GeminiVisionResult> {
+  const models = options?.models?.length ? options.models : geminiModelsToTry()
+  console.log(`Vision models: ${models.join(', ')}`)
   const result = await raceVisionModels({
-    models: geminiModelsToTry(),
+    models,
     signal,
+    onSample: options?.onSample,
     call: (model, attemptSignal) =>
       callModel(apiKey, model, mimeType, imageBase64, prompt, attemptSignal),
   })
