@@ -1006,9 +1006,11 @@ export default function App() {
     if (cloudUser) {
       try {
         const synced = await upsertWine(cloudUser.id, wine, rankingPreference)
-        if (synced.id !== wine.id) {
-          setWines((prev) => prev.map((w) => (w.id === wine.id ? synced : w)))
-        }
+        setWines((prev) => {
+          const next = prev.map((w) => (w.id === wine.id ? synced : w))
+          winesRef.current = next
+          return next
+        })
       } catch (e) {
         window.alert(`Saved locally but cloud sync failed: ${(e as Error).message}`)
       }

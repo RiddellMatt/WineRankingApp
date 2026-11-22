@@ -2155,6 +2155,247 @@ a.icon-btn {
   opacity: 0.85;
 }
 
+.wine-purchased {
+  flex-wrap: wrap;
+}
+
+.tried-on-field,
+.wine-photo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+
+.tried-on-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.field-optional {
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.tried-on-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.tried-on-trigger {
+  flex: 1;
+  text-align: left;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 0.6rem 0.75rem;
+}
+
+.tried-on-calendar {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7rem;
+}
+
+.tried-on-calendar-nav {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr 2.2rem;
+  align-items: center;
+  margin-bottom: 0.45rem;
+}
+
+.tried-on-month {
+  text-align: center;
+  font-weight: 600;
+  font-family: var(--font-display);
+}
+
+.tried-on-nav {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0.15rem 0;
+  border-radius: 8px;
+}
+
+.tried-on-nav:hover {
+  background: var(--surface-hover);
+}
+
+.tried-on-weekdays,
+.tried-on-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.15rem;
+}
+
+.tried-on-weekdays {
+  margin-bottom: 0.2rem;
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.tried-on-day {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.86rem;
+  padding: 0;
+}
+
+.tried-on-day:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.tried-on-day.selected {
+  background: var(--accent);
+  color: #fff;
+}
+
+.tried-on-day:disabled {
+  color: var(--text-faint);
+  opacity: 0.4;
+  cursor: default;
+}
+
+.wine-photo-hint {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 0.82rem;
+}
+
+.wine-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.wine-photo-editor,
+.wine-photo-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.wine-photo-editor-item,
+.wine-photo-thumb,
+.wine-photo-more {
+  width: 4.1rem;
+  height: 4.1rem;
+  border-radius: 10px;
+}
+
+.wine-photo-editor-item {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.wine-photo-editor-item img,
+.wine-photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.wine-photo-remove {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.15rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  line-height: 1;
+  padding: 0;
+}
+
+.wine-photo-thumb,
+.wine-photo-more {
+  padding: 0;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.wine-photo-more {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+
+.wine-photo-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(8, 4, 6, 0.88);
+}
+
+.wine-photo-lightbox img {
+  max-width: min(92vw, 52rem);
+  max-height: 82vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.wine-photo-lightbox-close,
+.wine-photo-lightbox-nav {
+  position: absolute;
+  border: none;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.wine-photo-lightbox-close {
+  top: max(0.8rem, var(--safe-top));
+  right: 0.8rem;
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  font-weight: 600;
+}
+
+.wine-photo-lightbox-nav {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 999px;
+  font-size: 1.8rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.wine-photo-lightbox-nav.prev {
+  left: 0.6rem;
+}
+
+.wine-photo-lightbox-nav.next {
+  right: 0.6rem;
+}
+
 .wine-save-wishlist-btn {
   display: inline-flex;
   align-items: center;
