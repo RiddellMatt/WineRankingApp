@@ -266,7 +266,7 @@ After opening the app signed in, you should see a row with your `user_id`, `plat
 
 If empty:
 
-- Check you are on a **real device**, signed into **cloud** (not “Continue without account”)
+- Check you are on a **real device** and signed in
 - Edge Functions → `register-push-token` → Logs for errors
 
 ### G3. End-to-end

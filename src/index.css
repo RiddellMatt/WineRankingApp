@@ -4926,11 +4926,6 @@ html.keyboard-open .auth-screen {
   margin: 1rem auto 0;
 }
 
-.auth-offline {
-  width: 100%;
-  margin-top: 1rem;
-}
-
 .auth-offline-note {
   color: var(--text-faint);
   font-size: 0.78rem;

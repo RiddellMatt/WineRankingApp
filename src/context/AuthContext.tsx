@@ -35,7 +35,6 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<string | null>
   signInWithOAuth: (provider: Provider) => Promise<string | null>
   signOut: () => Promise<void>
-  continueOffline: () => void
   exitOffline: () => void
   configError: string | null
 }
@@ -44,13 +43,21 @@ const AuthContext = createContext<AuthState | null>(null)
 
 const OFFLINE_KEY = `${STORAGE_PREFIX}.offline-mode`
 
+function forgetOfflineChoice(): void {
+  try {
+    localStorage.removeItem(OFFLINE_KEY)
+  } catch {
+    // Private mode or a blocked storage API.
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const configured = isSupabaseConfigured
   const [loading, setLoading] = useState(configured)
   const [session, setSession] = useState<Session | null>(null)
   const [offlineMode, setOfflineMode] = useState(() => {
-    if (!configured) return true
-    return localStorage.getItem(OFFLINE_KEY) === 'true'
+    forgetOfflineChoice()
+    return false
   })
   const [configError, setConfigError] = useState<string | null>(() => {
     const { url, anonKey } = getSupabaseEnv()
@@ -188,11 +195,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null)
   }
 
-  function continueOffline(): void {
-    setOfflineMode(true)
-    localStorage.setItem(OFFLINE_KEY, 'true')
-  }
-
   function exitOffline(): void {
     setOfflineMode(false)
     localStorage.removeItem(OFFLINE_KEY)
@@ -210,7 +212,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signInWithOAuth,
         signOut,
-        continueOffline,
         exitOffline,
         configError,
       }}
