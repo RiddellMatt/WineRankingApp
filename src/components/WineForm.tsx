@@ -20,6 +20,9 @@ import { StarInput } from './StarRating'
 import { TasteInput } from './TasteProfile'
 import { TastingTagsInput } from './TastingTagsInput'
 import { TriedOnField } from './TriedOnField'
+import { DuplicateWineDialog } from './DuplicateWineDialog'
+import { findCellarDuplicate, normalizePours, type Pour } from '../lib/winePours'
+import { isoDateFromLocal, normalizeTriedOn } from '../lib/wineMoments'
 import { WinePhotoField } from './WinePhotoField'
 import { VarietalSelect } from './VarietalSelect'
 import { RegionPicker } from './RegionPicker'
@@ -43,6 +46,8 @@ interface Props {
   /** Open the label scan file picker once when adding a new wine. */
   autoOpenScan?: boolean
   userId?: string
+  /** Close this form and show the cellar card for a wine already saved. */
+  onViewExisting?: (wine: Wine) => void
 }
 
 export function WineForm({
@@ -59,6 +64,7 @@ export function WineForm({
   onUpgrade,
   autoOpenScan = false,
   userId,
+  onViewExisting,
 }: Props) {
   const wishlistForm = formMode === 'wishlist'
   const promoteFromWishlist = initial?.status === 'wishlist' && !wishlistForm
@@ -71,6 +77,10 @@ export function WineForm({
   const [price, setPrice] = useState(initial?.price?.toString() ?? '')
   const [purchasedAt, setPurchasedAt] = useState(initial?.purchasedAt ?? '')
   const [triedOn, setTriedOn] = useState<string | null>(initial?.triedOn ?? null)
+  const [pours, setPours] = useState<Pour[]>(() => normalizePours(initial?.pours))
+  const [duplicate, setDuplicate] = useState<Wine | null>(null)
+  const allowDuplicateRef = useRef(false)
+  const pendingWineRef = useRef<Wine | null>(null)
   const [photos, setPhotos] = useState<string[]>(initial?.photos ?? [])
   const [ratingEnjoyment, setRatingEnjoyment] = useState(
     initial?.ratingEnjoyment ?? initial?.rating ?? 0,
@@ -364,6 +374,7 @@ export function WineForm({
         withFriendIds: wishlistForm ? [] : normalizeWithFriendIds(withFriendIds),
         purchasedAt: purchasedAt.trim(),
         triedOn: wishlistForm ? null : triedOn,
+        pours: wishlistForm ? [] : normalizePours(pours),
         photos: wishlistForm ? [] : photos,
         taste: wishlistForm ? {} : taste,
         tasteSource: wishlistForm ? undefined : tasteTouched ? 'custom' : 'typical',
@@ -389,7 +400,27 @@ export function WineForm({
       })
       aiScanBaselineRef.current = null
     }
+    const checkingNewTried = !wishlistForm && (!initial || initial.status === 'wishlist')
+    if (checkingNewTried && !allowDuplicateRef.current) {
+      const match = findCellarDuplicate(cellarWines, wine)
+      if (match) {
+        pendingWineRef.current = wine
+        setDuplicate(match)
+        return
+      }
+    }
+    allowDuplicateRef.current = false
+    setDuplicate(null)
     onSave(wine)
+  }
+
+  function recordAgain(triedOnAgain: string | null) {
+    if (!duplicate) return
+    const date = normalizeTriedOn(triedOnAgain)
+    onSave({
+      ...duplicate,
+      pours: [...normalizePours(duplicate.pours), { triedOn: date }],
+    })
   }
 
   const modalTitle = promoteFromWishlist
@@ -594,6 +625,56 @@ export function WineForm({
         {!wishlistForm && (
           <>
             <TriedOnField value={triedOn} onChange={setTriedOn} />
+            <div className="repeat-pours">
+              <div className="tried-on-label">
+                <span>Had it again</span>
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() =>
+                    setPours((current) => [
+                      ...current,
+                      { triedOn: isoDateFromLocal(new Date()) },
+                    ])
+                  }
+                >
+                  Add a date
+                </button>
+              </div>
+              <p className="form-rating-hint">
+                {pours.length === 0
+                  ? 'The date above is the first time. Add a date each time you have it again.'
+                  : `Tried ${1 + pours.length} times.`}
+              </p>
+              {pours.map((pour, index) => (
+                <div className="repeat-pour-row" key={`${pour.triedOn ?? 'open'}-${index}`}>
+                  <input
+                    type="date"
+                    aria-label={`Date for time ${index + 2}`}
+                    value={pour.triedOn ?? ''}
+                    max={isoDateFromLocal(new Date())}
+                    onChange={(e) =>
+                      setPours((current) =>
+                        current.map((item, itemIndex) =>
+                          itemIndex === index
+                            ? { triedOn: normalizeTriedOn(e.target.value) }
+                            : item,
+                        ),
+                      )
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() =>
+                      setPours((current) => current.filter((_, itemIndex) => itemIndex !== index))
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
             <WinePhotoField photos={photos} onChange={setPhotos} />
           </>
         )}
@@ -673,6 +754,25 @@ export function WineForm({
           </button>
         </div>
       </form>
+      {duplicate && (
+        <DuplicateWineDialog
+          existing={duplicate}
+          onDismiss={() => setDuplicate(null)}
+          onView={() => {
+            const match = duplicate
+            setDuplicate(null)
+            if (onViewExisting) onViewExisting(match)
+            else onClose()
+          }}
+          onLogAnyway={() => {
+            allowDuplicateRef.current = true
+            setDuplicate(null)
+            const pending = pendingWineRef.current
+            if (pending) onSave(pending)
+          }}
+          onHadAgain={recordAgain}
+        />
+      )}
     </div>
   )
 }

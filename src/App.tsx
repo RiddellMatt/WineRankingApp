@@ -1001,6 +1001,22 @@ export default function App() {
     setView('insights')
   }
 
+  function showExistingWine(wine: Wine) {
+    setFormOpen(false)
+    setEditing(null)
+    setAutoOpenScan(false)
+    setAddWineChooserOpen(false)
+    setFriendView(null)
+    setView('cellar')
+    setCellarSegment('tried')
+    window.setTimeout(() => {
+      document.getElementById(`wine-card-${wine.id}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+    }, 60)
+  }
+
   function openCellarWine(wine: Wine) {
     setFriendView(null)
     setView('cellar')
@@ -1749,6 +1765,7 @@ export default function App() {
           cellarWines={wines}
           completedJourneys={completedJourneys}
           onSave={handleSave}
+          onViewExisting={showExistingWine}
           onClose={() => {
             setFormOpen(false)
             setEditing(null)
