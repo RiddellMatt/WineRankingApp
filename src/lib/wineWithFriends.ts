@@ -40,21 +40,42 @@ export function enrichActivityWithFriends(
   return events.map((event) => {
     const ids = event.wine?.withFriendIds ?? []
     if (ids.length === 0) return event
-    const withFriends = ids.map((id) => profiles.get(id)).filter((p): p is FriendProfile => Boolean(p))
-    if (withFriends.length === 0) return event
+    const withFriends = ids.map(
+      (id) => profiles.get(id) ?? { id, displayName: '', email: '' },
+    )
     return { ...event, withFriends }
   })
 }
 
+function joinNames(names: string[]): string {
+  if (names.length === 1) return names[0]
+  if (names.length === 2) return `${names[0]} and ${names[1]}`
+  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+}
+
+/**
+ * "with Jordan" on a friend's post: the actor tried the wine with these people.
+ * A tagged person the viewer cannot name still counts, as "a friend".
+ */
 export function activityWithFriendsClause(
   withFriends: FriendProfile[] | undefined,
   viewerId: string,
 ): string | null {
   if (!withFriends?.length) return null
-  const names = withFriends.map((f) =>
-    f.id === viewerId ? 'you' : friendDisplayLabel(f),
-  )
-  if (names.length === 1) return `with ${names[0]}`
-  if (names.length === 2) return `with ${names[0]} and ${names[1]}`
-  return `with ${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+  const named: string[] = []
+  let unnamed = 0
+  for (const friend of withFriends) {
+    if (friend.id === viewerId) {
+      named.push('you')
+      continue
+    }
+    const label = friendDisplayLabel(friend, '')
+    if (label) named.push(label)
+    else unnamed += 1
+  }
+  const parts = [...named]
+  if (unnamed === 1) parts.push('a friend')
+  else if (unnamed > 1) parts.push(`${unnamed} friends`)
+  if (parts.length === 0) return null
+  return `with ${joinNames(parts)}`
 }

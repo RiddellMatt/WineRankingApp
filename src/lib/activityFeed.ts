@@ -48,7 +48,7 @@ export function activityEventLabel(type: ActivityEventType): string {
     case 'journey_complete':
       return 'completed a journey'
     default:
-      return 'logged'
+      return 'tried'
   }
 }
 
@@ -72,6 +72,28 @@ export function wineActivityTitle(wine: Wine): string {
 export function wineActivitySubtitle(wine: Wine): string | null {
   if (wine.winery.trim()) return wine.winery.trim()
   return null
+}
+
+/** Names for people tagged on a visible wine, including friends-of-friends. */
+async function fillTaggedFriendNames(
+  profiles: Map<string, FriendProfile>,
+  taggedIds: string[],
+): Promise<void> {
+  const missing = taggedIds.filter((id) => !profiles.has(id)).slice(0, 64)
+  if (missing.length === 0) return
+  const { data, error } = await getSupabase().rpc('tagged_friend_names', { ids: missing })
+  if (error || !Array.isArray(data)) return
+  for (const row of data) {
+    if (!row || typeof row !== 'object') continue
+    const id = (row as { id?: unknown }).id
+    const displayName = (row as { display_name?: unknown }).display_name
+    if (typeof id !== 'string' || profiles.has(id)) continue
+    profiles.set(id, {
+      id,
+      displayName: typeof displayName === 'string' ? displayName.trim() : '',
+      email: '',
+    })
+  }
 }
 
 function milestoneFromRow(row: ActivityEventRow): ActivityMilestone {
@@ -160,12 +182,12 @@ export async function fetchFriendActivity(
       })
     }
   }
+  await fillTaggedFriendNames(profiles, taggedIds)
 
   function taggedProfiles(wine: Wine): FriendProfile[] | undefined {
     const ids = wine.withFriendIds ?? []
     if (ids.length === 0) return undefined
-    const tagged = ids.map((id) => profiles.get(id)).filter((p): p is FriendProfile => Boolean(p))
-    return tagged.length > 0 ? tagged : undefined
+    return ids.map((id) => profiles.get(id) ?? { id, displayName: '', email: '' })
   }
 
   const events: ActivityEvent[] = []

@@ -3,16 +3,14 @@ import {
   formatActivityTime,
   type ActivityEvent,
 } from '../lib/activityFeed'
+import { activityWithFriendsClause } from '../lib/wineWithFriends'
 import { BADGE_DEFINITIONS, type BadgeTier } from '../lib/badges'
-import { compositeScore } from '../lib/ranking'
-import { isWishlist } from '../lib/wishlist'
-import type { RankingPreference } from '../types'
 import { WineTypePill } from './WineTypePill'
 import { BadgeMedal } from './BadgeMedal'
 
 interface Props {
   events: ActivityEvent[]
-  rankingPreference: RankingPreference
+  viewerId: string
   emptyHint: string
 }
 
@@ -24,7 +22,7 @@ function badgeIconForEvent(event: ActivityEvent): string | null {
   return BADGE_DEFINITIONS.find((def) => def.id === id)?.icon ?? null
 }
 
-export function OwnActivityFeed({ events, rankingPreference, emptyHint }: Props) {
+export function OwnActivityFeed({ events, viewerId, emptyHint }: Props) {
   if (events.length === 0) {
     return (
       <section className="activity-empty own-activity-empty">
@@ -75,17 +73,14 @@ export function OwnActivityFeed({ events, rankingPreference, emptyHint }: Props)
         }
         const wine = event.wine!
         const title = [wine.name, wine.vintage].filter(Boolean).join(' ')
-        let actionPrefix = 'Logged'
-        if (event.type === 'saved_to_try') {
-          actionPrefix = 'Saved'
-        } else if (!isWishlist(wine) && compositeScore(wine, rankingPreference) > 0) {
-          actionPrefix = 'Rated'
-        }
+        const withFriends = activityWithFriendsClause(event.withFriends, viewerId)
+        const actionPrefix = event.type === 'saved_to_try' ? 'Saved' : 'Tried'
         return (
           <li className="own-activity-item own-activity-wine" key={event.id}>
             <p className="own-activity-line">
               {actionPrefix}{' '}
-              <span className="own-activity-wine-title">{title}</span>
+              <span className="own-activity-wine-title">{title || 'a wine'}</span>
+              {withFriends && <span className="activity-with-friends"> {withFriends}</span>}
             </p>
             {event.wine?.winery?.trim() && (
               <p className="own-activity-sub">{event.wine.winery.trim()}</p>
