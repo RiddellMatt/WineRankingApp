@@ -4128,19 +4128,13 @@ html.keyboard-open .wine-form-backdrop {
 .wine-form-modal {
   display: flex;
   flex-direction: column;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
+  align-self: stretch;
   height: auto;
-  align-self: flex-start;
   min-height: 0;
-  max-height: calc(100dvh - 1rem - var(--keyboard-inset, 0px));
   max-height: 100%;
   overflow: hidden;
   margin-top: 0;
-}
-
-html.keyboard-open .wine-form-modal {
-  flex: 1 1 auto;
-  align-self: stretch;
 }
 
 /* The save row sits where a keyboard-dismiss tap lands, and it eats the few
