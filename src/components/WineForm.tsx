@@ -14,7 +14,12 @@ import { hasTaste, lookupTaste } from '../tasteData'
 import { WINE_TYPES, type RankingPreference, type TasteProfile, type Wine, type WineType } from '../types'
 import { catalogTags } from '../lib/tastingTags'
 import { triedWines } from '../lib/wishlist'
-import { dismissKeyboard, focusNextTextField, isTextField } from '../lib/keyboardInset'
+import {
+  dismissKeyboard,
+  focusNextTextField,
+  isTextField,
+  shouldDismissKeyboardOnScroll,
+} from '../lib/keyboardInset'
 import { canonicalVarietal, isListedVarietal, typeForVarietal, varietalFitsType } from '../lib/wineVarietals'
 import { StarInput } from './StarRating'
 import { TasteInput } from './TasteProfile'
@@ -97,6 +102,7 @@ export function WineForm({
   const [aiPreviewUrl, setAiPreviewUrl] = useState<string | null>(null)
   const scanInputRef = useRef<HTMLInputElement>(null)
   const formBodyRef = useRef<HTMLDivElement>(null)
+  const ignoreCloseUntil = useRef(0)
   const aiScanBaselineRef = useRef<LabelScanBaseline | null>(null)
   const aiAvailable = pro && signedIn && cloudConfigured
   const triedCellar = useMemo(() => triedWines(cellarWines), [cellarWines])
@@ -105,7 +111,24 @@ export function WineForm({
     if (scanState !== 'done' && scanState !== 'failed') return
     dismissKeyboard()
     formBodyRef.current?.scrollTo({ top: 0 })
+    // The photo picker hands focus back after it closes. Blur again so the
+    // keyboard stays down until the person taps a field.
+    const timers = [80, 320, 700].map((ms) => window.setTimeout(dismissKeyboard, ms))
+    return () => timers.forEach((timer) => window.clearTimeout(timer))
   }, [scanState])
+
+  function armCloseGuard() {
+    ignoreCloseUntil.current = Date.now() + 650
+  }
+
+  function closeBlocked(): boolean {
+    return Date.now() < ignoreCloseUntil.current
+  }
+
+  function requestClose() {
+    if (closeBlocked()) return
+    onClose()
+  }
 
   useEffect(() => {
     if (!autoOpenScan || initial) return
@@ -419,10 +442,27 @@ export function WineForm({
   return (
     <div
       className="modal-backdrop wine-form-backdrop"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      onMouseDown={(e) => {
+        if (e.target !== e.currentTarget) return
+        // A tap outside a field is how the keyboard goes away. Closing the
+        // sheet on that same tap throws away the wine they just scanned.
+        if (closeBlocked() || isTextField(document.activeElement)) {
+          armCloseGuard()
+          dismissKeyboard()
+          return
+        }
+        onClose()
+      }}
     >
       <ScanPourOverlay open={aiScanning} variant="label" previewUrl={aiPreviewUrl} />
-      <form className="modal wine-form-modal" onSubmit={handleSubmit} onKeyDown={onFormKeyDown}>
+      <form
+        className="modal wine-form-modal"
+        onSubmit={handleSubmit}
+        onKeyDown={onFormKeyDown}
+        onBlur={(e) => {
+          if (isTextField(e.target)) armCloseGuard()
+        }}
+      >
         <div className="modal-header">
           <div className="modal-header-titles">
             <h2>{modalTitle}</h2>
@@ -435,7 +475,22 @@ export function WineForm({
           </button>
         </div>
 
-        <div className="wine-form-body" ref={formBodyRef}>
+        <div
+          className="wine-form-body"
+          ref={formBodyRef}
+          onScroll={() => {
+            if (!shouldDismissKeyboardOnScroll()) return
+            armCloseGuard()
+            dismissKeyboard()
+          }}
+          onPointerDown={(e) => {
+            if (!(e.target instanceof Element)) return
+            if (e.target.closest('input, textarea, select, button, a, label')) return
+            if (!isTextField(document.activeElement)) return
+            armCloseGuard()
+            dismissKeyboard()
+          }}
+        >
         {!initial && (
           <div className="scan-box">
             <button
@@ -665,7 +720,7 @@ export function WineForm({
         </div>
 
         <div className="modal-actions">
-          <button type="button" className="btn ghost" onClick={onClose}>
+          <button type="button" className="btn ghost" onClick={requestClose}>
             Cancel
           </button>
           <button type="submit" className="btn primary">
