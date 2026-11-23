@@ -2141,6 +2141,91 @@ a.icon-btn {
   font-size: 0.85rem;
 }
 
+.wine-tastings {
+  margin: 0.35rem 0 0;
+}
+
+.wine-times {
+  display: inline-flex;
+  margin: 0;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.wine-tasting-dates {
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-faint);
+  font-size: 0.8rem;
+}
+
+.wine-tasting-dates li + li {
+  margin-top: 0.1rem;
+}
+
+.repeat-pours {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+
+.repeat-pour-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.repeat-pour-row input[type='date'] {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.duplicate-wine-backdrop {
+  z-index: 520;
+  align-items: center;
+}
+
+.duplicate-wine-dialog {
+  width: min(28rem, 100%);
+}
+
+.duplicate-wine-name {
+  margin: 0.2rem 0 0;
+  font-weight: 650;
+}
+
+.duplicate-wine-count,
+.duplicate-wine-dates {
+  margin: 0.35rem 0 0;
+  color: var(--text-dim);
+}
+
+.duplicate-wine-dates {
+  padding-left: 1.1rem;
+}
+
+.duplicate-wine-dialog .field {
+  margin-top: 0.85rem;
+}
+
+.duplicate-wine-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.duplicate-wine-actions .btn {
+  width: 100%;
+}
+
 .wine-purchased {
   display: flex;
   align-items: center;
