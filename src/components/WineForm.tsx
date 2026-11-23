@@ -475,14 +475,9 @@ export function WineForm({
       className="modal-backdrop wine-form-backdrop"
       onMouseDown={(e) => {
         if (e.target !== e.currentTarget) return
-        // A tap outside a field is how the keyboard goes away. Closing the
-        // sheet on that same tap throws away the wine they just scanned.
-        if (closeBlocked() || isTextField(document.activeElement)) {
-          armCloseGuard()
-          dismissKeyboard()
-          return
-        }
-        onClose()
+        // The dimmed margin is not a way out. A tap there only puts the
+        // keyboard away. Save and Cancel are the ways off this screen.
+        if (isTextField(document.activeElement)) dismissKeyboard()
       }}
     >
       <ScanPourOverlay open={aiScanning} variant="label" previewUrl={aiPreviewUrl} />
