@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createNativeAuthStorage } from './capacitorAuthStorage'
+import { createJwtFutureRetryFetch } from './jwtFutureRetry'
 import { getSupabaseEnv, looksLikePlaceholderConfig } from './supabaseConfig'
 
 const { url, anonKey } = getSupabaseEnv()
@@ -20,6 +21,9 @@ export function getSupabase(): SupabaseClient {
         flowType: 'pkce',
         detectSessionInUrl: true,
         ...(nativeStorage ? { storage: nativeStorage } : {}),
+      },
+      global: {
+        fetch: createJwtFutureRetryFetch(),
       },
     })
   }

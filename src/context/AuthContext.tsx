@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data } = await supabase.auth.getSession()
       if (cancelled) return
       let nextSession = data.session
-      // Cold launch often uses a persisted JWT before device clock / GoTrue agree (PostgREST: "JWT issued at future").
+      // A persisted session may already be expired. PGRST303 on the first query is retried separately.
       if (nextSession) {
         const { data: refreshed, error } = await supabase.auth.refreshSession()
         if (!cancelled && !error && refreshed.session) {
