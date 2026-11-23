@@ -1397,10 +1397,6 @@ export default function App() {
           ) : cloudUser ? (
             <FriendsPanel
               userId={cloudUser.id}
-              userEmail={cloudUser.email}
-              userDisplayName={profile?.displayName}
-              userAvatarUrl={profile?.avatarUrl}
-              wines={wines}
               rankingPreference={rankingPreference}
               onViewCellar={viewFriendCellar}
               onSaveToWishlist={handleSaveWishlistFromFriend}
