@@ -24,12 +24,71 @@ export async function grantPro(
   return true
 }
 
-export async function revokePro(admin: SupabaseClient, userId: string): Promise<void> {
-  const { error } = await admin
+/**
+ * Banked invite days start when paid Pro ends.
+ * Keep the day math aligned with endPaidSubscription in src/lib/referrals.ts.
+ */
+function endPaidProPatch(profile: {
+  pro_until?: string | null
+  bonus_pro_days?: number | null
+}): {
+  is_pro: false
+  stripe_subscription_id: null
+  pro_until?: string
+  bonus_pro_days?: number
+} {
+  const bonus = profile.bonus_pro_days ?? 0
+  const patch: {
+    is_pro: false
+    stripe_subscription_id: null
+    pro_until?: string
+    bonus_pro_days?: number
+  } = {
+    is_pro: false,
+    stripe_subscription_id: null,
+  }
+  if (bonus > 0) {
+    const existing = profile.pro_until ? Date.parse(profile.pro_until) : Number.NaN
+    const base = Math.max(Number.isFinite(existing) ? existing : 0, Date.now())
+    patch.pro_until = new Date(base + bonus * 24 * 60 * 60 * 1000).toISOString()
+    patch.bonus_pro_days = 0
+  }
+  return patch
+}
+
+async function endPaidPro(
+  admin: SupabaseClient,
+  column: 'id' | 'stripe_customer_id' | 'stripe_subscription_id',
+  value: string,
+): Promise<void> {
+  const { data, error } = await admin
     .from('profiles')
-    .update({ is_pro: false, stripe_subscription_id: null })
-    .eq('id', userId)
-  if (error) throw error
+    .select('id, pro_until, bonus_pro_days')
+    .eq(column, value)
+    .maybeSingle()
+
+  if (error) {
+    if (/pro_until|bonus_pro_days/.test(error.message)) {
+      const { error: fallback } = await admin
+        .from('profiles')
+        .update({ is_pro: false, stripe_subscription_id: null })
+        .eq(column, value)
+      if (fallback) throw fallback
+      return
+    }
+    throw error
+  }
+  if (!data?.id) return
+
+  const { error: updateError } = await admin
+    .from('profiles')
+    .update(endPaidProPatch(data))
+    .eq('id', data.id)
+  if (updateError) throw updateError
+}
+
+export async function revokePro(admin: SupabaseClient, userId: string): Promise<void> {
+  await endPaidPro(admin, 'id', userId)
 }
 
 /** Revoke Pro when IAP lapses but keep access for active Stripe subscriptions. */
@@ -41,7 +100,7 @@ export async function revokeProIfIapOnly(admin: SupabaseClient, userId: string):
     .maybeSingle()
   if (readError) throw readError
   if (profile?.stripe_subscription_id) return
-  await revokePro(admin, userId)
+  await endPaidPro(admin, 'id', userId)
 }
 
 export async function grantProByEmail(
@@ -85,22 +144,14 @@ export async function revokeProByStripeCustomer(
   admin: SupabaseClient,
   stripeCustomerId: string,
 ): Promise<void> {
-  const { error } = await admin
-    .from('profiles')
-    .update({ is_pro: false, stripe_subscription_id: null })
-    .eq('stripe_customer_id', stripeCustomerId)
-  if (error) throw error
+  await endPaidPro(admin, 'stripe_customer_id', stripeCustomerId)
 }
 
 export async function revokeProBySubscription(
   admin: SupabaseClient,
   subscriptionId: string,
 ): Promise<void> {
-  const { error } = await admin
-    .from('profiles')
-    .update({ is_pro: false, stripe_subscription_id: null })
-    .eq('stripe_subscription_id', subscriptionId)
-  if (error) throw error
+  await endPaidPro(admin, 'stripe_subscription_id', subscriptionId)
 }
 
 export function subscriptionIsActive(status: string): boolean {

@@ -5,12 +5,14 @@ import App from './App.tsx'
 import { AppLaunchOverlay } from './components/AppLaunchOverlay.tsx'
 import { AuthProvider } from './context/AuthContext.tsx'
 import { migrateLegacyStorageKeys } from './lib/storageMigrate.ts'
+import { captureReferralFromLocation } from './lib/referrals.ts'
 import { initAppIcon } from './lib/appIcon.ts'
 import { initTheme } from './lib/themes.ts'
 import { installKeyboardInset } from './lib/keyboardInset.ts'
 import { initNativeShell } from './mobile/initNativeShell.ts'
 
 migrateLegacyStorageKeys()
+captureReferralFromLocation()
 initTheme()
 void initAppIcon()
 void initNativeShell()

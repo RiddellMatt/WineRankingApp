@@ -26,6 +26,7 @@ import {
   type Friendship,
 } from '../lib/friendsDb'
 import { requestNotificationsRefresh } from '../lib/notificationsRefresh'
+import { referralInviteUrl, shareReferralInvite } from '../lib/referrals'
 import type { RankingPreference, Wine } from '../types'
 
 interface Props {
@@ -38,6 +39,8 @@ interface Props {
   onFriendshipsChanged?: (friendCount: number) => void
   requestedTab?: FriendsTab | null
   onRequestedTabHandled?: () => void
+  inviteCode?: string
+  qualifiedReferralCount?: number
 }
 
 type FriendsTab = 'feed' | 'manage'
@@ -84,6 +87,8 @@ export function FriendsPanel({
   onFriendshipsChanged,
   requestedTab = null,
   onRequestedTabHandled,
+  inviteCode,
+  qualifiedReferralCount = 0,
 }: Props) {
   const [tab, setTab] = useState<FriendsTab>('feed')
   const [friendships, setFriendships] = useState<Friendship[]>([])
@@ -95,6 +100,7 @@ export function FriendsPanel({
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
+  const [inviteMessage, setInviteMessage] = useState('')
   const [busy, setBusy] = useState(false)
 
   const reload = useCallback(async () => {
@@ -175,6 +181,28 @@ export function FriendsPanel({
     : friendIds.length === 0
       ? 'Add a friend to see activity here.'
       : 'No friend activity yet.'
+
+  async function handleShareInvite() {
+    if (!inviteCode) return
+    setInviteMessage('')
+    try {
+      const result = await shareReferralInvite(inviteCode)
+      setInviteMessage(result === 'copied' ? 'Invite link copied.' : '')
+    } catch (e) {
+      setInviteMessage(String((e as Error).message ?? e))
+    }
+  }
+
+  async function handleCopyInvite() {
+    if (!inviteCode) return
+    setInviteMessage('')
+    try {
+      await navigator.clipboard.writeText(referralInviteUrl(inviteCode))
+      setInviteMessage('Invite link copied.')
+    } catch (e) {
+      setInviteMessage(String((e as Error).message ?? e))
+    }
+  }
 
   async function handleAddFriend() {
     setError('')
@@ -336,6 +364,41 @@ export function FriendsPanel({
         </section>
       ) : (
         <>
+          <section className="friends-invite">
+            <h2>Invite a friend</h2>
+            <p className="friends-hint">
+              They enter your code when they sign up. After they rate a wine, you each get a month
+              of Pro.
+            </p>
+            {inviteCode ? (
+              <>
+                <p className="friends-invite-code">{inviteCode}</p>
+                {qualifiedReferralCount > 0 && (
+                  <p className="friends-hint">
+                    {qualifiedReferralCount === 1
+                      ? '1 friend has joined with your invite.'
+                      : `${qualifiedReferralCount} friends have joined with your invite.`}
+                  </p>
+                )}
+                <div className="friends-invite-actions">
+                  <button type="button" className="btn primary" onClick={() => void handleShareInvite()}>
+                    Share invite
+                  </button>
+                  <button type="button" className="btn ghost" onClick={() => void handleCopyInvite()}>
+                    Copy link
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p className="friends-hint">Your invite code will show here once your profile loads.</p>
+            )}
+            {inviteMessage && (
+              <p className={inviteMessage === 'Invite link copied.' ? 'auth-info' : 'form-error'}>
+                {inviteMessage}
+              </p>
+            )}
+          </section>
+
           <section className="friends-add">
             <h2>Add a friend</h2>
             <p className="friends-hint">Invite with their Decanti sign-in email.</p>
@@ -412,7 +475,7 @@ export function FriendsPanel({
           <section className="friends-section">
             <h3>Your friends</h3>
             {friends.length === 0 ? (
-              <p className="friends-empty">No friends yet — add someone by email above.</p>
+              <p className="friends-empty">No friends yet. Share your invite, or add someone by email.</p>
             ) : (
               <ul className="friends-list">
                 {friends.map((f) => {

@@ -22,16 +22,26 @@ export async function assertProAndScanQuota(
   proRequiredCode: string,
   quotaExceededCode: string,
 ): Promise<ScanQuotaResult> {
-  const { data: profile, error: profileError } = await admin
+  const full = await admin
     .from('profiles')
-    .select('is_pro')
+    .select('is_pro, pro_until')
     .eq('id', userId)
     .maybeSingle()
 
-  if (profileError) {
-    throw new Error(profileError.message)
+  let profile: { is_pro?: boolean | null; pro_until?: string | null } | null = null
+  if (full.error && /pro_until/.test(full.error.message)) {
+    const basic = await admin.from('profiles').select('is_pro').eq('id', userId).maybeSingle()
+    if (basic.error) throw new Error(basic.error.message)
+    profile = basic.data
+  } else if (full.error) {
+    throw new Error(full.error.message)
+  } else {
+    profile = full.data
   }
-  if (!profile?.is_pro) {
+
+  const until = profile?.pro_until ? Date.parse(profile.pro_until) : Number.NaN
+  const invitePro = Number.isFinite(until) && until > Date.now()
+  if (!profile?.is_pro && !invitePro) {
     throw new ScanPreflightError('Pro required', proRequiredCode)
   }
 

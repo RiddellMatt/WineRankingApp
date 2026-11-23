@@ -17,6 +17,7 @@ import {
 } from '../lib/webOAuth'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
 import { STORAGE_PREFIX } from '../brand'
+import { getDeviceId, loadRememberedReferralCode } from '../lib/referrals'
 import {
   friendlyAuthError,
   friendlySupabaseConfigError,
@@ -31,7 +32,12 @@ interface AuthState {
   session: Session | null
   user: User | null
   offlineMode: boolean
-  signUp: (email: string, password: string, displayName?: string) => Promise<string | null>
+  signUp: (
+    email: string,
+    password: string,
+    displayName?: string,
+    referralCode?: string,
+  ) => Promise<string | null>
   signIn: (email: string, password: string) => Promise<string | null>
   signInWithOAuth: (provider: Provider) => Promise<string | null>
   signOut: () => Promise<void>
@@ -153,14 +159,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     displayName?: string,
+    referralCode?: string,
   ): Promise<string | null> {
     const trimmedName = displayName?.trim()
+    const code = (referralCode || loadRememberedReferralCode()).trim()
+    const data: Record<string, string> = { device_id: getDeviceId() }
+    if (trimmedName) data.display_name = trimmedName
+    if (code) data.referral_code = code
     const { error } = await getSupabase().auth.signUp({
       email,
       password,
-      options: trimmedName
-        ? { data: { display_name: trimmedName } }
-        : undefined,
+      options: { data },
     })
     return error?.message ?? null
   }

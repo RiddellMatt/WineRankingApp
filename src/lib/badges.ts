@@ -34,6 +34,8 @@ export interface BadgeInput {
   friendCount: number
   /** Permanent journey completions for Pathfinder badge */
   completedJourneys?: ReadonlySet<string>
+  /** Invites that led to a new account rating a wine. */
+  referralCount?: number
 }
 
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
@@ -79,6 +81,13 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     icon: '🧭',
     thresholds: STANDARD_BADGE_THRESHOLDS,
   },
+  {
+    id: 'host',
+    title: 'Host',
+    description: 'Friends who joined with your invite and rated a wine',
+    icon: '🥂',
+    thresholds: [1, 3, 10, 25],
+  },
 ]
 
 const TIER_ORDER: BadgeTier[] = ['locked', 'bronze', 'silver', 'gold', 'diamond']
@@ -116,6 +125,8 @@ function badgeValue(id: string, input: BadgeInput): number {
       return input.friendCount
     case 'pathfinder':
       return completedJourneyCount(input.completedJourneys ?? new Set())
+    case 'host':
+      return input.referralCount ?? 0
     default:
       return 0
   }

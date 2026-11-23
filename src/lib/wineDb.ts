@@ -8,6 +8,7 @@ import { toTenPoint } from './scoreScale'
 import { normalizeTriedOn, normalizeWinePhotos } from './wineMoments'
 import { normalizePours } from './winePours'
 import { persistWinePhotos, removeWinePhotoFolder } from './winePhotos'
+import { prepareReferralForSession, retryReferralQualification } from './referrals'
 
 function wineStatusFromRow(raw: string | null | undefined): WineStatus {
   return raw === 'wishlist' ? 'wishlist' : 'tried'
@@ -111,8 +112,16 @@ export async function upsertWine(userId: string, wine: Wine, pref?: RankingPrefe
   const normalized = await persistWinePhotos(userId, ensureWineId(wine))
   const resolved = pref ?? resolveRankingPreference()
   const row = wineToRow(userId, normalized, resolved)
+  await prepareReferralForSession()
   const { error } = await getSupabase().from('wines').upsert(row)
   if (error) throw error
+  if (row.status === 'tried' && Number(row.rating) > 0) {
+    try {
+      await retryReferralQualification()
+    } catch {
+      // The wine is saved. The invite qualifies on the next rated bottle.
+    }
+  }
   return applyCompositeRating(normalized, resolved)
 }
 
@@ -145,7 +154,15 @@ export async function bulkUpsertWines(
   }
   const resolved = pref ?? resolveRankingPreference()
   const rows = normalized.map((w) => wineToRow(userId, w, resolved))
+  await prepareReferralForSession()
   const { error } = await getSupabase().from('wines').upsert(rows)
   if (error) throw error
+  if (rows.some((row) => row.status === 'tried' && Number(row.rating) > 0)) {
+    try {
+      await retryReferralQualification()
+    } catch {
+      // The cellar is saved. The invite qualifies on the next rated bottle.
+    }
+  }
   return normalized.map((w) => applyCompositeRating(w, resolved))
 }
