@@ -96,9 +96,19 @@ test('the social post reads as your friend tried a wine with their friend', () =
   assert.match(ownHtml, /with Jordan/)
 })
 
-test('social activity does not claim the feed is yours before friendships load', () => {
-  assert.equal(feed.socialActivityCaption(false, 0), 'Loading activity…')
-  assert.equal(feed.socialActivityCaption(false, 3), 'Loading activity…')
-  assert.equal(feed.socialActivityCaption(true, 0), 'Your activity until you add friends.')
-  assert.equal(feed.socialActivityCaption(true, 2), 'Friend activity and saves.')
+test('social activity stays a friend feed and leaves out your own logs', () => {
+  assert.equal(feed.socialActivityCaption(false), 'Loading activity…')
+  assert.equal(feed.socialActivityCaption(true), 'Friend activity and saves.')
+  assert.equal(feed.socialActivityCaption(true).includes('Your activity'), false)
+
+  const own = {
+    id: 'mine',
+    type: 'logged',
+    at: Date.now(),
+    actor: { id: 'viewer', displayName: 'You', email: 'me@example.com' },
+    wine: { id: 'w', name: 'Mine', winery: '', vintage: null, addedAt: Date.now() },
+  }
+  const theirs = { ...own, id: 'theirs', actor: alex, wine: { ...own.wine, id: 'w2', name: 'Theirs' } }
+  const visible = feed.withoutOwnActivity([own, theirs], 'viewer')
+  assert.deepEqual(visible.map((event) => event.id), ['theirs'])
 })

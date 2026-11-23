@@ -10,9 +10,8 @@ import {
 } from '../lib/activityReactions'
 import {
   fetchFriendActivity,
-  ownActivityActor,
-  ownRecentActivity,
   socialActivityCaption,
+  withoutOwnActivity,
   type ActivityEvent,
   type WineActivityEventType,
 } from '../lib/activityFeed'
@@ -25,18 +24,12 @@ import {
   respondToRequest,
   sendFriendRequest,
   type Friendship,
-  type FriendProfile,
 } from '../lib/friendsDb'
 import { requestNotificationsRefresh } from '../lib/notificationsRefresh'
-import { enrichActivityWithFriends } from '../lib/wineWithFriends'
 import type { RankingPreference, Wine } from '../types'
 
 interface Props {
   userId: string
-  userEmail?: string
-  userDisplayName?: string
-  userAvatarUrl?: string
-  wines: Wine[]
   rankingPreference: RankingPreference
   onViewCellar: (friendId: string, friendName: string, avatarUrl?: string) => void
   onSaveToWishlist?: (wine: Wine, friendName: string) => void | Promise<void>
@@ -83,10 +76,6 @@ function FriendIdentity({
 
 export function FriendsPanel({
   userId,
-  userEmail = '',
-  userDisplayName = '',
-  userAvatarUrl,
-  wines,
   rankingPreference,
   onViewCellar,
   onSaveToWishlist,
@@ -146,19 +135,7 @@ export function FriendsPanel({
       return
     }
     if (friendIds.length === 0) {
-      const profileMap = new Map<string, FriendProfile>()
-      profileMap.set(
-        userId,
-        ownActivityActor(userId, userDisplayName, userEmail, userAvatarUrl),
-      )
-      for (const f of friends) {
-        if (f.friend) profileMap.set(f.friend.id, f.friend)
-      }
-      const events = enrichActivityWithFriends(
-        ownRecentActivity(userId, userDisplayName, userEmail, userAvatarUrl, wines, 10),
-        profileMap,
-      )
-      setActivity(events)
+      setActivity([])
       setActivityLoading(false)
       return
     }
@@ -167,7 +144,7 @@ export function FriendsPanel({
     try {
       const events = await fetchFriendActivity(friendIds, 30)
       const withReactions = await attachReactionsToEvents(events, userId)
-      setActivity(withReactions)
+      setActivity(withoutOwnActivity(withReactions, userId))
     } catch (e) {
       setError(String((e as Error).message ?? e))
       setActivity([])
@@ -178,11 +155,6 @@ export function FriendsPanel({
     friendshipsLoaded,
     friendIds,
     userId,
-    userDisplayName,
-    userEmail,
-    userAvatarUrl,
-    wines,
-    friends,
   ])
 
   useEffect(() => {
@@ -201,7 +173,7 @@ export function FriendsPanel({
   const feedEmptyHint = !friendshipsLoaded
     ? 'Loading activity…'
     : friendIds.length === 0
-      ? 'Add a friend or log a wine to see activity here.'
+      ? 'Add a friend to see activity here.'
       : 'No friend activity yet.'
 
   async function handleAddFriend() {
@@ -346,7 +318,7 @@ export function FriendsPanel({
       {tab === 'feed' ? (
         <section className="friends-section">
           <h2>Recent activity</h2>
-          <p className="friends-hint">{socialActivityCaption(friendshipsLoaded, friendIds.length)}</p>
+          <p className="friends-hint">{socialActivityCaption(friendshipsLoaded)}</p>
           <ActivityFeed
             events={activity}
             viewerId={userId}

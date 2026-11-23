@@ -263,31 +263,19 @@ export function mergeOwnActivity(
   return [...wineEvents, ...milestones].sort((a, b) => b.at - a.at).slice(0, limit)
 }
 
-/**
- * Caption under Social → Recent activity.
- * Stay neutral until friendships are known. An empty friend list is the
- * starting state, and treating that as "your activity" flashes the wrong
- * feed for a moment before friend activity replaces it.
- */
-export function socialActivityCaption(friendshipsLoaded: boolean, friendCount: number): string {
-  if (!friendshipsLoaded) return 'Loading activity…'
-  if (friendCount === 0) return 'Your activity until you add friends.'
-  return 'Friend activity and saves.'
+/** Drop the viewer's own logs. Those stay on Profile, not in Social. */
+export function withoutOwnActivity(events: ActivityEvent[], viewerId: string): ActivityEvent[] {
+  return events.filter((event) => event.actor.id !== viewerId)
 }
 
-/** Fallback when the user has no friends yet — show their own recent logs. */
-export function ownRecentActivity(
-  userId: string,
-  displayName: string,
-  email: string,
-  avatarUrl: string | undefined,
-  wines: Wine[],
-  limit = 8,
-): ActivityEvent[] {
-  const actor = ownActivityActor(userId, displayName, email, avatarUrl)
-  return wineEventsFromCellar(userId, actor, wines)
-    .sort((a, b) => b.at - a.at)
-    .slice(0, limit)
+/**
+ * Caption under Social → Recent activity.
+ * Stay neutral until friendships are known. Social only shows friends;
+ * the signed-in person's own logs stay on Profile.
+ */
+export function socialActivityCaption(friendshipsLoaded: boolean): string {
+  if (!friendshipsLoaded) return 'Loading activity…'
+  return 'Friend activity and saves.'
 }
 
 export function actorLabel(actor: FriendProfile, viewerId: string): string {
