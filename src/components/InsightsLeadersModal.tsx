@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { formatActivityTime } from '../lib/activityFeed'
 import { lockAppScroll } from '../lib/lockAppScroll'
 import { compositeScore } from '../lib/ranking'
+import { formatScoreOutOf } from '../lib/scoreScale'
 import type { InsightsLeaderKind } from '../lib/insightsLeaders'
 import type { RankingPreference, Wine } from '../types'
 
@@ -48,7 +49,7 @@ export function InsightsLeadersModal({ kind, wines, rankingPreference, onClose }
                       <p className="insights-leader-name">{title}</p>
                       <p className="insights-leader-sub">
                         {wine.price != null && wine.price > 0 ? `$${wine.price.toFixed(0)}` : '—'}
-                        {score > 0 ? ` · ${score.toFixed(1)}★` : ''}
+                        {score > 0 ? ` · ${formatScoreOutOf(score)}` : ''}
                       </p>
                     </div>
                     <span className="insights-leader-when">{formatActivityTime(wine.addedAt)}</span>

@@ -141,6 +141,13 @@ export function SettingsMenu({
         ]
       : []),
     {
+      kind: 'nav',
+      id: 'rating-tips',
+      label: 'Rating tips',
+      detail: 'How to think about 1 through 10',
+      icon: <IconScale />,
+    },
+    {
       kind: 'link',
       id: 'terms',
       label: 'Terms of use',
@@ -390,6 +397,18 @@ function IconBell() {
         strokeLinejoin="round"
       />
       <path d="M10 20a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconScale() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 15h16" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+      <path d="M4 15h6" stroke="#c4473a" strokeWidth="3" strokeLinecap="round" />
+      <path d="M10 15h5" stroke="#e2b43a" strokeWidth="3" strokeLinecap="round" />
+      <path d="M15 15h5" stroke="#2f8a45" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="16" cy="15" r="2.2" fill="currentColor" />
     </svg>
   )
 }

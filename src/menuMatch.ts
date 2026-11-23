@@ -2,6 +2,7 @@ import type { RankingPreference, Wine } from './types'
 import { REGIONS, VARIETALS } from './scanner'
 import { containsPhrase, findPhrase, findRegion } from './textMatch'
 import { compositeScore, wineEnjoyment } from './lib/ranking'
+import { formatScoreAverage, formatScoreOutOf } from './lib/scoreScale'
 import { formatMenuWineLine, normalizeMenuWineFields } from './lib/menuWineParse'
 
 export interface ParsedMenuWine {
@@ -246,7 +247,7 @@ export function matchParsedMenuWines(
   const typePrefs = preferencesBy(cellar, (w) => w.type, rankingPreference)
   const lovedRegions = new Map<string, Wine>()
   for (const w of cellar) {
-    if (wineEnjoyment(w) >= 4 && w.region.trim()) {
+    if (wineEnjoyment(w) >= 8 && w.region.trim()) {
       for (const region of REGIONS) {
         if (containsPhrase(w.region, region)) lovedRegions.set(region, w)
       }
@@ -279,22 +280,22 @@ export function matchParsedMenuWines(
 
     if (cellarWine) {
       const cellarScore = compositeScore(cellarWine, rankingPreference)
-      score = cellarScore * 20
-      reasons.push(`In your cellar — you rated it ${cellarScore.toFixed(1)}★`)
+      score = cellarScore * 10
+      reasons.push(`In your cellar — you rated it ${formatScoreOutOf(cellarScore)}`)
     } else {
       const pref = varietalHit ? varietalPrefs.get(varietalHit[0]) : undefined
       const typePref = varietalHit ? typePrefs.get(varietalHit[1].toLowerCase()) : undefined
       if (pref) {
-        score = pref.avg * 18 + 5
+        score = pref.avg * 9 + 5
         const label = varietalHit![0].replace(/(^|\s)\S/g, (c) => c.toUpperCase())
         reasons.push(
-          `You average ${pref.avg.toFixed(1)}★ across ${pref.count} ${label} ${
+          `You average ${formatScoreAverage(pref.avg)} across ${pref.count} ${label} ${
             pref.count === 1 ? 'wine' : 'wines'
           }`,
         )
       } else if (typePref) {
-        score = typePref.avg * 15 + 5
-        reasons.push(`You average ${typePref.avg.toFixed(1)}★ on ${varietalHit![1]} wines`)
+        score = typePref.avg * 7.5 + 5
+        reasons.push(`You average ${formatScoreAverage(typePref.avg)} on ${varietalHit![1]} wines`)
       } else {
         score = 50
         reasons.push(

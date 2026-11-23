@@ -48,10 +48,12 @@ export interface Wine {
   varietal: string
   region: string
   price: number | null
-  /** How much you liked drinking it (0.5–5). */
+  /** How much you liked drinking it, from 0 to 10 in quarter steps. 0 means unset. */
   ratingEnjoyment: number
-  /** Worth the price — optional; used in composite rank when set. */
+  /** Worth the price — optional; used in composite rank when set. Same 0–10 scale. */
   ratingValue?: number | null
+  /** 10 = current quarter-step scores. Missing or 5 = legacy half stars out of 5. */
+  ratingScale?: 5 | 10
   /** Would buy again — optional; shown on cards, not in composite rank. */
   ratingBuyAgain?: number | null
   /** Composite score cached at save time; use compositeScore() for display with current preference. */

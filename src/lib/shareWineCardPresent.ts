@@ -1,4 +1,5 @@
 import { APP_NAME } from '../brand'
+import { formatScoreOutOf } from './scoreScale'
 import { isNativeApp } from './platform'
 import type { ShareCardFormatId } from './shareCardFormats'
 import {
@@ -35,7 +36,7 @@ export async function presentWineCardShareSheet(
   const blob = await renderShareWineCard(input, formatId)
   const filename = shareWineCardFilename(input.wine, formatId)
   const title = input.wine.vintage ? `${input.wine.name} ${input.wine.vintage}` : input.wine.name
-  const text = `${title} — ${input.score.toFixed(1)}★ on ${APP_NAME}`
+  const text = `${title} — ${formatScoreOutOf(input.score)} on ${APP_NAME}`
 
   if (isNativeApp()) {
     const { Filesystem, Directory } = await import('@capacitor/filesystem')

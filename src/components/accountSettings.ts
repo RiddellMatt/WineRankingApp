@@ -5,6 +5,7 @@ export type AccountSettingsSection =
   | 'appearance'
   | 'notifications'
   | 'ranking'
+  | 'rating-tips'
 
 export const SETTINGS_SECTION_TITLES: Record<AccountSettingsSection, string> = {
   menu: 'Settings',
@@ -13,4 +14,5 @@ export const SETTINGS_SECTION_TITLES: Record<AccountSettingsSection, string> = {
   appearance: 'Appearance',
   notifications: 'Notification settings',
   ranking: 'Ranking preference',
+  'rating-tips': 'Rating tips',
 }

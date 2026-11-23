@@ -1,6 +1,7 @@
 import type { RankingPreference, Wine } from '../types'
 import { STORAGE_PREFIX } from '../brand'
 import { normalizeTriedOn, normalizeWinePhotos } from './wineMoments'
+import { snapScore, toTenPoint } from './scoreScale'
 
 export const RANKING_PREFERENCE_OPTIONS: {
   value: RankingPreference
@@ -55,9 +56,9 @@ export function compositeScore(
 ): number {
   const enjoyment = wineEnjoyment(wine)
   const value = wineValueScore(wine)
-  if (value == null) return enjoyment
+  if (value == null) return snapScore(enjoyment)
   const weights = getScoreWeights(pref)
-  return Math.round((enjoyment * weights.enjoyment + value * weights.value) * 10) / 10
+  return snapScore(enjoyment * weights.enjoyment + value * weights.value)
 }
 
 export function compareByRank(a: Wine, b: Wine, pref: RankingPreference): number {
@@ -106,7 +107,8 @@ export function needsRankingPreferenceSetup(
 
 /** Backfill legacy exports and old saves that only had `rating`. */
 export function normalizeWine(raw: Partial<Wine>): Wine {
-  const enjoyment = raw.ratingEnjoyment ?? raw.rating ?? 0
+  const scale = raw.ratingScale === 10 ? 10 : 5
+  const enjoyment = toTenPoint(raw.ratingEnjoyment ?? raw.rating ?? 0, scale)
   const pref = loadLocalRankingPreference() ?? 'balanced'
   const wine: Wine = {
     id: raw.id ?? crypto.randomUUID(),
@@ -118,7 +120,9 @@ export function normalizeWine(raw: Partial<Wine>): Wine {
     region: raw.region ?? '',
     price: raw.price ?? null,
     ratingEnjoyment: enjoyment,
-    ratingValue: raw.ratingValue ?? null,
+    ratingValue:
+      raw.ratingValue != null && raw.ratingValue > 0 ? toTenPoint(raw.ratingValue, scale) : null,
+    ratingScale: 10,
     ratingBuyAgain: raw.ratingBuyAgain ?? null,
     rating: raw.rating ?? enjoyment,
     notes: raw.notes ?? '',
