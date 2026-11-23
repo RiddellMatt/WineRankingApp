@@ -64,8 +64,10 @@ export interface Wine {
   /** Accepted friends tagged on this pour (Beli-style "with you"). */
   withFriendIds?: string[]
   purchasedAt: string
-  /** Calendar day the bottle was tasted, YYYY-MM-DD. Optional. */
+  /** Calendar day the bottle was first tasted, YYYY-MM-DD. Optional. */
   triedOn?: string | null
+  /** Later times this same bottle was opened. The cellar count is 1 plus this list. */
+  pours?: { triedOn: string | null }[]
   /** Photo URLs or local data URLs. Optional. */
   photos?: string[]
   taste: TasteProfile

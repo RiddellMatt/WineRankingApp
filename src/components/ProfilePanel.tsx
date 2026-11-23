@@ -6,13 +6,14 @@ import { OwnActivityFeed } from './OwnActivityFeed'
 import { WinePassport } from './WinePassport'
 import { mergeOwnActivity } from '../lib/activityFeed'
 import { fetchUserMilestoneEvents, type ActivityEventRow } from '../lib/activityEventsDb'
+import { enrichActivityWithFriends } from '../lib/wineWithFriends'
 import { isSupabaseConfigured } from '../lib/supabase'
 import {
   computeDisplayedBadgeProgress,
   isBadgeTestingEnabled,
   resetEarnedBadgeProgressForTesting,
 } from '../lib/badgeUnlocks'
-import { fetchFriendships } from '../lib/friendsDb'
+import { fetchFriendships, type FriendProfile } from '../lib/friendsDb'
 import { computePlayerLevel } from '../lib/playerLevel'
 import { ProfileLevelBar } from './ProfileLevelBar'
 import type { UserProfile } from '../lib/profileDb'
@@ -41,6 +42,7 @@ export function ProfilePanel({
 }: Props) {
   const [tab, setTab] = useState<ProfileTab>('activity')
   const [friendCount, setFriendCount] = useState(0)
+  const [friendProfiles, setFriendProfiles] = useState<Map<string, FriendProfile>>(() => new Map())
   const [milestoneRows, setMilestoneRows] = useState<ActivityEventRow[]>([])
   const [tiersOpen, setTiersOpen] = useState(false)
 
@@ -49,8 +51,19 @@ export function ProfilePanel({
 
   useEffect(() => {
     fetchFriendships(profile.id)
-      .then((rows) => setFriendCount(rows.filter((f) => f.status === 'accepted').length))
-      .catch(() => setFriendCount(0))
+      .then((rows) => {
+        const accepted = rows.filter((row) => row.status === 'accepted')
+        setFriendCount(accepted.length)
+        const profiles = new Map<string, FriendProfile>()
+        for (const row of accepted) {
+          if (row.friend) profiles.set(row.friend.id, row.friend)
+        }
+        setFriendProfiles(profiles)
+      })
+      .catch(() => {
+        setFriendCount(0)
+        setFriendProfiles(new Map())
+      })
   }, [profile.id])
 
   useEffect(() => {
@@ -75,16 +88,28 @@ export function ProfilePanel({
 
   const activity = useMemo(
     () =>
-      mergeOwnActivity(
-        profile.id,
-        displayName,
-        profile.email ?? email ?? '',
-        profile.avatarUrl,
-        wines,
-        milestoneRows,
-        40,
+      enrichActivityWithFriends(
+        mergeOwnActivity(
+          profile.id,
+          displayName,
+          profile.email ?? email ?? '',
+          profile.avatarUrl,
+          wines,
+          milestoneRows,
+          40,
+        ),
+        friendProfiles,
       ),
-    [profile.id, displayName, profile.email, profile.avatarUrl, email, wines, milestoneRows],
+    [
+      profile.id,
+      displayName,
+      profile.email,
+      profile.avatarUrl,
+      email,
+      wines,
+      milestoneRows,
+      friendProfiles,
+    ],
   )
 
   const badgeTestingEnabled = isBadgeTestingEnabled()
@@ -151,7 +176,7 @@ export function ProfilePanel({
         <section className="profile-tab-panel">
           <OwnActivityFeed
             events={activity}
-            rankingPreference={rankingPreference}
+            viewerId={profile.id}
             emptyHint="Log or save wines in Scan to see activity here."
           />
         </section>

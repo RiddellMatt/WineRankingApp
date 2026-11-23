@@ -6,6 +6,7 @@ import { assertCleanText } from './contentFilter'
 import { applyCompositeRating, resolveRankingPreference, wineEnjoyment } from './ranking'
 import { toTenPoint } from './scoreScale'
 import { normalizeTriedOn, normalizeWinePhotos } from './wineMoments'
+import { normalizePours } from './winePours'
 import { persistWinePhotos, removeWinePhotoFolder } from './winePhotos'
 
 function wineStatusFromRow(raw: string | null | undefined): WineStatus {
@@ -48,6 +49,7 @@ export function wineFromRow(row: WineRow): Wine {
     withFriendIds: normalizeWithFriendIds(row.with_friend_ids),
     purchasedAt: row.purchased_at,
     triedOn: normalizeTriedOn(row.tried_on),
+    pours: normalizePours(row.pours),
     photos: normalizeWinePhotos(row.photo_urls),
     taste: (row.taste ?? {}) as TasteProfile,
     tasteSource: row.taste_source === 'custom' ? 'custom' : row.taste_source === 'typical' ? 'typical' : undefined,
@@ -83,6 +85,7 @@ export function wineToRow(
     with_friend_ids: normalizeWithFriendIds(normalized.withFriendIds),
     purchased_at: normalized.purchasedAt,
     tried_on: normalizeTriedOn(normalized.triedOn),
+    pours: normalizePours(normalized.pours),
     photo_urls: normalizeWinePhotos(normalized.photos),
     taste: (normalized.taste ?? {}) as Record<string, number>,
     taste_source: normalized.tasteSource ?? null,

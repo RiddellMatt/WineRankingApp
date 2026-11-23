@@ -11,6 +11,7 @@ import { IconHeart, IconMapPin, IconPencil, IconTrash } from './icons/UiIcons'
 import { ShopForWine } from './ShopForWine'
 import { WinePhotoStrip } from './WinePhotoStrip'
 import { formatTriedOn } from '../lib/wineMoments'
+import { tastingMoments, timesTried } from '../lib/winePours'
 
 function WineScore({
   score,
@@ -133,16 +134,26 @@ export function WineCard({
         </div>
         {wine.winery && <p className="wine-winery">{wine.winery}</p>}
         {meta && <p className="wine-meta">{meta}</p>}
-        {(wine.triedOn || wine.purchasedAt) && (
-          <p className="wine-purchased">
-            {wine.triedOn && <span>Tried {formatTriedOn(wine.triedOn)}</span>}
-            {wine.triedOn && wine.purchasedAt ? <span aria-hidden="true"> · </span> : null}
-            {wine.purchasedAt && (
-              <>
-                <IconMapPin className="wine-purchased-icon" />
-                {wine.purchasedAt}
-              </>
+        {wine.status !== 'wishlist' && (
+          <div className="wine-tastings">
+            <p className="wine-times">
+              {timesTried(wine) === 1 ? 'Tried once' : `Tried ${timesTried(wine)} times`}
+            </p>
+            {(tastingMoments(wine).length > 1 || tastingMoments(wine).some((moment) => moment.triedOn)) && (
+              <ul className="wine-tasting-dates">
+                {[...tastingMoments(wine)].reverse().map((moment, index) => (
+                  <li key={`${moment.triedOn ?? 'undated'}-${index}`}>
+                    {moment.triedOn ? formatTriedOn(moment.triedOn) : 'Date not recorded'}
+                  </li>
+                ))}
+              </ul>
             )}
+          </div>
+        )}
+        {wine.purchasedAt && (
+          <p className="wine-purchased">
+            <IconMapPin className="wine-purchased-icon" />
+            {wine.purchasedAt}
           </p>
         )}
         <WinePhotoStrip photos={wine.photos ?? []} />

@@ -14,12 +14,20 @@ import { hasTaste, lookupTaste } from '../tasteData'
 import { WINE_TYPES, type RankingPreference, type TasteProfile, type Wine, type WineType } from '../types'
 import { catalogTags } from '../lib/tastingTags'
 import { triedWines } from '../lib/wishlist'
-import { dismissKeyboard, focusNextTextField, isTextField } from '../lib/keyboardInset'
+import {
+  dismissKeyboard,
+  focusNextTextField,
+  isTextField,
+  shouldDismissKeyboardOnScroll,
+} from '../lib/keyboardInset'
 import { canonicalVarietal, isListedVarietal, typeForVarietal, varietalFitsType } from '../lib/wineVarietals'
 import { ScoreReadout, ScoreSlider } from './ScoreSlider'
 import { TasteInput } from './TasteProfile'
 import { TastingTagsInput } from './TastingTagsInput'
 import { TriedOnField } from './TriedOnField'
+import { DuplicateWineDialog } from './DuplicateWineDialog'
+import { findCellarDuplicate, normalizePours, type Pour } from '../lib/winePours'
+import { isoDateFromLocal, normalizeTriedOn } from '../lib/wineMoments'
 import { WinePhotoField } from './WinePhotoField'
 import { VarietalSelect } from './VarietalSelect'
 import { RegionPicker } from './RegionPicker'
@@ -43,6 +51,8 @@ interface Props {
   /** Open the label scan file picker once when adding a new wine. */
   autoOpenScan?: boolean
   userId?: string
+  /** Close this form and show the cellar card for a wine already saved. */
+  onViewExisting?: (wine: Wine) => void
 }
 
 export function WineForm({
@@ -59,6 +69,7 @@ export function WineForm({
   onUpgrade,
   autoOpenScan = false,
   userId,
+  onViewExisting,
 }: Props) {
   const wishlistForm = formMode === 'wishlist'
   const promoteFromWishlist = initial?.status === 'wishlist' && !wishlistForm
@@ -71,6 +82,10 @@ export function WineForm({
   const [price, setPrice] = useState(initial?.price?.toString() ?? '')
   const [purchasedAt, setPurchasedAt] = useState(initial?.purchasedAt ?? '')
   const [triedOn, setTriedOn] = useState<string | null>(initial?.triedOn ?? null)
+  const [pours, setPours] = useState<Pour[]>(() => normalizePours(initial?.pours))
+  const [duplicate, setDuplicate] = useState<Wine | null>(null)
+  const allowDuplicateRef = useRef(false)
+  const pendingWineRef = useRef<Wine | null>(null)
   const [photos, setPhotos] = useState<string[]>(initial?.photos ?? [])
   const [ratingEnjoyment, setRatingEnjoyment] = useState(
     initial?.ratingEnjoyment ?? initial?.rating ?? 0,
@@ -97,6 +112,7 @@ export function WineForm({
   const [aiPreviewUrl, setAiPreviewUrl] = useState<string | null>(null)
   const scanInputRef = useRef<HTMLInputElement>(null)
   const formBodyRef = useRef<HTMLDivElement>(null)
+  const ignoreCloseUntil = useRef(0)
   const aiScanBaselineRef = useRef<LabelScanBaseline | null>(null)
   const aiAvailable = pro && signedIn && cloudConfigured
   const triedCellar = useMemo(() => triedWines(cellarWines), [cellarWines])
@@ -105,7 +121,24 @@ export function WineForm({
     if (scanState !== 'done' && scanState !== 'failed') return
     dismissKeyboard()
     formBodyRef.current?.scrollTo({ top: 0 })
+    // The photo picker hands focus back after it closes. Blur again so the
+    // keyboard stays down until the person taps a field.
+    const timers = [80, 320, 700].map((ms) => window.setTimeout(dismissKeyboard, ms))
+    return () => timers.forEach((timer) => window.clearTimeout(timer))
   }, [scanState])
+
+  function armCloseGuard() {
+    ignoreCloseUntil.current = Date.now() + 650
+  }
+
+  function closeBlocked(): boolean {
+    return Date.now() < ignoreCloseUntil.current
+  }
+
+  function requestClose() {
+    if (closeBlocked()) return
+    onClose()
+  }
 
   useEffect(() => {
     if (!autoOpenScan || initial) return
@@ -364,6 +397,7 @@ export function WineForm({
         withFriendIds: wishlistForm ? [] : normalizeWithFriendIds(withFriendIds),
         purchasedAt: purchasedAt.trim(),
         triedOn: wishlistForm ? null : triedOn,
+        pours: wishlistForm ? [] : normalizePours(pours),
         photos: wishlistForm ? [] : photos,
         taste: wishlistForm ? {} : taste,
         tasteSource: wishlistForm ? undefined : tasteTouched ? 'custom' : 'typical',
@@ -389,7 +423,27 @@ export function WineForm({
       })
       aiScanBaselineRef.current = null
     }
+    const checkingNewTried = !wishlistForm && (!initial || initial.status === 'wishlist')
+    if (checkingNewTried && !allowDuplicateRef.current) {
+      const match = findCellarDuplicate(cellarWines, wine)
+      if (match) {
+        pendingWineRef.current = wine
+        setDuplicate(match)
+        return
+      }
+    }
+    allowDuplicateRef.current = false
+    setDuplicate(null)
     onSave(wine)
+  }
+
+  function recordAgain(triedOnAgain: string | null) {
+    if (!duplicate) return
+    const date = normalizeTriedOn(triedOnAgain)
+    onSave({
+      ...duplicate,
+      pours: [...normalizePours(duplicate.pours), { triedOn: date }],
+    })
   }
 
   const modalTitle = promoteFromWishlist
@@ -419,10 +473,27 @@ export function WineForm({
   return (
     <div
       className="modal-backdrop wine-form-backdrop"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      onMouseDown={(e) => {
+        if (e.target !== e.currentTarget) return
+        // A tap outside a field is how the keyboard goes away. Closing the
+        // sheet on that same tap throws away the wine they just scanned.
+        if (closeBlocked() || isTextField(document.activeElement)) {
+          armCloseGuard()
+          dismissKeyboard()
+          return
+        }
+        onClose()
+      }}
     >
       <ScanPourOverlay open={aiScanning} variant="label" previewUrl={aiPreviewUrl} />
-      <form className="modal wine-form-modal" onSubmit={handleSubmit} onKeyDown={onFormKeyDown}>
+      <form
+        className="modal wine-form-modal"
+        onSubmit={handleSubmit}
+        onKeyDown={onFormKeyDown}
+        onBlur={(e) => {
+          if (isTextField(e.target)) armCloseGuard()
+        }}
+      >
         <div className="modal-header">
           <div className="modal-header-titles">
             <h2>{modalTitle}</h2>
@@ -435,7 +506,22 @@ export function WineForm({
           </button>
         </div>
 
-        <div className="wine-form-body" ref={formBodyRef}>
+        <div
+          className="wine-form-body"
+          ref={formBodyRef}
+          onScroll={() => {
+            if (!shouldDismissKeyboardOnScroll()) return
+            armCloseGuard()
+            dismissKeyboard()
+          }}
+          onPointerDown={(e) => {
+            if (!(e.target instanceof Element)) return
+            if (e.target.closest('input, textarea, select, button, a, label')) return
+            if (!isTextField(document.activeElement)) return
+            armCloseGuard()
+            dismissKeyboard()
+          }}
+        >
         {!initial && (
           <div className="scan-box">
             <button
@@ -599,6 +685,56 @@ export function WineForm({
         {!wishlistForm && (
           <>
             <TriedOnField value={triedOn} onChange={setTriedOn} />
+            <div className="repeat-pours">
+              <div className="tried-on-label">
+                <span>Had it again</span>
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() =>
+                    setPours((current) => [
+                      ...current,
+                      { triedOn: isoDateFromLocal(new Date()) },
+                    ])
+                  }
+                >
+                  Add a date
+                </button>
+              </div>
+              <p className="form-rating-hint">
+                {pours.length === 0
+                  ? 'The date above is the first time. Add a date each time you have it again.'
+                  : `Tried ${1 + pours.length} times.`}
+              </p>
+              {pours.map((pour, index) => (
+                <div className="repeat-pour-row" key={`${pour.triedOn ?? 'open'}-${index}`}>
+                  <input
+                    type="date"
+                    aria-label={`Date for time ${index + 2}`}
+                    value={pour.triedOn ?? ''}
+                    max={isoDateFromLocal(new Date())}
+                    onChange={(e) =>
+                      setPours((current) =>
+                        current.map((item, itemIndex) =>
+                          itemIndex === index
+                            ? { triedOn: normalizeTriedOn(e.target.value) }
+                            : item,
+                        ),
+                      )
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() =>
+                      setPours((current) => current.filter((_, itemIndex) => itemIndex !== index))
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
             <WinePhotoField photos={photos} onChange={setPhotos} />
           </>
         )}
@@ -670,7 +806,7 @@ export function WineForm({
         </div>
 
         <div className="modal-actions">
-          <button type="button" className="btn ghost" onClick={onClose}>
+          <button type="button" className="btn ghost" onClick={requestClose}>
             Cancel
           </button>
           <button type="submit" className="btn primary">
@@ -678,6 +814,25 @@ export function WineForm({
           </button>
         </div>
       </form>
+      {duplicate && (
+        <DuplicateWineDialog
+          existing={duplicate}
+          onDismiss={() => setDuplicate(null)}
+          onView={() => {
+            const match = duplicate
+            setDuplicate(null)
+            if (onViewExisting) onViewExisting(match)
+            else onClose()
+          }}
+          onLogAnyway={() => {
+            allowDuplicateRef.current = true
+            setDuplicate(null)
+            const pending = pendingWineRef.current
+            if (pending) onSave(pending)
+          }}
+          onHadAgain={recordAgain}
+        />
+      )}
     </div>
   )
 }
