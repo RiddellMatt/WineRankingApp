@@ -58,10 +58,19 @@ function findScroller(el: HTMLElement): HTMLElement | null {
   return null
 }
 
+let suppressScrollDismiss = 0
+
+/** True when a finger-scroll should put the keyboard away so the rest of the form is visible. */
+export function shouldDismissKeyboardOnScroll(): boolean {
+  if (suppressScrollDismiss > 0) return false
+  return keyboardOverlap() > 0 || document.documentElement.classList.contains('keyboard-open')
+}
+
 /** Slide the focused field (and its label) into the band above the keyboard. */
 export function revealFocusedField(): void {
   const el = document.activeElement
   if (!isField(el)) return
+  suppressScrollDismiss += 1
   const label = el.closest('label')
   const target = label instanceof HTMLElement ? label : el
   const scroller = findScroller(el)
@@ -74,16 +83,29 @@ export function revealFocusedField(): void {
   let delta = 0
   if (rect.bottom > viewBottom) delta = rect.bottom - viewBottom
   else if (rect.top < viewTop) delta = rect.top - viewTop
-  if (Math.abs(delta) < 1) return
+  if (Math.abs(delta) < 1) {
+    queueMicrotask(() => {
+      suppressScrollDismiss = Math.max(0, suppressScrollDismiss - 1)
+    })
+    return
+  }
   if (scroller) scroller.scrollTop += delta
   else window.scrollBy(0, delta)
+  queueMicrotask(() => {
+    suppressScrollDismiss = Math.max(0, suppressScrollDismiss - 1)
+  })
 }
 
 /** Close the software keyboard. A finished scan should leave the fields visible, not covered. */
 export function dismissKeyboard(): void {
   const active = document.activeElement
   if (active instanceof HTMLElement && active !== document.body) active.blur()
-  if (isNativeApp()) void Keyboard.hide()
+  if (isNativeApp()) {
+    void Keyboard.hide()
+    return
+  }
+  nativeReported = 0
+  publish()
 }
 
 export function focusNextTextField(current: HTMLElement, root: ParentNode = document): boolean {

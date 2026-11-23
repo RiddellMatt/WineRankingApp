@@ -3925,6 +3925,12 @@ html.keyboard-open .wine-form-modal {
   align-self: stretch;
 }
 
+/* The save row sits where a keyboard-dismiss tap lands, and it eats the few
+   visible rows. Bring it back once the keyboard is gone. */
+html.keyboard-open .wine-form-modal .modal-actions {
+  display: none;
+}
+
 .wine-form-modal .modal-header {
   flex-shrink: 0;
 }
