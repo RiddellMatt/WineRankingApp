@@ -10,7 +10,7 @@ import { isNativeApp } from '../lib/platform'
 export function AuthScreen() {
   const theme = useAppTheme()
   const showThemeLogo = usesThemeWordmarkLogo(theme)
-  const { signIn, signUp, signInWithOAuth, continueOffline, user, configError } = useAuth()
+  const { signIn, signUp, signInWithOAuth, user, configError } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
@@ -172,11 +172,6 @@ export function AuthScreen() {
         >
           {mode === 'signin' ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
         </button>
-
-        <button type="button" className="btn ghost auth-offline" onClick={continueOffline}>
-          Continue without an account
-        </button>
-        <p className="auth-offline-note">Data stays on this device until you sign in.</p>
       </div>
     </div>
   )

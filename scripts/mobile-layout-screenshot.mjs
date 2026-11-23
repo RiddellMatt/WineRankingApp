@@ -60,7 +60,7 @@ async function main() {
     document.documentElement.classList.add('native-app')
     document.body.classList.add('native-app')
     localStorage.setItem('decanti.wines.v1', JSON.stringify(wines))
-    localStorage.setItem('decanti.offline-mode', 'true')
+    localStorage.removeItem('decanti.offline-mode')
     localStorage.setItem('decanti.ranking-preference-setup-done', '1')
     localStorage.setItem('decanti.ranking-preference', 'enjoyment')
   }, sampleWines)
@@ -68,10 +68,9 @@ async function main() {
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60000 })
   // Auth/session bootstrap on configured builds can take a few seconds.
   await page.waitForTimeout(2500)
-  const offlineBtn = page.getByRole('button', { name: /Continue without an account/i })
-  if (await offlineBtn.isVisible().catch(() => false)) {
-    await offlineBtn.click()
-    await page.waitForTimeout(800)
+  const signInRequired = page.getByRole('button', { name: /^Sign in$/i })
+  if (await signInRequired.isVisible().catch(() => false)) {
+    throw new Error('Sign-in is required on this build. The layout check needs an unconfigured app or an existing session.')
   }
   await page.waitForSelector('nav.tabs', { timeout: 20000 })
 
