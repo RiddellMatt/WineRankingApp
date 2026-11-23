@@ -95,3 +95,10 @@ test('the social post reads as your friend tried a wine with their friend', () =
   assert.match(ownHtml, /Barolo/)
   assert.match(ownHtml, /with Jordan/)
 })
+
+test('social activity does not claim the feed is yours before friendships load', () => {
+  assert.equal(feed.socialActivityCaption(false, 0), 'Loading activity…')
+  assert.equal(feed.socialActivityCaption(false, 3), 'Loading activity…')
+  assert.equal(feed.socialActivityCaption(true, 0), 'Your activity until you add friends.')
+  assert.equal(feed.socialActivityCaption(true, 2), 'Friend activity and saves.')
+})

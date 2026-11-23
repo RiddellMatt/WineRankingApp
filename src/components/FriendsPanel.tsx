@@ -12,6 +12,7 @@ import {
   fetchFriendActivity,
   ownActivityActor,
   ownRecentActivity,
+  socialActivityCaption,
   type ActivityEvent,
   type WineActivityEventType,
 } from '../lib/activityFeed'
@@ -100,7 +101,7 @@ export function FriendsPanel({
   const [blocked, setBlocked] = useState<BlockedPerson[]>([])
   const [friendshipsLoaded, setFriendshipsLoaded] = useState(false)
   const [activity, setActivity] = useState<ActivityEvent[]>([])
-  const [activityLoading, setActivityLoading] = useState(false)
+  const [activityLoading, setActivityLoading] = useState(true)
   const [togglingReactionKey, setTogglingReactionKey] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
@@ -145,7 +146,6 @@ export function FriendsPanel({
       return
     }
     if (friendIds.length === 0) {
-      setActivityLoading(false)
       const profileMap = new Map<string, FriendProfile>()
       profileMap.set(
         userId,
@@ -159,8 +159,10 @@ export function FriendsPanel({
         profileMap,
       )
       setActivity(events)
+      setActivityLoading(false)
       return
     }
+    setActivity([])
     setActivityLoading(true)
     try {
       const events = await fetchFriendActivity(friendIds, 30)
@@ -196,8 +198,9 @@ export function FriendsPanel({
     (f) => f.status === 'pending' && f.requesterId === userId,
   )
 
-  const feedEmptyHint =
-    friendIds.length === 0
+  const feedEmptyHint = !friendshipsLoaded
+    ? 'Loading activity…'
+    : friendIds.length === 0
       ? 'Add a friend or log a wine to see activity here.'
       : 'No friend activity yet.'
 
@@ -343,9 +346,7 @@ export function FriendsPanel({
       {tab === 'feed' ? (
         <section className="friends-section">
           <h2>Recent activity</h2>
-          <p className="friends-hint">
-            {friendIds.length === 0 ? 'Your activity until you add friends.' : 'Friend activity and saves.'}
-          </p>
+          <p className="friends-hint">{socialActivityCaption(friendshipsLoaded, friendIds.length)}</p>
           <ActivityFeed
             events={activity}
             viewerId={userId}

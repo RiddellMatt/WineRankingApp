@@ -3428,11 +3428,11 @@ button.tasting-tag-pill-btn.active {
 
 .rating-tip-list {
   list-style: none;
-  margin: 0.4rem 0 0;
+  margin: 0.85rem 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 1rem;
 }
 
 .rating-tip-list li {
@@ -3457,12 +3457,32 @@ button.tasting-tag-pill-btn.active {
 .rating-tip-copy {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 0.55rem;
   min-width: 0;
+  padding-top: 0.15rem;
+}
+
+.rating-tip-axis {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+}
+
+.rating-tip-kind {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.rating-tip-axis-text {
+  line-height: 1.4;
 }
 
 .rating-tip-title {
   font-weight: 600;
+  color: var(--text);
 }
 
 .rating-tip-body {
