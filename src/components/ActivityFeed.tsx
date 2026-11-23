@@ -236,7 +236,7 @@ export function ActivityFeed({
             <div className="activity-body">
               <p className="activity-line">
                 <strong>{name}</strong> {activityEventLabel(event.type)}{' '}
-                <span className="activity-wine">{title}</span>
+                <span className="activity-wine">{title.trim() || 'a wine'}</span>
                 {withFriends && <span className="activity-with-friends"> {withFriends}</span>}
                 {event.type === 'logged' && !isWishlist(wine) && score > 0 && (
                   <span className="activity-rating"> · {score.toFixed(1)}★</span>
