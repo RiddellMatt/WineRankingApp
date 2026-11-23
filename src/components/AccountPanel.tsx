@@ -20,6 +20,7 @@ import type { RankingPreference } from '../types'
 import { applyAppIcon, loadStoredAppIcon, type AppIconVariant } from '../lib/appIcon'
 import { applyTheme, loadStoredTheme, previewTheme, type AppTheme } from '../lib/themes'
 import { RankingPreferencePicker } from './RankingPreferencePicker'
+import { RatingTips } from './RatingTips'
 import { APP_NAME_PRO } from '../brand'
 import { Avatar } from './Avatar'
 import { AppIconPicker } from './AppIconPicker'
@@ -793,6 +794,8 @@ export function AccountPanel({
           cloudConfigured={cloudConfigured}
         />
       )}
+
+      {settingsSection === 'rating-tips' && <RatingTips />}
 
       {settingsSection === 'ranking' && (
         <RankingPreferencePicker

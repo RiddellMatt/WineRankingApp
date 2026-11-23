@@ -4,6 +4,7 @@ import { withSupabaseAuthRetry } from './supabaseAuthRetry'
 import { getSupabase, type WineRow } from './supabase'
 import { assertCleanText } from './contentFilter'
 import { applyCompositeRating, resolveRankingPreference, wineEnjoyment } from './ranking'
+import { toTenPoint } from './scoreScale'
 import { normalizeTriedOn, normalizeWinePhotos } from './wineMoments'
 import { normalizePours } from './winePours'
 import { persistWinePhotos, removeWinePhotoFolder } from './winePhotos'
@@ -21,7 +22,11 @@ function ensureWineId(wine: Wine): Wine {
 }
 
 export function wineFromRow(row: WineRow): Wine {
-  const enjoyment = row.rating_enjoyment != null ? Number(row.rating_enjoyment) : Number(row.rating)
+  const scale = row.rating_scale === 10 ? 10 : 5
+  const enjoyment = toTenPoint(
+    row.rating_enjoyment != null ? Number(row.rating_enjoyment) : Number(row.rating),
+    scale,
+  )
   const wine: Wine = {
     id: row.id,
     name: row.name,
@@ -32,7 +37,11 @@ export function wineFromRow(row: WineRow): Wine {
     region: row.region,
     price: row.price != null ? Number(row.price) : null,
     ratingEnjoyment: enjoyment,
-    ratingValue: row.rating_value != null ? Number(row.rating_value) : null,
+    ratingValue:
+      row.rating_value != null && Number(row.rating_value) > 0
+        ? toTenPoint(Number(row.rating_value), scale)
+        : null,
+    ratingScale: 10,
     ratingBuyAgain: row.rating_buy_again != null ? Number(row.rating_buy_again) : null,
     rating: Number(row.rating),
     notes: row.notes,
@@ -70,6 +79,7 @@ export function wineToRow(
     rating_enjoyment: wineEnjoyment(normalized),
     rating_value: normalized.ratingValue ?? null,
     rating_buy_again: normalized.ratingBuyAgain ?? null,
+    rating_scale: 10,
     notes: normalized.notes,
     tasting_tags: normalized.tastingTags ?? [],
     with_friend_ids: normalizeWithFriendIds(normalized.withFriendIds),

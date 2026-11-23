@@ -3296,50 +3296,183 @@ button.tasting-tag-pill-btn.active {
   font-weight: 600;
 }
 
-/* ── Stars ──────────────────────────────────────────── */
+/* ── Score slider ───────────────────────────────────── */
 
-.star-row {
-  display: inline-flex;
-  gap: 2px;
-}
-
-.star-input {
+.score-slider {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
-  width: fit-content;
-  border-radius: 10px;
+  gap: 0.75rem;
+  width: 100%;
 }
 
-.star-input:focus-visible {
+.score-track {
+  position: relative;
+  flex: 1;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  touch-action: none;
+  cursor: pointer;
+  border-radius: 999px;
+}
+
+.score-track:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
 
-.star-cell {
+.score-track-bar {
   position: relative;
-  display: inline-block;
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
 }
 
-.star-half {
+.score-track-scale,
+.score-track-rest {
   position: absolute;
-  top: 0;
-  width: 50%;
-  height: 100%;
-  background: transparent;
-  border: none;
-  padding: 0;
+  inset: 0;
 }
 
-.star-half.left { left: 0; }
-.star-half.right { right: 0; }
+.score-track-rest {
+  background: color-mix(in srgb, var(--bg) 42%, transparent);
+}
 
-.star-input-value {
+.score-thumb {
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  margin-left: -11px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.score-slider-value,
+.score-slider-type {
+  flex: 0 0 4.8rem;
+  width: 4.8rem;
+  text-align: right;
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: var(--star);
-  min-width: 2.2rem;
+}
+
+.score-slider-value {
+  background: none;
+  border: none;
+  padding: 0.35rem 0;
+  cursor: pointer;
+}
+
+.score-slider-type {
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.3rem 0.4rem;
+}
+
+.score-readout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.score-readout-track {
+  width: 3.2rem;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.score-readout-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.score-readout-num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text-faint);
+}
+
+.score-readout.is-compact .score-readout-num {
+  font-size: 0.82rem;
+}
+
+.score-readout-denom {
+  font-size: 0.72em;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.rating-tips p {
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
+.rating-tips h4 {
+  margin: 1.1rem 0 0.35rem;
+  font-size: 1rem;
+}
+
+.rating-tip-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.rating-tip-list li {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+
+.rating-tip-score {
+  flex: 0 0 2rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+
+.rating-tip-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.rating-tip-title {
+  font-weight: 600;
+}
+
+.rating-tip-body {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.rank-preview .score-readout {
+  font-weight: 700;
 }
 
 /* ── Empty state ────────────────────────────────────── */
@@ -3995,19 +4128,13 @@ html.keyboard-open .wine-form-backdrop {
 .wine-form-modal {
   display: flex;
   flex-direction: column;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
+  align-self: stretch;
   height: auto;
-  align-self: flex-start;
   min-height: 0;
-  max-height: calc(100dvh - 1rem - var(--keyboard-inset, 0px));
   max-height: 100%;
   overflow: hidden;
   margin-top: 0;
-}
-
-html.keyboard-open .wine-form-modal {
-  flex: 1 1 auto;
-  align-self: stretch;
 }
 
 /* The save row sits where a keyboard-dismiss tap lands, and it eats the few

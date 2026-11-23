@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { compositeScore } from '../lib/ranking'
+import { formatScore } from '../lib/scoreScale'
 import { topInsightWines, type InsightsLeaderKind } from '../lib/insightsLeaders'
 import { InsightsLeadersModal } from './InsightsLeadersModal'
 import {
@@ -48,11 +49,11 @@ export function Insights({ wines, rankingPreference }: Props) {
     const topSplurge = topInsightWines(wines, 'splurge', rankingPreference, 1)[0]
 
     const histogram: { label: string; value: number; display: string }[] = []
-    for (let r = 5; r >= 0.5; r -= 0.5) {
-      const count = wines.filter((w) => compositeScore(w, rankingPreference) === r).length
-      if (count > 0 || r >= 3) {
-        histogram.push({ label: `${r.toFixed(1)}★`, value: count, display: `${count}` })
-      }
+    for (let band = 10; band >= 1; band -= 1) {
+      const count = wines.filter(
+        (w) => Math.round(compositeScore(w, rankingPreference)) === band,
+      ).length
+      histogram.push({ label: String(band), value: count, display: `${count}` })
     }
 
     return {
@@ -111,7 +112,7 @@ export function Insights({ wines, rankingPreference }: Props) {
           <span className="stat-label">
             best value{' '}
             {insights.bestValue &&
-              `(${compositeScore(insights.bestValue, rankingPreference).toFixed(1)}★ at $${insights.bestValue.price?.toFixed(0)})`}
+              `(${formatScore(compositeScore(insights.bestValue, rankingPreference))}/10 at $${insights.bestValue.price?.toFixed(0)})`}
           </span>
         </button>
         <button
@@ -123,7 +124,7 @@ export function Insights({ wines, rankingPreference }: Props) {
           <span className="stat-label">
             biggest splurge{' '}
             {insights.splurge &&
-              `($${insights.splurge.price?.toFixed(0)} · ${compositeScore(insights.splurge, rankingPreference).toFixed(1)}★)`}
+              `($${insights.splurge.price?.toFixed(0)} · ${formatScore(compositeScore(insights.splurge, rankingPreference))}/10)`}
           </span>
         </button>
       </section>

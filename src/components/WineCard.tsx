@@ -2,7 +2,7 @@ import type { RankingPreference, Wine } from '../types'
 import { compositeScore, isWineFavorite } from '../lib/ranking'
 import { getPairings } from '../pairings'
 import { hasTaste, lookupTaste } from '../tasteData'
-import { StarDisplay } from './StarRating'
+import { ScoreReadout } from './ScoreSlider'
 import { TasteDisplay } from './TasteProfile'
 import { ShareWineButton } from './ShareWineButton'
 import { tastingTagLabel } from '../lib/tastingTags'
@@ -27,18 +27,17 @@ function WineScore({
   return (
     <div className="wine-rating">
       <div className="wine-rating-overall">
-        <StarDisplay value={score} />
-        <span className="rating-number">{score.toFixed(1)}</span>
+        <ScoreReadout value={score} />
       </div>
       {showParts && (
         <div className="rating-breakdown">
           <span className="rating-part">
             <span className="rating-part-label">Taste</span>
-            <StarDisplay value={taste} size={12} />
+            <ScoreReadout value={taste} compact />
           </span>
           <span className="rating-part">
             <span className="rating-part-label">Value</span>
-            <StarDisplay value={value ?? 0} size={12} />
+            <ScoreReadout value={value ?? 0} compact />
           </span>
         </div>
       )}

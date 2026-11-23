@@ -6,6 +6,7 @@ import {
 } from './shareCardFormats'
 import { hasTaste, lookupTaste } from '../tasteData'
 import { TASTE_AXES, type TasteProfile, type Wine } from '../types'
+import { SCORE_MAX, SCORE_STOPS, formatScoreOutOf, scoreRgb } from './scoreScale'
 
 export interface ShareWineCardInput {
   wine: Wine
@@ -76,51 +77,32 @@ function drawDecanterMark(ctx: CanvasRenderingContext2D, cx: number, cy: number,
   ctx.restore()
 }
 
-function drawStars(ctx: CanvasRenderingContext2D, x: number, y: number, score: number, size: number) {
-  const fullStars = Math.floor(score)
-  const partial = score - fullStars
-  const gap = size * 0.35
-
-  for (let i = 0; i < 5; i++) {
-    const cx = x + i * (size + gap) + size / 2
-    const fillAmount = i < fullStars ? 1 : i === fullStars ? partial : 0
-    drawStar(ctx, cx, y + size / 2, size / 2, fillAmount)
-  }
-}
-
-function drawStar(
+function drawScoreBar(
   ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  outerR: number,
-  fill: number,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  score: number,
 ) {
-  const innerR = outerR * 0.45
-  const points: { x: number; y: number }[] = []
-  for (let i = 0; i < 10; i++) {
-    const r = i % 2 === 0 ? outerR : innerR
-    const angle = (Math.PI / 2) * -1 + (Math.PI / 5) * i
-    points.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r })
-  }
-
+  const radius = height / 2
+  ctx.save()
   ctx.beginPath()
-  points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)))
-  ctx.closePath()
-  ctx.fillStyle = '#4a2c36'
-  ctx.fill()
-
-  if (fill > 0) {
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(cx - outerR, cy - outerR, outerR * 2 * fill, outerR * 2)
-    ctx.clip()
-    ctx.beginPath()
-    points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)))
-    ctx.closePath()
-    ctx.fillStyle = COLORS.gold
-    ctx.fill()
-    ctx.restore()
+  roundRect(ctx, x, y, width, height, radius)
+  ctx.clip()
+  const gradient = ctx.createLinearGradient(x, y, x + width, y)
+  for (const stop of SCORE_STOPS) {
+    const rgb = scoreRgb(stop.at)
+    gradient.addColorStop(stop.at / SCORE_MAX, `rgb(${rgb.r} ${rgb.g} ${rgb.b})`)
   }
+  ctx.fillStyle = gradient
+  ctx.fillRect(x, y, width, height)
+  const rest = Math.max(0, 1 - score / SCORE_MAX)
+  if (rest > 0) {
+    ctx.fillStyle = 'rgba(18, 8, 12, 0.62)'
+    ctx.fillRect(x + width * (score / SCORE_MAX), y, width * rest, height)
+  }
+  ctx.restore()
 }
 
 function roundRect(
@@ -350,11 +332,13 @@ export async function renderShareWineCard(
   }
 
   y += s(layout, 36)
-  const starSize = s(layout, 44)
-  drawStars(ctx, textX, y, score, starSize)
+  const barH = s(layout, 18)
+  const barW = Math.min(s(layout, 280), maxText * 0.62)
+  drawScoreBar(ctx, textX, y, barW, barH, score)
   ctx.font = `700 ${s(layout, 48)}px Inter, system-ui, sans-serif`
-  ctx.fillStyle = COLORS.gold
-  ctx.fillText(score.toFixed(1), textX + 5 * starSize + 4 * 15 + 24, y + starSize - 6)
+  const rgb = scoreRgb(score)
+  ctx.fillStyle = `rgb(${rgb.r} ${rgb.g} ${rgb.b})`
+  ctx.fillText(formatScoreOutOf(score), textX + barW + s(layout, 18), y + barH)
 
   const tasteSection = resolveShareTaste(wine, layout.maxTasteRows)
   if (tasteSection) {

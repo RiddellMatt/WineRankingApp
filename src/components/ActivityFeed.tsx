@@ -17,6 +17,7 @@ import {
 } from '../lib/activityFeed'
 import { activityWithFriendsClause } from '../lib/wineWithFriends'
 import { compositeScore } from '../lib/ranking'
+import { formatScoreOutOf, scoreColor } from '../lib/scoreScale'
 import { isWishlist, wishlistIdentityKey } from '../lib/wishlist'
 import type { RankingPreference, Wine } from '../types'
 import type { BadgeTier } from '../lib/badges'
@@ -239,7 +240,10 @@ export function ActivityFeed({
                 <span className="activity-wine">{title.trim() || 'a wine'}</span>
                 {withFriends && <span className="activity-with-friends"> {withFriends}</span>}
                 {event.type === 'logged' && !isWishlist(wine) && score > 0 && (
-                  <span className="activity-rating"> · {score.toFixed(1)}★</span>
+                  <span className="activity-rating" style={{ color: scoreColor(score) }}>
+                    {' '}
+                    · {formatScoreOutOf(score)}
+                  </span>
                 )}
               </p>
               {subtitle && <p className="activity-sub">{subtitle}</p>}

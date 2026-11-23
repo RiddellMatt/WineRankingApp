@@ -19,8 +19,18 @@ function isField(el: EventTarget | null): el is HTMLElement {
   return isTextField(el) || (el instanceof HTMLSelectElement && !el.disabled)
 }
 
-/** Keyboard overlap that CSS still has to clear. Zero when the layout viewport already shrank. */
+function keyboardIsUp(): boolean {
+  return nativeReported > 0 || isField(document.activeElement)
+}
+
+/**
+ * Keyboard overlap that CSS still has to clear.
+ * Once the field blurs and the native keyboard reports closed, the inset is 0
+ * even if the visual viewport has not caught up yet. That lets the sheet grow
+ * back into the space the keyboard was using.
+ */
 export function keyboardOverlap(): number {
+  if (!keyboardIsUp()) return 0
   const vv = window.visualViewport
   const viewportInset = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0
   const shrunk = Math.max(0, baselineInner - window.innerHeight)
@@ -136,10 +146,21 @@ export function installKeyboardInset(): void {
     if (nativeReported === 0) baselineInner = window.innerHeight
     onGeometry()
   })
+  const releaseInset = () => {
+    window.requestAnimationFrame(() => {
+      publish()
+      window.setTimeout(publish, 60)
+      window.setTimeout(publish, 320)
+    })
+  }
   document.addEventListener('focusin', (event) => {
     if (!isField(event.target)) return
     window.setTimeout(revealFocusedField, 50)
     window.setTimeout(revealFocusedField, 320)
+  })
+  document.addEventListener('focusout', (event) => {
+    if (!isField(event.target)) return
+    releaseInset()
   })
   // The sheet shrinks when the keyboard inset lands. Pull the field back into
   // that band even if it was already focused (autofocus) and never got a new focus event.
@@ -171,7 +192,10 @@ export function installKeyboardInset(): void {
     })
     const hide = () => {
       nativeReported = 0
+      const active = document.activeElement
+      if (isField(active)) active.blur()
       publish()
+      releaseInset()
     }
     void Keyboard.addListener('keyboardWillHide', hide)
     void Keyboard.addListener('keyboardDidHide', hide)

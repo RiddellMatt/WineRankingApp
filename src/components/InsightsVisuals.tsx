@@ -1,3 +1,5 @@
+import { formatScoreAverage } from '../lib/scoreScale'
+
 export interface GroupDatum {
   label: string
   count: number
@@ -57,7 +59,7 @@ export function TypeMixDonut({ data, total }: { data: GroupDatum[]; total: numbe
             <span className="type-mix-legend-label">{d.label}</span>
             <span className="type-mix-legend-value">
               {d.count}
-              <span className="type-mix-legend-avg">{d.avg.toFixed(1)}★ avg</span>
+              <span className="type-mix-legend-avg">{formatScoreAverage(d.avg)} avg</span>
             </span>
           </li>
         ))}
@@ -128,7 +130,7 @@ export function RankedBreakdown({
           </div>
           <span className="insight-ranked-meta">
             {d.count}
-            <span className="insight-ranked-avg">{d.avg.toFixed(1)}★</span>
+            <span className="insight-ranked-avg">{formatScoreAverage(d.avg)}</span>
           </span>
         </li>
       ))}

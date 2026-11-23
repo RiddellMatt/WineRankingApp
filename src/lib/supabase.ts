@@ -51,6 +51,8 @@ export interface WineRow {
   rating_enjoyment?: number | null
   rating_value?: number | null
   rating_buy_again?: number | null
+  /** 5 = legacy half stars. 10 = quarter steps out of 10. */
+  rating_scale?: number | null
   notes: string
   tasting_tags?: string[] | null
   with_friend_ids?: string[] | null

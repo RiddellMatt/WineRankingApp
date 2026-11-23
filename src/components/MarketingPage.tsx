@@ -69,8 +69,8 @@ export function MarketingPage({ onOpenApp }: Props) {
         <section className="mkt-section" aria-labelledby="mkt-cellar">
           <h2 id="mkt-cellar">A cellar that stays in order</h2>
           <p>
-            Log the winery, vintage, region, price, and what you thought. Ratings use half stars,
-            and your list stays ranked so the bottles you would buy again sit at the top.
+            Log the winery, vintage, region, price, and what you thought. Ratings run from 1 to
+            10, and your list stays ranked so the bottles you would buy again sit at the top.
           </p>
           <p>
             Save a bottle you have not opened yet. When you are in a shop or staring at a restaurant

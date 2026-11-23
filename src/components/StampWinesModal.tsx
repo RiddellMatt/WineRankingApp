@@ -1,5 +1,6 @@
 import { formatActivityTime } from '../lib/activityFeed'
 import { compositeScore } from '../lib/ranking'
+import { formatScoreOutOf } from '../lib/scoreScale'
 import type { PassportStamp } from '../lib/passportAtlas'
 import type { RankingPreference, Wine } from '../types'
 
@@ -47,7 +48,7 @@ export function StampWinesModal({ stamp, wines, rankingPreference, onClose }: Pr
                     {wine.winery?.trim() && <p className="stamp-wine-winery">{wine.winery.trim()}</p>}
                   </div>
                   <div className="stamp-wine-meta">
-                    {score > 0 && <span className="stamp-wine-rating">{score.toFixed(1)}★</span>}
+                    {score > 0 && <span className="stamp-wine-rating">{formatScoreOutOf(score)}</span>}
                     <span className="stamp-wine-when">{formatActivityTime(wine.addedAt)}</span>
                   </div>
                 </li>

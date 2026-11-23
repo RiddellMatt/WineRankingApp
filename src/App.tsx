@@ -1496,7 +1496,7 @@ export default function App() {
                   onClick={goToInsightsTab}
                   aria-label="View average rating in insights"
                 >
-                  <span className="stat-value">{stats.avg.toFixed(1)}</span>
+                  <span className="stat-value">{stats.avg.toFixed(1)}/10</span>
                   <span className="stat-label">average rating</span>
                 </button>
                 <button

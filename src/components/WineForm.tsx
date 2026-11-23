@@ -21,7 +21,7 @@ import {
   shouldDismissKeyboardOnScroll,
 } from '../lib/keyboardInset'
 import { canonicalVarietal, isListedVarietal, typeForVarietal, varietalFitsType } from '../lib/wineVarietals'
-import { StarInput } from './StarRating'
+import { ScoreReadout, ScoreSlider } from './ScoreSlider'
 import { TasteInput } from './TasteProfile'
 import { TastingTagsInput } from './TastingTagsInput'
 import { TriedOnField } from './TriedOnField'
@@ -661,17 +661,22 @@ export function WineForm({
           <div className="form-ratings">
             <div className="form-rating">
               <label>Enjoyment</label>
-              <p className="form-rating-hint">How much did you like it?</p>
-              <StarInput value={ratingEnjoyment} onChange={setRatingEnjoyment} label="Enjoyment" />
+              <p className="form-rating-hint">How much did you like it? Drag, or tap the score to type.</p>
+              <ScoreSlider value={ratingEnjoyment} onChange={setRatingEnjoyment} label="Enjoyment" />
             </div>
             <div className="form-rating">
               <label>Value</label>
-              <p className="form-rating-hint">Worth the price? Optional.</p>
-              <StarInput value={ratingValue} onChange={setRatingValue} label="Value" />
+              <p className="form-rating-hint">Worth the price? Optional. Same 0 to 10 scale.</p>
+              <ScoreSlider value={ratingValue} onChange={setRatingValue} label="Value" />
             </div>
             {ratingEnjoyment > 0 && (
               <p className="rank-preview">
-                Your rank: <strong>{previewRank.toFixed(1)}</strong>
+                Overall <ScoreReadout value={previewRank} />
+                <span className="rank-preview-detail">
+                  {' '}
+                  Calculated from enjoyment
+                  {ratingValue > 0 ? ', value,' : ''} and your ranking preference.
+                </span>
               </p>
             )}
           </div>
