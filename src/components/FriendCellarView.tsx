@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { fetchEarnedBadgeTiersForUsers } from '../lib/badgeDb'
+import { lockedBadgeSnapshot, type BadgeTierSnapshot } from '../lib/badgeUnlocks'
 import { blockUser } from '../lib/blocksDb'
 import { Avatar } from './Avatar'
 import { ReportControl } from './ReportSheet'
@@ -60,6 +62,7 @@ export function FriendCellarView({
   const [safetyError, setSafetyError] = useState('')
   const [blockBusy, setBlockBusy] = useState(false)
   const [favoritesOpen, setFavoritesOpen] = useState(false)
+  const [earnedBadges, setEarnedBadges] = useState<BadgeTierSnapshot>(() => lockedBadgeSnapshot())
   const rankById = useMemo(() => {
     const tried = triedWines(wines)
     const ordered = sortWinesByRating(tried, rankingPreference)
@@ -83,6 +86,23 @@ export function FriendCellarView({
 
   useEffect(() => {
     setFavoritesOpen(false)
+  }, [userId])
+
+  useEffect(() => {
+    // Level XP reads a badge ledger. The default ledger is this phone's cache,
+    // which made a reset friend show the viewer's old level.
+    let cancelled = false
+    setEarnedBadges(lockedBadgeSnapshot())
+    void fetchEarnedBadgeTiersForUsers([userId])
+      .then((map) => {
+        if (!cancelled) setEarnedBadges(map.get(userId) ?? lockedBadgeSnapshot())
+      })
+      .catch(() => {
+        if (!cancelled) setEarnedBadges(lockedBadgeSnapshot())
+      })
+    return () => {
+      cancelled = true
+    }
   }, [userId])
 
   useEffect(() => {
@@ -124,8 +144,12 @@ export function FriendCellarView({
   }
 
   const playerLevel = useMemo(
-    () => computePlayerLevel({ wines, friendCount, completedJourneys }),
-    [wines, friendCount, completedJourneys],
+    () =>
+      computePlayerLevel(
+        { wines, friendCount, completedJourneys },
+        earnedBadges,
+      ),
+    [wines, friendCount, completedJourneys, earnedBadges],
   )
 
   if (favoritesOpen) {
