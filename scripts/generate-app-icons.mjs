@@ -25,6 +25,15 @@ const androidDensities = {
   xxxhdpi: 192,
 }
 
+/** Adaptive foreground canvas is 108dp. Artwork stays inside the 66dp safe zone. */
+const androidAdaptive = {
+  mdpi: 108,
+  hdpi: 162,
+  xhdpi: 216,
+  xxhdpi: 324,
+  xxxhdpi: 432,
+}
+
 function iosContents(filename) {
   return JSON.stringify(
     {
@@ -59,6 +68,26 @@ async function androidSet(src, baseName) {
   }
 }
 
+async function androidAdaptiveForeground(src, baseName) {
+  for (const [folder, size] of Object.entries(androidAdaptive)) {
+    const dir = join(root, `android/app/src/main/res/mipmap-${folder}`)
+    mkdirSync(dir, { recursive: true })
+    const inner = Math.round(size * (66 / 108))
+    const artwork = await sharp(src).rotate().resize(inner, inner, { fit: 'cover' }).png().toBuffer()
+    await sharp({
+      create: {
+        width: size,
+        height: size,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      },
+    })
+      .composite([{ input: artwork, gravity: 'centre' }])
+      .png()
+      .toFile(join(dir, `${baseName}.png`))
+  }
+}
+
 mkdirSync(iosWhite, { recursive: true })
 mkdirSync(iosNavy, { recursive: true })
 mkdirSync(webIcons, { recursive: true })
@@ -74,6 +103,8 @@ writeFileSync(join(iosNavy, 'Contents.json'), iosContents('AppIconNavy-1024.png'
 
 await androidSet(whiteSrc, 'ic_launcher')
 await androidSet(alternateIconSrc, 'ic_launcher_navy')
+await androidAdaptiveForeground(whiteSrc, 'ic_launcher_foreground')
+await androidAdaptiveForeground(alternateIconSrc, 'ic_launcher_navy_foreground')
 
 for (const [name, size, src] of [
   ['pwa-192.png', 192, whiteSrc],
