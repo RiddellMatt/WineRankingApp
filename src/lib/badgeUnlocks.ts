@@ -10,9 +10,13 @@ import {
   type BadgeTier,
 } from './badges'
 import { STORAGE_PREFIX } from '../brand'
+import {
+  activeProgressUserId,
+  badgeTiersStorageKey,
+  markSignedInProgressCacheFresh,
+  signedInProgressCacheIsFresh,
+} from './progressStorage'
 
-/** Permanent earned tiers — never downgraded when wines are removed. */
-const EARNED_KEY = `${STORAGE_PREFIX}.badge-tiers.v1`
 /** After testing reset, the next cellar change may re-toast tiers already live in the cellar. */
 const CATCHUP_KEY = `${STORAGE_PREFIX}.badge-catchup-testing.v1`
 
@@ -38,8 +42,11 @@ export function snapshotFromBadgeInput(input: BadgeInput): BadgeTierSnapshot {
 }
 
 export function loadEarnedBadgeTiers(): BadgeTierSnapshot | null {
+  // A signed-in cache from an earlier account or a reset is not earned progress.
+  // Sync rewrites it from the server ledger and the cellar that is open now.
+  if (activeProgressUserId() && !signedInProgressCacheIsFresh()) return null
   try {
-    const raw = localStorage.getItem(EARNED_KEY)
+    const raw = localStorage.getItem(badgeTiersStorageKey())
     if (!raw) return null
     const parsed = JSON.parse(raw) as BadgeTierSnapshot
     return parsed && typeof parsed === 'object' ? parsed : null
@@ -50,7 +57,8 @@ export function loadEarnedBadgeTiers(): BadgeTierSnapshot | null {
 
 export function saveEarnedBadgeTiers(snapshot: BadgeTierSnapshot): void {
   try {
-    localStorage.setItem(EARNED_KEY, JSON.stringify(snapshot))
+    localStorage.setItem(badgeTiersStorageKey(), JSON.stringify(snapshot))
+    markSignedInProgressCacheFresh()
   } catch {
     // ignore quota / private mode
   }

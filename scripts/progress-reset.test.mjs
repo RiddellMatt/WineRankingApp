@@ -88,5 +88,7 @@ test('reset plan covers cellar, badges, and journeys and leaves the account row'
   assert.match(sql, /progress_reset_at = now\(\)/)
   assert.match(sql, /reject_restored_cellar/)
   assert.match(sql, /reject_restored_points/)
+  assert.match(sql, /reject_restored_badge_tier/)
+  assert.match(sql, /Badge tier is ahead of this cellar/)
   assert.equal(sql.includes('delete from storage.objects'), false)
 })

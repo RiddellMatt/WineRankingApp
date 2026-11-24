@@ -1,13 +1,13 @@
 import type { PostgrestError } from '@supabase/supabase-js'
-import { STORAGE_PREFIX } from '../brand'
+import type { Wine } from '../types'
+import { mergedJourneyCompletions } from './journeys'
+import { journeyCompletionsStorageKey } from './progressStorage'
 import { localProgressGeneration } from './progressReset'
 import { getSupabase } from './supabase'
 
-const COMPLETED_KEY = `${STORAGE_PREFIX}.journey-completions.v1`
-
 export function loadCompletedJourneysLocal(): Set<string> {
   try {
-    const raw = localStorage.getItem(COMPLETED_KEY)
+    const raw = localStorage.getItem(journeyCompletionsStorageKey())
     if (!raw) return new Set()
     const parsed = JSON.parse(raw) as string[]
     return new Set(Array.isArray(parsed) ? parsed : [])
@@ -18,7 +18,7 @@ export function loadCompletedJourneysLocal(): Set<string> {
 
 export function saveCompletedJourneysLocal(completed: Set<string>): void {
   try {
-    localStorage.setItem(COMPLETED_KEY, JSON.stringify([...completed]))
+    localStorage.setItem(journeyCompletionsStorageKey(), JSON.stringify([...completed]))
   } catch {
     // ignore
   }
@@ -121,14 +121,18 @@ export async function markJourneysComplete(
   }
 }
 
-/** Merge cloud completions with newly detected local completions. */
+/**
+ * Keep server completions, including ones the cellar no longer satisfies,
+ * and add journeys this cellar actually completes. The on-device set is not
+ * an authority — it used to re-upload another account's passport after a reset.
+ */
 export async function syncJourneyCompletions(
   userId: string,
-  localEarned: Set<string>,
+  wines: Wine[],
 ): Promise<Set<string>> {
   const cloud = await fetchCompletedJourneys(userId)
-  const merged = new Set([...cloud, ...localEarned])
-  const toUpload = [...localEarned].filter((id) => !cloud.has(id))
+  const merged = mergedJourneyCompletions(wines, cloud)
+  const toUpload = [...merged].filter((id) => !cloud.has(id))
   if (toUpload.length > 0) {
     await markJourneysComplete(userId, toUpload)
   }

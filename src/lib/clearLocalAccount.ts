@@ -5,6 +5,7 @@ import {
   STORAGE_PREFIX,
   WINE_STORAGE_KEY,
 } from '../brand'
+import { badgeTiersStorageKey, journeyCompletionsStorageKey } from './progressStorage'
 
 /** On-device copies of the account. Theme, app icon, and the iOS 21+ shop confirmation stay; they are device preferences. */
 export const LOCAL_ACCOUNT_KEYS = [
@@ -41,8 +42,10 @@ function removeKeys(keys: readonly string[]): void {
 }
 
 /** Drop cached cellar, badges, journeys, and ranking setup. Keeps Pro and device preferences. */
-export function clearLocalProgressData(): void {
+export function clearLocalProgressData(userId?: string | null): void {
   removeKeys(LOCAL_PROGRESS_KEYS)
+  if (!userId) return
+  removeKeys([badgeTiersStorageKey(userId), journeyCompletionsStorageKey(userId)])
 }
 
 export function clearLocalAccountData(): void {
