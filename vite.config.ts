@@ -26,6 +26,10 @@ export default defineConfig(({ mode }) => {
             VitePWA({
               registerType: 'autoUpdate',
               includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
+              workbox: {
+                // The Android sign-in return page must stay this file, not the app shell.
+                navigateFallbackDenylist: [/^\/login-callback\.html$/],
+              },
               manifest: {
                 name: 'Decanti',
                 short_name: 'Decanti',

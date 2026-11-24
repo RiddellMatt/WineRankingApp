@@ -73,6 +73,7 @@ Dashboard → **Authentication → URL Configuration** — ensure this is listed
 
 ```
 com.northline.decanti://login-callback
+https://decantiwine.com/login-callback.html
 ```
 
 ## 5. First iOS build

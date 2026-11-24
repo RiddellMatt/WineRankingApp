@@ -96,7 +96,8 @@ export async function completeOAuthFromUrl(url: string): Promise<boolean> {
 /**
  * Google blocks OAuth inside embedded WebViews (400 after 2FA). Native builds open
  * the system browser (Chrome Custom Tabs / SFSafariViewController) via Browser.open
- * so Supabase can redirect to com.northline.decanti://login-callback and resume the app.
+ * so Supabase can redirect back and resume the app. iOS uses the app scheme directly.
+ * Android returns via https://decantiwine.com/login-callback.html, which opens the scheme.
  * PKCE state is stored via Capacitor Preferences for exchangeCodeForSession on return.
  */
 export async function startNativeOAuth(provider: Provider): Promise<string | null> {

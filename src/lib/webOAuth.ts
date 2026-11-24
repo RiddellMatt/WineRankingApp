@@ -10,6 +10,7 @@ export const SUPABASE_WEB_REDIRECT_URLS = [
   'https://decantiwine.com',
   'https://www.decantiwine.com/',
   'https://www.decantiwine.com',
+  'https://decantiwine.com/login-callback.html',
   'https://riddellmatt.github.io/WineRankingApp/',
   'https://riddellmatt.github.io/WineRankingApp',
   'http://localhost:5173/',
