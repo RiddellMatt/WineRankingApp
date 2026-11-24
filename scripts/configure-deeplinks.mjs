@@ -49,12 +49,21 @@ function patchAndroidManifest() {
 
   let manifest = fs.readFileSync(manifestPath, 'utf8')
   if (manifest.includes(`android:scheme="${SCHEME}"`)) {
+    const repaired = manifest.replace(
+      `<intent-filter android:autoVerify="true">\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="${SCHEME}" />\n            </intent-filter>`,
+      `<intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="${SCHEME}" />\n            </intent-filter>`,
+    )
+    if (repaired !== manifest) {
+      fs.writeFileSync(manifestPath, repaired)
+      console.log('Removed autoVerify from the Android sign-in URL scheme.')
+      return
+    }
     console.log('Android URL scheme already configured.')
     return
   }
 
   const intentFilter = `
-            <intent-filter android:autoVerify="true">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />

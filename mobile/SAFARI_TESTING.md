@@ -19,6 +19,7 @@ https://decantiwine.com/
 https://decantiwine.com
 https://www.decantiwine.com/
 https://www.decantiwine.com
+https://decantiwine.com/login-callback.html
 com.northline.decanti://login-callback
 com.northline.cellarrank://login-callback
 http://localhost:5173/

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Returning to Decanti</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #12080c;
+        color: #f7eef1;
+        font: 500 17px/1.4 Georgia, "Times New Roman", serif;
+      }
+      a {
+        color: #e8b04b;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Returning to Decanti… <a id="open" href="com.northline.decanti://login-callback">Open Decanti</a></p>
+    <script>
+      // Supabase lands here over https. Chrome Custom Tabs will not follow a
+      // custom-scheme redirect on their own, but they will open an Android intent.
+      var search = window.location.search || ''
+      var scheme = 'com.northline.decanti://login-callback' + search
+      var open = document.getElementById('open')
+      var android = /Android/i.test(navigator.userAgent || '')
+      var target = android
+        ? 'intent://login-callback' +
+          search +
+          '#Intent;scheme=com.northline.decanti;package=com.northline.decanti;end'
+        : scheme
+      open.href = target
+      window.location.replace(target)
+    </script>
+  </body>
+</html>

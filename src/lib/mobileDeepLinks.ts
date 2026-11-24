@@ -2,6 +2,11 @@ import { APP_SCHEME } from '../brand'
 
 export const MOBILE_APP_SCHEME = APP_SCHEME
 export const MOBILE_AUTH_REDIRECT = `${MOBILE_APP_SCHEME}://login-callback`
+/**
+ * Android Chrome Custom Tabs ignore the custom-scheme hop from Supabase and stay
+ * on the auth callback. This page turns that https return into an app intent.
+ */
+export const ANDROID_AUTH_REDIRECT = 'https://decantiwine.com/login-callback.html'
 export const MOBILE_CHECKOUT_SUCCESS = `${MOBILE_APP_SCHEME}://checkout-success`
 export const MOBILE_CHECKOUT_CANCEL = `${MOBILE_APP_SCHEME}://checkout-cancel`
 export const MOBILE_ACCOUNT_REDIRECT = `${MOBILE_APP_SCHEME}://account`

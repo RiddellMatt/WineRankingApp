@@ -1,12 +1,17 @@
-import { isNativeApp } from './platform'
+import { isNativeApp, nativePlatform } from './platform'
 import {
+  ANDROID_AUTH_REDIRECT,
   MOBILE_AUTH_REDIRECT,
   MOBILE_CHECKOUT_SUCCESS,
 } from './mobileDeepLinks'
 
 /** OAuth redirect target; must match Supabase Auth → URL Configuration. */
 export function authRedirectUrl(): string {
-  if (isNativeApp()) return MOBILE_AUTH_REDIRECT
+  if (isNativeApp()) {
+    // iOS Safari follows com.northline.decanti:// directly. Android Custom Tabs do not.
+    if (nativePlatform() === 'android') return ANDROID_AUTH_REDIRECT
+    return MOBILE_AUTH_REDIRECT
+  }
 
   const base = import.meta.env.BASE_URL || '/'
   const normalized = base.endsWith('/') ? base : `${base}/`
