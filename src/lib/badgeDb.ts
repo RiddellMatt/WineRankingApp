@@ -1,6 +1,7 @@
 import type { PostgrestError } from '@supabase/supabase-js'
 import {
   BADGE_DEFINITIONS,
+  compareTiers,
   type BadgeTier,
 } from './badges'
 import { lockedBadgeSnapshot, maxTierSnapshot, type BadgeTierSnapshot } from './badgeUnlocks'
@@ -112,42 +113,22 @@ export async function saveEarnedBadgeTiersCloud(
   }
 }
 
-/** Merge local + cloud earned tiers, preferring higher tier. Upload if local wins. */
-export async function syncEarnedBadgeTiers(
-  userId: string,
-  localSnapshot: BadgeTierSnapshot | null,
-): Promise<BadgeTierSnapshot> {
-  const cloud = await fetchEarnedBadgeTiers(userId)
-  if (cloud === null) {
-    return localSnapshot ?? lockedBadgeSnapshot()
-  }
-
-  const merged = maxTierSnapshot(cloud, localSnapshot ?? lockedBadgeSnapshot())
-
-  if (localSnapshot) {
-    const localWins = BADGE_DEFINITIONS.some((def) => {
-      const localTier = localSnapshot[def.id] ?? 'locked'
-      const cloudTier = cloud[def.id] ?? 'locked'
-      return localTier !== cloudTier && merged[def.id] === localTier
-    })
-    if (localWins) {
-      await saveEarnedBadgeTiersCloud(userId, merged)
-    }
-  }
-
-  return merged
-}
-
-/** Merge cloud and local earned-tier ledger — upload so friends can see earned tiers. */
+/**
+ * Server ledger plus tiers this cellar currently earns.
+ * The on-device snapshot is not merged in. It survived resets and was shared
+ * across accounts, then uploaded with the current progress generation.
+ */
 export async function syncEarnedBadgeTiersWithCellar(
   userId: string,
-  localSnapshot: BadgeTierSnapshot | null,
+  liveSnapshot: BadgeTierSnapshot,
 ): Promise<BadgeTierSnapshot> {
   const cloud = await fetchEarnedBadgeTiers(userId)
-  const merged = maxTierSnapshot(
-    cloud ?? lockedBadgeSnapshot(),
-    localSnapshot ?? lockedBadgeSnapshot(),
+  if (cloud === null) return liveSnapshot
+
+  const merged = maxTierSnapshot(cloud, liveSnapshot)
+  const raised = BADGE_DEFINITIONS.some(
+    (def) => compareTiers(merged[def.id] ?? 'locked', cloud[def.id] ?? 'locked') > 0,
   )
-  await saveEarnedBadgeTiersCloud(userId, merged)
+  if (raised) await saveEarnedBadgeTiersCloud(userId, merged)
   return merged
 }

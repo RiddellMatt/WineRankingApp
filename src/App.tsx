@@ -88,7 +88,9 @@ import {
   evaluateBadgeProgressChange,
   hydrateEarnedBadgeTiers,
   loadEarnedBadgeTiers,
+  lockedBadgeSnapshot,
   saveEarnedBadgeTiers,
+  snapshotFromBadgeInput,
   type BadgeTierSnapshot,
   type BadgeUnlock,
 } from './lib/badgeUnlocks'
@@ -108,6 +110,7 @@ import type { BadgeInput } from './lib/badges'
 import { fetchMyProfile, updateRankingPreference, type UserProfile } from './lib/profileDb'
 import { prepareReferralForSession } from './lib/referrals'
 import { discardLocalProgressIfReset } from './lib/progressReset'
+import { setActiveProgressUser } from './lib/progressStorage'
 import { isSupabaseConfigured } from './lib/supabase'
 import {
   applyCompositeRating,
@@ -186,6 +189,7 @@ export default function App() {
     configured,
   } = useAuth()
   const cloudUser = user && !offlineMode ? user : null
+  setActiveProgressUser(cloudUser?.id ?? null)
 
   const [wines, setWines] = useState<Wine[]>(() => (offlineMode ? loadWines() : []))
   const [friendWines, setFriendWines] = useState<Wine[]>([])
@@ -477,7 +481,9 @@ export default function App() {
 
   const applyBadgeProgressChange = useCallback(
     (previous: BadgeInput, next: BadgeInput) => {
-      const earned = earnedBadgeTiersRef.current ?? loadEarnedBadgeTiers() ?? {}
+      const earned =
+        earnedBadgeTiersRef.current ??
+        (cloudUser ? lockedBadgeSnapshot() : loadEarnedBadgeTiers() ?? lockedBadgeSnapshot())
       const catchUpAfterReset = consumeCatchUpTestingFlag()
 
       const newJourneys = detectNewJourneyCompletions(next.wines, completedJourneysRef.current)
@@ -509,7 +515,7 @@ export default function App() {
       pushBadgeUnlocks(unlocks)
       void persistProgressToCloud(nextEarned, newJourneyIds, unlocks)
     },
-    [pushBadgeUnlocks, pushJourneyCompletions, persistProgressToCloud],
+    [cloudUser, pushBadgeUnlocks, pushJourneyCompletions, persistProgressToCloud],
   )
 
   const applyBadgeProgressChangeRef = useRef(applyBadgeProgressChange)
@@ -708,14 +714,19 @@ export default function App() {
       try {
         const discarded = await discardLocalProgressIfReset(cloudUser.id)
         if (discarded && !cancelled) setProgressResetTick((tick) => tick + 1)
-        const localBadges = discarded ? null : loadEarnedBadgeTiers()
-        const syncedBadges = await syncEarnedBadgeTiersWithCellar(cloudUser.id, localBadges)
-        const localJourneys = discarded ? new Set<string>() : loadCompletedJourneysLocal()
-        const syncedJourneys = await syncJourneyCompletions(cloudUser.id, localJourneys)
+        const cellar = winesRef.current
+        const syncedJourneys = await syncJourneyCompletions(cloudUser.id, cellar)
+        if (cancelled) return
+        completedJourneysRef.current = syncedJourneys
+        referralCountRef.current = profile?.qualifiedReferralCount ?? 0
+        badgeFriendCountRef.current = friendCount
+        const liveBadges = snapshotFromBadgeInput(
+          buildBadgeInput(cellar, friendCount),
+        )
+        const syncedBadges = await syncEarnedBadgeTiersWithCellar(cloudUser.id, liveBadges)
         if (!cancelled) {
           earnedBadgeTiersRef.current = syncedBadges
           saveEarnedBadgeTiers(syncedBadges)
-          completedJourneysRef.current = syncedJourneys
           saveCompletedJourneysLocal(syncedJourneys)
           setCompletedJourneys(syncedJourneys)
           badgeHydratedRef.current = true
@@ -736,7 +747,15 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [cloudUser?.id, cloudUser, cellarProgressReady, ensureBadgeHydrated, buildBadgeInput])
+  }, [
+    cloudUser?.id,
+    cloudUser,
+    cellarProgressReady,
+    ensureBadgeHydrated,
+    buildBadgeInput,
+    friendCount,
+    profile?.qualifiedReferralCount,
+  ])
 
   useEffect(() => {
     if (!badgeReady) return

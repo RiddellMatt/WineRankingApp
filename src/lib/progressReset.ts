@@ -10,6 +10,10 @@ interface GenerationMap {
 }
 
 const pending = new Map<string, Promise<boolean>>()
+/** Once this page load has discarded a generation, later checks must keep saying so.
+ *  The generation write makes a second call look current, and that call used to
+ *  upload the badge cache the first call had just deleted. */
+const discardedThisPageLoad = new Set<string>()
 
 function readMap(): GenerationMap {
   try {
@@ -64,10 +68,12 @@ async function fetchProgressGeneration(userId: string): Promise<number | null> {
 }
 
 async function discardOnce(userId: string): Promise<boolean> {
+  if (discardedThisPageLoad.has(userId)) return true
   const server = await fetchProgressGeneration(userId)
   if (!progressGenerationIsNewer(server, localProgressGeneration(userId))) return false
-  clearLocalProgressData()
+  clearLocalProgressData(userId)
   writeLocalGeneration(userId, server as number)
+  discardedThisPageLoad.add(userId)
   return true
 }
 
