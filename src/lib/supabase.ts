@@ -36,6 +36,11 @@ export interface ProfileRow {
   email: string
   avatar_url: string | null
   is_pro?: boolean | null
+  pro_until?: string | null
+  bonus_pro_days?: number | null
+  referral_code?: string | null
+  referral_status?: string | null
+  qualified_referral_count?: number | null
   stripe_customer_id?: string | null
   stripe_subscription_id?: string | null
   ranking_preference?: string | null

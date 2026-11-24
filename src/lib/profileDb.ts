@@ -5,6 +5,7 @@ import {
   isMissingAvatarColumn,
   isMissingProColumn,
   isMissingRankingPreferenceColumn,
+  isMissingReferralColumn,
   isMissingStripeColumn,
   PROFILE_COLUMNS_BASE,
   PROFILE_COLUMNS_FULL,
@@ -12,7 +13,9 @@ import {
   PROFILE_COLUMNS_NO_PRO,
   PROFILE_COLUMNS_NO_RANKING,
   PROFILE_COLUMNS_NO_STRIPE,
+  PROFILE_COLUMNS_WITH_REFERRAL,
 } from './profileColumns'
+import type { ReferralStatus } from './referrals'
 import { assertCleanText } from './contentFilter'
 import { saveLocalRankingPreference } from './ranking'
 
@@ -28,12 +31,22 @@ export interface UserProfile {
   email: string
   avatarUrl?: string
   isPro?: boolean
+  proUntil?: string | null
+  bonusProDays?: number
+  referralCode?: string
+  referralStatus?: ReferralStatus | null
+  qualifiedReferralCount?: number
   hasBilling?: boolean
   rankingPreference?: RankingPreference | null
 }
 
 function parseRankingPreference(raw: string | null | undefined): RankingPreference | null {
   if (raw === 'taste_first' || raw === 'balanced' || raw === 'value_first') return raw
+  return null
+}
+
+function parseReferralStatus(raw: string | null | undefined): ReferralStatus | null {
+  if (raw === 'pending' || raw === 'qualified' || raw === 'rejected') return raw
   return null
 }
 
@@ -44,6 +57,11 @@ export function mapProfileRow(row: ProfileRow): UserProfile {
     email: row.email,
     avatarUrl: row.avatar_url ?? undefined,
     isPro: row.is_pro ?? undefined,
+    proUntil: row.pro_until ?? null,
+    bonusProDays: row.bonus_pro_days ?? 0,
+    referralCode: row.referral_code ?? undefined,
+    referralStatus: parseReferralStatus(row.referral_status),
+    qualifiedReferralCount: row.qualified_referral_count ?? 0,
     hasBilling: Boolean(row.stripe_customer_id),
     rankingPreference: parseRankingPreference(row.ranking_preference),
   }
@@ -55,6 +73,7 @@ async function selectMyProfileRow() {
   if (!user) return { row: null as ProfileRow | null, error: null as Error | null }
 
   const attempts = [
+    PROFILE_COLUMNS_WITH_REFERRAL,
     PROFILE_COLUMNS_FULL,
     PROFILE_COLUMNS_NO_RANKING,
     PROFILE_COLUMNS_NO_STRIPE,
@@ -72,7 +91,8 @@ async function selectMyProfileRow() {
       !isMissingAvatarColumn(result.error) &&
       !isMissingProColumn(result.error) &&
       !isMissingStripeColumn(result.error) &&
-      !isMissingRankingPreferenceColumn(result.error)
+      !isMissingRankingPreferenceColumn(result.error) &&
+      !isMissingReferralColumn(result.error)
     ) {
       return { row: null, error: result.error }
     }

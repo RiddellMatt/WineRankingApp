@@ -24,7 +24,7 @@ const FAQS = [
   {
     question: 'Can I rank wines with friends?',
     answer:
-      'Yes. Add a friend with the email they use to sign in, then see what they are drinking and keep your own ranked cellar.',
+      'Yes. Share your invite code, or add a friend with the email they use to sign in. When someone new rates a wine with your code, you each get a month of Pro.',
   },
 ] as const
 

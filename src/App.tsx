@@ -106,6 +106,7 @@ import {
 } from './lib/journeyDb'
 import type { BadgeInput } from './lib/badges'
 import { fetchMyProfile, updateRankingPreference, type UserProfile } from './lib/profileDb'
+import { prepareReferralForSession } from './lib/referrals'
 import { discardLocalProgressIfReset } from './lib/progressReset'
 import { isSupabaseConfigured } from './lib/supabase'
 import {
@@ -230,6 +231,7 @@ export default function App() {
   const [rankingSetupBusy, setRankingSetupBusy] = useState(false)
   const [savingFriendWishlistKey, setSavingFriendWishlistKey] = useState<string | null>(null)
   const [friendCount, setFriendCount] = useState(0)
+  const [referralNotice, setReferralNotice] = useState('')
   const [friendCountLoaded, setFriendCountLoaded] = useState(false)
   const [friendNameById, setFriendNameById] = useState(() => new Map<string, string>())
   const [friendsRequestedTab, setFriendsRequestedTab] = useState<'feed' | 'manage' | null>(null)
@@ -354,11 +356,14 @@ export default function App() {
 
   const badgeReady = cellarProgressReady && progressSynced
 
+  const referralCountRef = useRef(0)
+
   const buildBadgeInput = useCallback(
     (cellarWines: Wine[], friends: number): BadgeInput => ({
       wines: cellarWines,
       friendCount: friends,
       completedJourneys: completedJourneysRef.current,
+      referralCount: referralCountRef.current,
     }),
     [],
   )
@@ -527,6 +532,25 @@ export default function App() {
     [applyBadgeProgressChange, badgeReady, buildBadgeInput, ensureBadgeHydrated, pushXpFeedback],
   )
 
+  useEffect(() => {
+    if (!badgeReady) return
+    const count = profile?.qualifiedReferralCount ?? 0
+    if (count === referralCountRef.current) return
+    ensureBadgeHydrated({ seedIfMissing: false })
+    const previousInput = buildBadgeInput(winesRef.current, badgeFriendCountRef.current)
+    referralCountRef.current = count
+    const nextInput = buildBadgeInput(winesRef.current, badgeFriendCountRef.current)
+    applyBadgeProgressChange(previousInput, nextInput)
+    pushXpFeedback(previousInput, nextInput)
+  }, [
+    applyBadgeProgressChange,
+    badgeReady,
+    buildBadgeInput,
+    ensureBadgeHydrated,
+    profile?.qualifiedReferralCount,
+    pushXpFeedback,
+  ])
+
   function openProfile() {
     setFriendView(null)
     setView('profile')
@@ -608,9 +632,18 @@ export default function App() {
             p = await fetchMyProfile()
           }
         }
+        if (!cancelled && p) {
+          try {
+            await prepareReferralForSession()
+            const refreshed = await fetchMyProfile()
+            if (refreshed) p = refreshed
+          } catch {
+            // Invite attach retries the next time a wine is saved.
+          }
+        }
         if (!cancelled) {
           setProfile(p)
-          setPro(syncProFromServer(p?.isPro, true))
+          setPro(syncProFromServer(p?.isPro, true, p?.proUntil))
         }
       } catch {
         if (!cancelled) setProfile(null)
@@ -859,7 +892,7 @@ export default function App() {
         const p = await fetchMyProfile()
         if (cancelled) return
         setProfile(p)
-        const isPro = syncProFromServer(p?.isPro, true)
+        const isPro = syncProFromServer(p?.isPro, true, p?.proUntil)
         setPro(isPro)
         if (isPro || attempts >= 10) {
           goToAccount(true)
@@ -1109,12 +1142,23 @@ export default function App() {
     pushXpFeedback(previousInput, nextInput)
     if (cloudUser) {
       try {
+        const wasQualified = profile?.referralStatus === 'qualified'
         const synced = await upsertWine(cloudUser.id, wine, rankingPreference)
         setWines((prev) => {
           const next = prev.map((w) => (w.id === wine.id ? synced : w))
           winesRef.current = next
           return next
         })
+        if (wine.status !== 'wishlist' && wine.rating > 0) {
+          const nextProfile = await fetchMyProfile()
+          if (nextProfile) {
+            setProfile(nextProfile)
+            setPro(syncProFromServer(nextProfile.isPro, true, nextProfile.proUntil))
+            if (!wasQualified && nextProfile.referralStatus === 'qualified') {
+              setReferralNotice('Your invite counted. You and your friend each have a month of Pro.')
+            }
+          }
+        }
       } catch (e) {
         window.alert(`Saved locally but cloud sync failed: ${(e as Error).message}`)
       }
@@ -1331,6 +1375,14 @@ export default function App() {
       </header>
 
       <main ref={contentRef} className="content">
+        {referralNotice && (
+          <div className="referral-notice" role="status">
+            <p>{referralNotice}</p>
+            <button type="button" className="btn ghost small" onClick={() => setReferralNotice('')}>
+              Dismiss
+            </button>
+          </div>
+        )}
         {cellarLoading && view !== 'profile' && view !== 'more' && (
           <p className="auth-info">Syncing cellar…</p>
         )}
@@ -1363,7 +1415,7 @@ export default function App() {
                 return
               }
               setProfile(p)
-              setPro(syncProFromServer(p?.isPro, true))
+              setPro(syncProFromServer(p?.isPro, true, p?.proUntil))
             }}
             onSignOut={() => signOut()}
             onSignIn={() => exitOffline()}
@@ -1398,6 +1450,8 @@ export default function App() {
             <FriendsPanel
               userId={cloudUser.id}
               rankingPreference={rankingPreference}
+              inviteCode={profile?.referralCode}
+              qualifiedReferralCount={profile?.qualifiedReferralCount ?? 0}
               onViewCellar={viewFriendCellar}
               onSaveToWishlist={handleSaveWishlistFromFriend}
               isWishlistSaved={(wine) => isWishlistDuplicate(wines, wine)}

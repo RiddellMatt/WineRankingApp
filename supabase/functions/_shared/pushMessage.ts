@@ -7,6 +7,7 @@ export type PushNotificationType =
   | 'friend_badge_unlock'
   | 'friend_journey_complete'
   | 'wine_with_friend'
+  | 'referral_qualified'
 
 export interface PushMessage {
   title: string
@@ -42,6 +43,7 @@ export function shouldSendPushForType(
     case 'friend_request':
       return prefs.friend_requests !== false
     case 'friend_accepted':
+    case 'referral_qualified':
       return prefs.friend_accepted !== false
     case 'reaction':
       return prefs.reactions !== false
@@ -85,6 +87,16 @@ export function buildPushMessage(input: {
         body: `${actorName} accepted your friend request`,
         deepLink: pushDeepLink('manage'),
       }
+    case 'referral_qualified': {
+      const invited = payload.role === 'invited'
+      return {
+        title,
+        body: invited
+          ? `${actorName}'s invite counted. You both have a month of Pro.`
+          : `${actorName} rated a wine with your invite. You both have another month of Pro.`,
+        deepLink: pushDeepLink('manage'),
+      }
+    }
     case 'friend_badge_unlock': {
       const icon = String(payload.badge_icon ?? '🏅')
       const tier = TIER_LABEL[String(payload.tier)] ?? String(payload.tier ?? '')

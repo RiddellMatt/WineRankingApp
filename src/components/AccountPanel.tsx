@@ -22,6 +22,7 @@ import { applyTheme, loadStoredTheme, previewTheme, type AppTheme } from '../lib
 import { RankingPreferencePicker } from './RankingPreferencePicker'
 import { RatingTips } from './RatingTips'
 import { APP_NAME_PRO } from '../brand'
+import { referralProNote } from '../lib/referrals'
 import { Avatar } from './Avatar'
 import { AppIconPicker } from './AppIconPicker'
 import { ThemePicker } from './ThemePicker'
@@ -102,6 +103,12 @@ export function AccountPanel({
   const [deleteBusy, setDeleteBusy] = useState(false)
   const iosIap = isIosStoreKitConfigured()
   const path = purchasePath(nativePlatform(), iosIap)
+  const inviteProNote = referralProNote({
+    isPro: profile?.isPro,
+    proUntil: profile?.proUntil,
+    bonusProDays: profile?.bonusProDays,
+  })
+  const referralOnly = Boolean(pro && profile && !profile.isPro)
   const [iapPriceLabel, setIapPriceLabel] = useState<string | null>(null)
   const [iapSetupHint, setIapSetupHint] = useState<string | null>(null)
   const [iapPreviewLoaded, setIapPreviewLoaded] = useState(false)
@@ -625,19 +632,24 @@ export function AccountPanel({
               {pro && <span className="pro-badge">PRO</span>}
             </div>
             <p className="account-plan-detail">
-              {pro
-                ? signedIn
-                  ? 'Unlimited wines, Stats, export, AI scan, no ads.'
-                  : 'Unlimited wines, Stats, export, no ads on this device.'
-                : `${wineCount} of ${FREE_WINE_LIMIT} wines · Stats & export on Pro`}
+              {referralOnly && inviteProNote
+                ? inviteProNote
+                : pro
+                  ? signedIn
+                    ? 'Unlimited wines, Stats, export, AI scan, no ads.'
+                    : 'Unlimited wines, Stats, export, no ads on this device.'
+                  : `${wineCount} of ${FREE_WINE_LIMIT} wines · Stats & export on Pro`}
             </p>
+            {pro && !referralOnly && inviteProNote && (
+              <p className="account-hint">{inviteProNote}</p>
+            )}
             {!pro && signedIn && (
               <p className="account-hint">Subscribe to sync Pro across devices.</p>
             )}
             {!pro && !signedIn && <p className="account-hint">Sign in to subscribe.</p>}
           </div>
 
-          {pro && canCheckout && (iosIap || profile?.hasBilling) && (
+          {pro && !referralOnly && canCheckout && (iosIap || profile?.hasBilling) && (
             <button
               type="button"
               className="btn ghost account-manage-billing"
@@ -652,14 +664,14 @@ export function AccountPanel({
             </button>
           )}
 
-          {pro && (
+          {pro && !referralOnly && (
             <p className="account-legal-links">
               <LegalDocLink file="privacy.html">Privacy policy</LegalDocLink>
               <LegalDocLink file="terms.html">Terms of use</LegalDocLink>
             </p>
           )}
 
-          {!pro && (
+          {(!pro || referralOnly) && (
             <>
               <ul className="account-pro-features">
                 {PRO_FEATURES.map((feature) => (

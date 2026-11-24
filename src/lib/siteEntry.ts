@@ -8,7 +8,7 @@ export function shouldOpenAppDirectly(): boolean {
   if (isNativeApp()) return true
   if (isOAuthCallback() || isCheckoutSuccessUrl()) return true
   const params = new URLSearchParams(window.location.search)
-  if (params.has('view') || params.get('app') === '1') return true
+  if (params.has('view') || params.get('app') === '1' || params.has('ref')) return true
   try {
     return sessionStorage.getItem(ENTER_APP_KEY) === '1'
   } catch {

@@ -6,12 +6,21 @@ import { useAppTheme } from '../lib/useAppTheme'
 import { OAUTH_ERROR_EVENT, OAUTH_SUCCESS_EVENT } from '../lib/mobileOAuth'
 import { focusNextTextField, isTextField } from '../lib/keyboardInset'
 import { isNativeApp } from '../lib/platform'
+import {
+  clearRememberedReferralCode,
+  loadRememberedReferralCode,
+  normalizeReferralCode,
+  rememberReferralCode,
+} from '../lib/referrals'
 
 export function AuthScreen() {
   const theme = useAppTheme()
   const showThemeLogo = usesThemeWordmarkLogo(theme)
   const { signIn, signUp, signInWithOAuth, user, configError } = useAuth()
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  const [referralCode, setReferralCode] = useState(loadRememberedReferralCode)
+  const [mode, setMode] = useState<'signin' | 'signup'>(
+    loadRememberedReferralCode() ? 'signup' : 'signin',
+  )
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -61,7 +70,7 @@ export function AuthScreen() {
     setBusy(true)
     const err =
       mode === 'signup'
-        ? await signUp(email.trim(), password, displayName.trim())
+        ? await signUp(email.trim(), password, displayName.trim(), referralCode.trim())
         : await signIn(email.trim(), password)
     setBusy(false)
     if (err) {
@@ -142,6 +151,26 @@ export function AuthScreen() {
               required
             />
           </label>
+          {mode === 'signup' && (
+            <label className="field">
+              <span>Invite code</span>
+              <input
+                type="text"
+                value={referralCode}
+                onChange={(e) => {
+                  setReferralCode(e.target.value)
+                  if (normalizeReferralCode(e.target.value)) rememberReferralCode(e.target.value)
+                  else if (!e.target.value.trim()) clearRememberedReferralCode()
+                }}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="next"
+                placeholder="Optional"
+                maxLength={16}
+              />
+            </label>
+          )}
           <label className="field">
             <span>Password</span>
             <input

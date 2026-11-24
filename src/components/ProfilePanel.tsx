@@ -77,8 +77,14 @@ export function ProfilePanel({
   }, [profile.id])
 
   const badges = useMemo(
-    () => computeDisplayedBadgeProgress({ wines, friendCount, completedJourneys }),
-    [wines, friendCount, completedJourneys],
+    () =>
+      computeDisplayedBadgeProgress({
+        wines,
+        friendCount,
+        completedJourneys,
+        referralCount: profile.qualifiedReferralCount ?? 0,
+      }),
+    [wines, friendCount, completedJourneys, profile.qualifiedReferralCount],
   )
 
   const playerLevel = useMemo(

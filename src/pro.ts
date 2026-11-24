@@ -1,4 +1,5 @@
 import { PRO_STORAGE_KEY } from './brand'
+import { hasProAccess } from './lib/referrals'
 
 const PRO_KEY = PRO_STORAGE_KEY
 
@@ -23,12 +24,16 @@ export function clearPro(): void {
 }
 
 /**
- * When signed in, server `is_pro` is the source of truth.
+ * When signed in, paid Pro or an unexpired invite month is the source of truth.
  * Offline mode keeps using localStorage until the user signs in.
  */
-export function syncProFromServer(isPro: boolean | undefined, signedIn: boolean): boolean {
+export function syncProFromServer(
+  isPro: boolean | undefined,
+  signedIn: boolean,
+  proUntil?: string | null,
+): boolean {
   if (signedIn) {
-    if (isPro) {
+    if (hasProAccess(isPro, proUntil)) {
       activatePro()
       return true
     }
