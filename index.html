@@ -15,7 +15,13 @@
     <link rel="canonical" href="https://decantiwine.com/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Decanti" />
-    <meta property="og:title" content="Decanti — wine ranking app" />
+    <!--
+      iOS share sheets hide the side of a title that matches the domain when a
+      dash, pipe, or colon splits it. "Decanti — wine ranking app" on
+      decantiwine.com was previewing as "wine ranking app".
+    -->
+    <meta name="apple:title" content="Decanti" />
+    <meta property="og:title" content="Decanti" />
     <meta
       property="og:description"
       content="Rate every bottle you try, keep a want-to-try list, and share your cellar with friends."
@@ -23,7 +29,7 @@
     <meta property="og:url" content="https://decantiwine.com/" />
     <meta property="og:image" content="https://decantiwine.com/icons/pwa-512.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Decanti — wine ranking app" />
+    <meta name="twitter:title" content="Decanti" />
     <meta
       name="twitter:description"
       content="Rate every bottle you try, keep a want-to-try list, and share your cellar with friends."
