@@ -285,22 +285,20 @@ export function IconMenu({ className = 'ui-icon', size = defaultSize }: IconProp
   )
 }
 
-/** Tab: More. Dot size sits between the original ellipsis and a full-height glyph. */
+/** Tab: More. Same footprint as the other tab glyphs, matching the iOS ellipsis symbol. */
 export function IconEllipsis({ className = 'ui-icon', size = defaultSize }: IconProps) {
-  const height = size
-  const width = Math.round((size * 54) / 22)
   return (
     <svg
       className={className}
-      width={width}
-      height={height}
-      viewBox="0 0 54 22"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
       fill="currentColor"
       aria-hidden
     >
-      <circle cx="9" cy="11" r="7.6" />
-      <circle cx="27" cy="11" r="7.6" />
-      <circle cx="45" cy="11" r="7.6" />
+      <circle cx="5" cy="12" r="1.35" />
+      <circle cx="12" cy="12" r="1.35" />
+      <circle cx="19" cy="12" r="1.35" />
     </svg>
   )
 }
