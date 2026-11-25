@@ -32,7 +32,7 @@
       var target = android
         ? 'intent://login-callback' +
           search +
-          '#Intent;scheme=com.northline.decanti;package=com.northline.decanti;end'
+          '#Intent;scheme=com.northline.decanti;package=com.northline.decanti;action=android.intent.action.VIEW;category=android.intent.category.DEFAULT;category=android.intent.category.BROWSABLE;end'
         : scheme
       open.href = target
       window.location.replace(target)
