@@ -3787,7 +3787,7 @@ button.tasting-tag-pill-btn.active {
 
 .app-launch-mark,
 .app-launch-logo {
-  animation: app-launch-mark-in 0.7s ease-out both;
+  animation: app-launch-mark-in 0.35s ease-out both;
 }
 
 .app-launch-logo {
@@ -3799,12 +3799,10 @@ button.tasting-tag-pill-btn.active {
 @keyframes app-launch-mark-in {
   from {
     opacity: 0;
-    transform: scale(0.94);
   }
 
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -7698,6 +7696,10 @@ html.show-banner-ad.native-ios-tab-bar .content {
 }
 
 /* Reserved slot while native AdMob is loading (TestFlight / QA). */
+html.native-app:not(.native-ios-tab-bar).ad-banner-pending.show-banner-ad::after {
+  bottom: var(--banner-native-margin, calc(var(--tab-bar-height, 3.55rem) + var(--safe-bottom)));
+}
+
 html.ad-banner-pending.show-banner-ad::after {
   content: '';
   position: fixed;

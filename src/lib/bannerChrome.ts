@@ -24,6 +24,28 @@ const IOS_MIN_TAB_INSET_PX = 49
  * safe area, then reload it once the inset caught up. Wait until that inset
  * has actually moved (or was already large when we looked) and stopped changing.
  */
+/** HTML dock when it has not been measured yet (3.55rem bar, padding, raised add button). */
+export const HTML_DOCK_FALLBACK_PX = Math.round(3.55 * 16 + 0.28 * 16 + 0.35 * 16 + 0.95 * 16)
+
+/**
+ * Pixels to lift a bottom banner above the in-app menu.
+ * The Android AdMob plugin adds the navigation-bar inset on its own, so that
+ * inset is removed from the measured dock distance before the margin is set.
+ * iOS uses a fixed UITabBar height; its safe-area value is added as passed in.
+ */
+export function bannerMarginAboveDock(input: {
+  nativeTabBar: boolean
+  /** Distance from the top of the menu (including the raised add button) to the layout viewport bottom. */
+  dockFromBottomPx: number
+  safeBottomPx: number
+}): number {
+  if (input.nativeTabBar) {
+    return Math.round(49 + input.safeBottomPx + 6)
+  }
+  const chrome = input.dockFromBottomPx > 0 ? input.dockFromBottomPx : HTML_DOCK_FALLBACK_PX
+  return Math.round(Math.max(0, chrome - input.safeBottomPx) + 8)
+}
+
 export function isBannerChromeSettled(sample: BannerChromeSample): boolean {
   if (sample.platform !== 'ios') return true
   if (sample.elapsedMs >= BANNER_CHROME_TIMEOUT_MS) return true
