@@ -18,7 +18,7 @@ import {
   shouldUseTestAdUnits,
 } from './adConfig'
 import { isNativeApp } from './platform'
-import { isBannerChromeSettled } from './bannerChrome'
+import { bannerMarginAboveDock, isBannerChromeSettled } from './bannerChrome'
 
 let running = false
 let activeAdUnitId: string | null = null
@@ -96,20 +96,35 @@ function cssPx(value: string): number {
   return Number.isFinite(n) ? n : 0
 }
 
+/** Distance from the top of the HTML menu to the bottom of the layout viewport. */
+function measureDockFromBottomPx(): number {
+  const dock = document.querySelector('.tabs.tabs-dock')
+  if (!(dock instanceof HTMLElement)) return 0
+  const rect = dock.getBoundingClientRect()
+  if (rect.height < 1) return 0
+  let top = rect.top
+  const fab = dock.querySelector('.tab-fab-bubble')
+  if (fab instanceof HTMLElement) {
+    const fabRect = fab.getBoundingClientRect()
+    if (fabRect.height > 0) top = Math.min(top, fabRect.top)
+  }
+  return Math.max(0, window.innerHeight - top)
+}
+
 /** Lift banner above Decanti bottom chrome (native UITabBar or HTML dock). */
 function bannerBottomMarginPx(): number {
   const root = document.documentElement
-  const style = getComputedStyle(root)
-  const tabBar = cssPx(style.getPropertyValue('--tab-bar-height')) || 3.55 * 16
-  const safeBottom = cssPx(style.getPropertyValue('--safe-bottom'))
-  if (root.classList.contains('native-ios-tab-bar')) {
-    // UIView banner sits on the full window; lift above native UITabBar (~49pt) + home indicator.
-    return Math.round(49 + safeBottom + 6)
-  }
-  if (root.classList.contains('native-app')) {
-    return Math.round(tabBar + 12)
-  }
-  return 0
+  if (!root.classList.contains('native-app')) return 0
+  const nativeTabBar = root.classList.contains('native-ios-tab-bar')
+  // --safe-bottom keeps the env() text. iOS still reads it so the 49pt lift stays put.
+  const declaredSafeBottom = nativeTabBar
+    ? cssPx(getComputedStyle(root).getPropertyValue('--safe-bottom'))
+    : measureSafeAreaBottomPx()
+  return bannerMarginAboveDock({
+    nativeTabBar,
+    dockFromBottomPx: nativeTabBar ? 0 : measureDockFromBottomPx(),
+    safeBottomPx: declaredSafeBottom,
+  })
 }
 
 function bannerOptions(adId: string): BannerAdOptions {
@@ -181,6 +196,15 @@ function invalidateBannerChrome(): void {
  * reload moves it. Wait until that inset has settled before the first show.
  */
 function waitForSettledBannerChrome(): Promise<void> {
+  if (Capacitor.getPlatform() === 'android') {
+    return (async () => {
+      const started = Date.now()
+      while (Date.now() - started < 2500) {
+        if (measureDockFromBottomPx() > 0) return
+        await delay(50)
+      }
+    })()
+  }
   if (Capacitor.getPlatform() !== 'ios') {
     return new Promise((resolve) => requestAnimationFrame(() => resolve()))
   }
