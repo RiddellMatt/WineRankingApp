@@ -1,1 +1,0 @@
-import{o as e}from"./index-DgV3_lMR.js";var t=class extends e{async show(e){}async hide(e){}};export{t as SplashScreenWeb};
