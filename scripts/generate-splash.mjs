@@ -83,6 +83,26 @@ async function writeAndroid() {
   }
 }
 
+async function writeSplashIcon() {
+  const canvas = 960
+  // Centered so a circular Android 12 mask still shows the whole word.
+  const word = await sharp(wordmarkPath).resize({ width: 530, fit: 'inside' }).png().toBuffer()
+  const dir = join(root, 'android/app/src/main/res/drawable-nodpi')
+  mkdirSync(dir, { recursive: true })
+  await sharp({
+    create: {
+      width: canvas,
+      height: canvas,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
+  })
+    .composite([{ input: word, gravity: 'center' }])
+    .png()
+    .toFile(join(dir, 'splash_icon.png'))
+}
+
 await writeIos()
 await writeAndroid()
+await writeSplashIcon()
 console.log('Decanti splash assets written (wordmark on burgundy).')

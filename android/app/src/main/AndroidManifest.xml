@@ -20,13 +20,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.northline.decanti" />
-            </intent-filter>
         </activity>
 
         <activity-alias
@@ -41,6 +34,16 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.northline.decanti" android:host="login-callback" />
+                <data android:scheme="com.northline.decanti" android:host="checkout-success" />
+                <data android:scheme="com.northline.decanti" android:host="checkout-cancel" />
+                <data android:scheme="com.northline.decanti" android:host="account" />
+                <data android:scheme="com.northline.decanti" android:host="friends" />
+            </intent-filter>
         </activity-alias>
 
         <activity-alias
@@ -54,6 +57,16 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.northline.decanti" android:host="login-callback" />
+                <data android:scheme="com.northline.decanti" android:host="checkout-success" />
+                <data android:scheme="com.northline.decanti" android:host="checkout-cancel" />
+                <data android:scheme="com.northline.decanti" android:host="account" />
+                <data android:scheme="com.northline.decanti" android:host="friends" />
             </intent-filter>
         </activity-alias>
 

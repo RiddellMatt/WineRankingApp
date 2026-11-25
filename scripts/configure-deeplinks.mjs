@@ -40,6 +40,17 @@ function patchIosInfoPlist() {
   console.log('Patched iOS Info.plist with URL scheme.')
 }
 
+const ANDROID_VIEW_FILTER = `            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${SCHEME}" android:host="login-callback" />
+                <data android:scheme="${SCHEME}" android:host="checkout-success" />
+                <data android:scheme="${SCHEME}" android:host="checkout-cancel" />
+                <data android:scheme="${SCHEME}" android:host="account" />
+                <data android:scheme="${SCHEME}" android:host="friends" />
+            </intent-filter>`
+
 function patchAndroidManifest() {
   const manifestPath = path.join(ROOT, 'android/app/src/main/AndroidManifest.xml')
   if (!fs.existsSync(manifestPath)) {
@@ -48,34 +59,26 @@ function patchAndroidManifest() {
   }
 
   let manifest = fs.readFileSync(manifestPath, 'utf8')
-  if (manifest.includes(`android:scheme="${SCHEME}"`)) {
-    const repaired = manifest.replace(
-      `<intent-filter android:autoVerify="true">\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="${SCHEME}" />\n            </intent-filter>`,
-      `<intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="${SCHEME}" />\n            </intent-filter>`,
-    )
-    if (repaired !== manifest) {
-      fs.writeFileSync(manifestPath, repaired)
-      console.log('Removed autoVerify from the Android sign-in URL scheme.')
-      return
-    }
+  const before = manifest
+  manifest = manifest.replace(/<intent-filter android:autoVerify="true">/g, '<intent-filter>')
+
+  // The launcher is an activity-alias. Chrome's package-scoped return intent
+  // only opens the app when that enabled alias accepts the link.
+  manifest = manifest.replace(/<activity-alias\b[\s\S]*?<\/activity-alias>/g, (alias) => {
+    if (alias.includes(`android:scheme="${SCHEME}"`)) return alias
+    return alias.replace('</activity-alias>', `${ANDROID_VIEW_FILTER}\n        </activity-alias>`)
+  })
+
+  if (!manifest.includes(`android:scheme="${SCHEME}"`)) {
+    manifest = manifest.replace('</activity>', `${ANDROID_VIEW_FILTER}\n        </activity>`)
+  }
+
+  if (manifest === before) {
     console.log('Android URL scheme already configured.')
     return
   }
-
-  const intentFilter = `
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="${SCHEME}" />
-            </intent-filter>`
-
-  manifest = manifest.replace(
-    '</activity>',
-    `${intentFilter}\n        </activity>`,
-  )
   fs.writeFileSync(manifestPath, manifest)
-  console.log('Patched AndroidManifest.xml with URL scheme.')
+  console.log('Patched AndroidManifest.xml with URL scheme on the launcher aliases.')
 }
 
 patchIosInfoPlist()
