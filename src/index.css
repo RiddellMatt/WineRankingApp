@@ -592,10 +592,8 @@ textarea::placeholder {
   flex-shrink: 0;
 }
 
-/* Halfway between the original 13px dots and the 20px full-height dots. */
-.tab-icon-more {
-  width: 3.58rem;
-  height: 1.46rem;
+.tab-dock-label {
+  display: none;
 }
 
 .tab-pro-badge {
@@ -7432,6 +7430,7 @@ html.show-banner-ad .account-panel {
 
 /* Capacitor native shell — same bottom nav even on wider tablets in portrait */
 html.native-app {
+  --tab-bar-height: 4.35rem;
   overflow-x: hidden;
   max-width: 100%;
   overscroll-behavior: none;
@@ -7626,23 +7625,29 @@ html.native-app .tab.tab-icon {
   padding: 0.45rem 0.1rem;
 }
 
-html.native-app .tab-icon-svg:not(.tab-icon-more) {
+html.native-app .tab-icon-svg {
   width: 1.45rem;
   height: 1.45rem;
 }
 
+html.native-app .tabs.tabs-dock .tab-dock-label {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
 html.native-app .tabs.tabs-dock .tab-fab-bubble {
-  width: 2.85rem;
-  height: 2.85rem;
-  margin-top: -0.95rem;
-  box-shadow:
-    0 6px 18px rgba(196, 30, 58, 0.5),
-    0 0 0 2px color-mix(in srgb, var(--surface) 85%, transparent);
+  width: 1.55rem;
+  height: 1.55rem;
+  margin-top: 0;
+  box-shadow: none;
 }
 
 html.native-app .tab-fab .tab-fab-icon {
-  width: 1.65rem;
-  height: 1.65rem;
+  width: 1.05rem;
+  height: 1.05rem;
 }
 
 html.native-app .auth-screen {

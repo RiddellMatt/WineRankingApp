@@ -415,6 +415,8 @@ function patchAndroidBannerHiddenUntilSettled() {
                 if (positioned || decantiRevealAttempts > 24) {
                     if (mAdView.getHeight() > 0) {
                         decantiBannerRevealed = true;
+                        mAdViewLayout.setElevation(32f);
+                        mAdViewLayout.bringToFront();
                         mAdViewLayout.setVisibility(View.VISIBLE);
                     }
                     return;
@@ -434,6 +436,30 @@ function patchAndroidBannerHiddenUntilSettled() {
   console.log('[patch-admob-android] Banner stays hidden until insets settle')
 }
 
+/** Keep an already-patched Android banner above the WebView. */
+function patchAndroidBannerOnTop() {
+  const androidBanner = resolve(
+    import.meta.dirname,
+    '../node_modules/@capacitor-community/admob/android/src/main/java/com/getcapacitor/community/admob/banner/BannerExecutor.java',
+  )
+  if (!existsSync(androidBanner)) return
+  let source = readFileSync(androidBanner, 'utf8')
+  if (source.includes('mAdViewLayout.bringToFront()')) return
+  const target = `                        decantiBannerRevealed = true;
+                        mAdViewLayout.setVisibility(View.VISIBLE);`
+  const replacement = `                        decantiBannerRevealed = true;
+                        mAdViewLayout.setElevation(32f);
+                        mAdViewLayout.bringToFront();
+                        mAdViewLayout.setVisibility(View.VISIBLE);`
+  if (!source.includes(target)) {
+    console.warn('[patch-admob-android] reveal path changed; skipping bring-to-front')
+    return
+  }
+  source = source.replace(target, replacement)
+  writeFileSync(androidBanner, source)
+  console.log('[patch-admob-android] Banner is raised above the WebView')
+}
+
 patchBannerZOrder()
 patchGetRootVC()
 patchBannerDefaultTestUnit()
@@ -441,3 +467,4 @@ patchBannerReceiveAdSizing()
 repairBannerReceiveAdBrace()
 patchBannerHiddenUntilPositioned()
 patchAndroidBannerHiddenUntilSettled()
+patchAndroidBannerOnTop()

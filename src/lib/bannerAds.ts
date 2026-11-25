@@ -108,7 +108,10 @@ function measureDockFromBottomPx(): number {
     const fabRect = fab.getBoundingClientRect()
     if (fabRect.height > 0) top = Math.min(top, fabRect.top)
   }
-  return Math.max(0, window.innerHeight - top)
+  const fromBottom = Math.max(0, window.innerHeight - top)
+  // A dock still in document flow, not anchored, would shove the banner off screen.
+  if (fromBottom < 48 || fromBottom > 200) return 0
+  return fromBottom
 }
 
 /** Lift banner above Decanti bottom chrome (native UITabBar or HTML dock). */
@@ -119,7 +122,7 @@ function bannerBottomMarginPx(): number {
   // --safe-bottom keeps the env() text. iOS still reads it so the 49pt lift stays put.
   const declaredSafeBottom = nativeTabBar
     ? cssPx(getComputedStyle(root).getPropertyValue('--safe-bottom'))
-    : measureSafeAreaBottomPx()
+    : 0
   return bannerMarginAboveDock({
     nativeTabBar,
     dockFromBottomPx: nativeTabBar ? 0 : measureDockFromBottomPx(),

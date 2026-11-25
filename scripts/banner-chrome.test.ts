@@ -13,14 +13,14 @@ test.after(async () => {
   await server.close()
 })
 
-test('android banner clears the measured menu and leaves the nav inset to the plugin', () => {
+test('android banner clears the measured menu without subtracting the nav inset', () => {
   assert.equal(
     chrome.bannerMarginAboveDock({
       nativeTabBar: false,
       dockFromBottomPx: 128,
       safeBottomPx: 48,
     }),
-    88,
+    136,
   )
 })
 

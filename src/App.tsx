@@ -1754,6 +1754,7 @@ export default function App() {
           }}
         >
           <IconCellarList className="tab-icon-svg" size={22} />
+          <span className="tab-dock-label">Cellar</span>
         </button>
         {(cloudUser || activeGuide?.tab === 'friends') && (
           <button
@@ -1767,6 +1768,7 @@ export default function App() {
             }}
           >
             <IconChatBubble className="tab-icon-svg" size={22} />
+            <span className="tab-dock-label">Social</span>
           </button>
         )}
         <button
@@ -1782,6 +1784,7 @@ export default function App() {
           <span className="tab-fab-bubble" aria-hidden="true">
             <IconPlus className="tab-fab-icon" size={28} />
           </span>
+          <span className="tab-dock-label">Add</span>
         </button>
         <button
           type="button"
@@ -1794,6 +1797,7 @@ export default function App() {
           }}
         >
           <IconBarChart className="tab-icon-svg" size={22} />
+          <span className="tab-dock-label">Stats</span>
           {!pro && (
             <span className="tab-lock-badge" title="Decanti Pro">
               <IconLock className="tab-lock-icon" size={10} />
@@ -1813,6 +1817,7 @@ export default function App() {
           }}
         >
           <IconEllipsis className="tab-icon-svg tab-icon-more" size={22} />
+          <span className="tab-dock-label">More</span>
         </button>
       </nav>
       )}
