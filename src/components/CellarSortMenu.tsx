@@ -35,9 +35,9 @@ export function CellarSortMenu({ value, options, onChange, layout = 'compact' }:
     }
   }, [open])
 
-  const activeLabel = options.find((o) => o.key === value)?.label ?? 'Rating'
+  const activeLabel = options.find((o) => o.key === value)?.label ?? 'Recently added'
   const isBar = layout === 'bar'
-  const barLabel = sortPicked ? activeLabel : 'Category'
+  const barLabel = activeLabel
 
   return (
     <div
