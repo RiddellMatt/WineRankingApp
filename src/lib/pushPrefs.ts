@@ -6,6 +6,8 @@ export interface PushNotificationPrefs {
   friend_accepted: boolean
   reactions: boolean
   friend_milestones: boolean
+  /** A friend tagged you on a wine they logged. */
+  tagged_with_you: boolean
 }
 
 export const DEFAULT_PUSH_PREFS: PushNotificationPrefs = {
@@ -14,6 +16,7 @@ export const DEFAULT_PUSH_PREFS: PushNotificationPrefs = {
   friend_accepted: true,
   reactions: true,
   friend_milestones: true,
+  tagged_with_you: true,
 }
 
 function normalizePrefs(raw: unknown): PushNotificationPrefs {
@@ -25,6 +28,7 @@ function normalizePrefs(raw: unknown): PushNotificationPrefs {
     friend_accepted: o.friend_accepted !== false,
     reactions: o.reactions !== false,
     friend_milestones: o.friend_milestones !== false,
+    tagged_with_you: o.tagged_with_you !== false,
   }
 }
 

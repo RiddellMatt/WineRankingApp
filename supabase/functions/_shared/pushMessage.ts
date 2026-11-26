@@ -51,7 +51,8 @@ export function shouldSendPushForType(
     case 'friend_journey_complete':
       return prefs.friend_milestones !== false
     case 'wine_with_friend':
-      return prefs.reactions !== false
+      // Missing key means on, so accounts created before this toggle still get the push.
+      return prefs.tagged_with_you !== false
     default:
       return false
   }
