@@ -57,6 +57,13 @@ function joinNames(names: string[]): string {
  * "with Jordan" on a friend's post: the actor tried the wine with these people.
  * A tagged person the viewer cannot name still counts, as "a friend".
  */
+export function viewerIsTagged(
+  withFriends: FriendProfile[] | undefined,
+  viewerId: string,
+): boolean {
+  return Boolean(withFriends?.some((friend) => friend.id === viewerId))
+}
+
 export function activityWithFriendsClause(
   withFriends: FriendProfile[] | undefined,
   viewerId: string,

@@ -20,7 +20,8 @@ function samePrefs(a: PushNotificationPrefs, b: PushNotificationPrefs): boolean 
     a.friend_requests === b.friend_requests &&
     a.friend_accepted === b.friend_accepted &&
     a.reactions === b.reactions &&
-    a.friend_milestones === b.friend_milestones
+    a.friend_milestones === b.friend_milestones &&
+    a.tagged_with_you === b.tagged_with_you
   )
 }
 
@@ -137,6 +138,17 @@ export function PushNotificationSettings({ userId, signedIn, cloudConfigured }: 
               onChange={(e) => update('reactions', e.target.checked)}
             />
             <span>Reactions on your wines</span>
+          </label>
+        </li>
+        <li>
+          <label className="push-settings-row">
+            <input
+              type="checkbox"
+              checked={draft.tagged_with_you}
+              disabled={loading || busy || !draft.enabled}
+              onChange={(e) => update('tagged_with_you', e.target.checked)}
+            />
+            <span>Tagged on a wine</span>
           </label>
         </li>
         <li>

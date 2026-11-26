@@ -54,6 +54,8 @@ interface Props {
   userId?: string
   /** Close this form and show the cellar card for a wine already saved. */
   onViewExisting?: (wine: Wine) => void
+  /** initial is a prefill for a new bottle, not an edit of that id. */
+  createNew?: boolean
 }
 
 export function WineForm({
@@ -71,8 +73,10 @@ export function WineForm({
   autoOpenScan = false,
   userId,
   onViewExisting,
+  createNew = false,
 }: Props) {
   const wishlistForm = formMode === 'wishlist'
+  const editingExisting = Boolean(initial) && !createNew
   const promoteFromWishlist = initial?.status === 'wishlist' && !wishlistForm
   const [name, setName] = useState(initial?.name ?? '')
   const [winery, setWinery] = useState(initial?.winery ?? '')
@@ -391,7 +395,7 @@ export function WineForm({
     }
     const wine = applyCompositeRating(
       {
-        id: initial?.id ?? crypto.randomUUID(),
+        id: editingExisting ? initial!.id : crypto.randomUUID(),
         name: name.trim(),
         winery: winery.trim(),
         vintage: vintage ? Number(vintage) : null,
@@ -417,7 +421,7 @@ export function WineForm({
         taste: wishlistForm ? {} : taste,
         tasteSource: wishlistForm ? undefined : tasteTouched ? 'custom' : 'typical',
         status: wishlistForm ? 'wishlist' : 'tried',
-        addedAt: initial?.addedAt ?? Date.now(),
+        addedAt: editingExisting ? initial!.addedAt : Date.now(),
       },
       rankingPreference,
     )
@@ -438,7 +442,7 @@ export function WineForm({
       })
       aiScanBaselineRef.current = null
     }
-    const checkingNewTried = !wishlistForm && (!initial || initial.status === 'wishlist')
+    const checkingNewTried = !wishlistForm && (!editingExisting || initial?.status === 'wishlist')
     if (checkingNewTried && !allowDuplicateRef.current) {
       const match = findCellarDuplicate(cellarWines, wine)
       if (match) {
@@ -463,13 +467,13 @@ export function WineForm({
 
   const modalTitle = promoteFromWishlist
     ? 'Mark as tried'
-    : initial
+    : editingExisting
       ? wishlistForm
         ? 'Edit wishlist item'
         : 'Edit wine'
       : 'Add wine'
 
-  const destinationHint = !initial
+  const destinationHint = !editingExisting
     ? wishlistForm
       ? 'To your wishlist'
       : 'To your cellar'
@@ -477,7 +481,7 @@ export function WineForm({
 
   const submitLabel = promoteFromWishlist
     ? 'Save to cellar'
-    : initial
+    : editingExisting
       ? 'Save changes'
       : wishlistForm
         ? 'Add to wishlist'

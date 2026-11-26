@@ -10,6 +10,8 @@ interface Props {
   cloudConfigured: boolean
   onUpgrade: () => void
   onSaveWishlist: (wine: Wine) => void | Promise<void>
+  onAddToCellar?: (wine: Wine) => void
+  isInCellar?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
   onAddWine: () => void
 }
 
@@ -22,6 +24,8 @@ export function ScanHub({
   cloudConfigured,
   onUpgrade,
   onSaveWishlist,
+  onAddToCellar,
+  isInCellar,
   onAddWine,
 }: Props) {
   return (
@@ -43,6 +47,8 @@ export function ScanHub({
         cloudConfigured={cloudConfigured}
         onUpgrade={onUpgrade}
         onSaveWishlist={onSaveWishlist}
+        onAddToCellar={onAddToCellar}
+        isInCellar={isInCellar}
       />
     </div>
   )

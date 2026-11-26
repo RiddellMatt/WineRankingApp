@@ -1,5 +1,12 @@
 import { useRef, useState } from 'react'
-import { isWishlistDuplicate, menuMatchToWishlist } from '../lib/wishlist'
+import { findCellarDuplicate } from '../lib/winePours'
+import {
+  isWishlistDuplicate,
+  menuMatchTaste,
+  menuMatchToTriedDraft,
+  menuMatchToWishlist,
+} from '../lib/wishlist'
+import { TasteDisplay } from './TasteProfile'
 import { matchMenu, matchParsedMenuWines, type MenuMatch } from '../menuMatch'
 import { ShopForWine } from './ShopForWine'
 import { MenuScanError, scanMenuWithAi } from '../lib/menuScanApi'
@@ -15,6 +22,8 @@ interface Props {
   cloudConfigured: boolean
   onUpgrade: () => void
   onSaveWishlist: (wine: Wine) => void | Promise<void>
+  onAddToCellar?: (wine: Wine) => void
+  isInCellar?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
 }
 
 type State =
@@ -38,6 +47,8 @@ export function MenuScan({
   cloudConfigured,
   onUpgrade,
   onSaveWishlist,
+  onAddToCellar,
+  isInCellar,
 }: Props) {
   const [state, setState] = useState<State>({ phase: 'idle' })
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set())
@@ -235,6 +246,11 @@ export function MenuScan({
             const key = matchKey(m, i)
             const saved = isSaved(m) || savedKeys.has(key)
             const saving = savingKey === key
+            const taste = menuMatchTaste(m)
+            const cellarDraft = menuMatchToTriedDraft(m)
+            const inCellar =
+              isInCellar?.(cellarDraft) ??
+              Boolean(findCellarDuplicate(wines, { ...cellarDraft, id: 'draft' }))
             return (
             <li className="menu-result" key={key}>
               <div className={`menu-score ${scoreClass(m.score)}`}>
@@ -254,7 +270,21 @@ export function MenuScan({
                     </span>
                   ))}
                 </div>
+                <div className="menu-taste">
+                  <p className="menu-taste-caption">Typical {taste.basedOn}</p>
+                  <TasteDisplay taste={taste.taste} />
+                </div>
                 <div className="menu-result-actions">
+                  {onAddToCellar && (
+                    <button
+                      type="button"
+                      className={`btn ghost small menu-save-btn ${inCellar ? 'saved' : ''}`}
+                      disabled={inCellar}
+                      onClick={() => onAddToCellar(cellarDraft)}
+                    >
+                      {inCellar ? 'In your cellar' : 'Add to cellar'}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className={`btn ghost small menu-save-btn ${saved ? 'saved' : ''}`}
