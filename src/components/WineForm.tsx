@@ -31,6 +31,7 @@ import { isoDateFromLocal, normalizeTriedOn } from '../lib/wineMoments'
 import { WinePhotoField } from './WinePhotoField'
 import { VarietalSelect } from './VarietalSelect'
 import { RegionPicker } from './RegionPicker'
+import { PlacePicker } from './PlacePicker'
 import { ScanPourOverlay } from './ScanPourOverlay'
 import { WithFriendsPicker } from './WithFriendsPicker'
 import { fetchFriendships, type FriendProfile } from '../lib/friendsDb'
@@ -195,6 +196,20 @@ export function WineForm({
   }
 
   const parsedPrice = price ? Number(price) : null
+
+  const recentDrinkPlaces = useMemo(() => {
+    const seen = new Set<string>()
+    const places: string[] = []
+    for (const wine of [...cellarWines].sort((a, b) => b.addedAt - a.addedAt)) {
+      const place = wine.purchasedAt.trim()
+      const key = place.toLowerCase()
+      if (!place || seen.has(key)) continue
+      seen.add(key)
+      places.push(place)
+      if (places.length === 4) break
+    }
+    return places
+  }, [cellarWines])
 
   const previewRank = useMemo(
     () =>
@@ -640,16 +655,15 @@ export function WineForm({
               enterKeyHint="next"
             />
           </label>
-          <label className="field span-2">
-            <span>Where you drank it</span>
-            <input
+          <div className="field span-2">
+            <span id="drink-place-label">Where you drank it</span>
+            <PlacePicker
               value={purchasedAt}
-              onChange={(e) => setPurchasedAt(e.target.value)}
-              placeholder="e.g. Charleston, SC or a winery"
-              enterKeyHint="next"
-              autoComplete="off"
+              onChange={setPurchasedAt}
+              labelledBy="drink-place-label"
+              recentPlaces={recentDrinkPlaces}
             />
-          </label>
+          </div>
         </div>
 
         {!wishlistForm && (
