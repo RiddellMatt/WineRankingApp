@@ -117,6 +117,7 @@ export function WineForm({
   const [aiPreviewUrl, setAiPreviewUrl] = useState<string | null>(null)
   const scanInputRef = useRef<HTMLInputElement>(null)
   const formBodyRef = useRef<HTMLDivElement>(null)
+  const dismissOnScrollRef = useRef(false)
   const ignoreCloseUntil = useRef(0)
   const aiScanBaselineRef = useRef<LabelScanBaseline | null>(null)
   const aiAvailable = pro && signedIn && cloudConfigured
@@ -523,7 +524,19 @@ export function WineForm({
         <div
           className="wine-form-body"
           ref={formBodyRef}
+          onTouchMove={(e) => {
+            const target = e.target
+            const onField =
+              target instanceof Element &&
+              Boolean(target.closest('textarea, input, select, label, [contenteditable="true"]'))
+            if (!onField) dismissOnScrollRef.current = true
+          }}
+          onWheel={() => {
+            dismissOnScrollRef.current = true
+          }}
           onScroll={() => {
+            if (!dismissOnScrollRef.current) return
+            dismissOnScrollRef.current = false
             if (!shouldDismissKeyboardOnScroll()) return
             armCloseGuard()
             dismissKeyboard()
@@ -803,8 +816,10 @@ export function WineForm({
           <label className="field span-2">
             <span>{wishlistForm ? 'Notes' : 'Tasting notes'}</span>
             <textarea
+              id="tasting-notes"
               rows={3}
               value={notes}
+              enterKeyHint="enter"
               onChange={(e) => setNotes(e.target.value)}
               placeholder={
                 wishlistForm

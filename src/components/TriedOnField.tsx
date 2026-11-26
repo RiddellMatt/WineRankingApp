@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { formatTriedOn, isFutureDay, isoDateFromLocal, normalizeTriedOn } from '../lib/wineMoments'
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
@@ -20,6 +20,7 @@ export function TriedOnField({
   onChange: (next: string | null) => void
 }) {
   const selected = normalizeTriedOn(value)
+  const rootRef = useRef<HTMLDivElement>(null)
   const initial = selected ? selected.split('-').map(Number) : null
   const today = new Date()
   const [open, setOpen] = useState(false)
@@ -34,13 +35,24 @@ export function TriedOnField({
     year: 'numeric',
   })
 
+  useEffect(() => {
+    if (!open) return
+    function onPointerDown(event: PointerEvent) {
+      const root = rootRef.current
+      if (!root || !(event.target instanceof Node) || root.contains(event.target)) return
+      setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    return () => document.removeEventListener('pointerdown', onPointerDown, true)
+  }, [open])
+
   function shiftMonth(delta: number) {
     const next = new Date(cursor.year, cursor.month + delta, 1)
     setCursor({ year: next.getFullYear(), month: next.getMonth() })
   }
 
   return (
-    <div className="tried-on-field">
+    <div className="tried-on-field" ref={rootRef}>
       <div className="tried-on-label">
         <span>Tried on</span>
         <span className="field-optional">Optional</span>
@@ -50,7 +62,10 @@ export function TriedOnField({
           type="button"
           className="tried-on-trigger"
           aria-expanded={open}
-          onClick={() => setOpen((current) => !current)}
+          onClick={() => {
+            if (!open && !selected) onChange(isoDateFromLocal(new Date()))
+            setOpen((current) => !current)
+          }}
         >
           {selected ? formatTriedOn(selected) : 'Choose a date'}
         </button>

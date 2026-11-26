@@ -4188,6 +4188,17 @@ html.keyboard-open .wine-form-modal .modal-actions {
 
 .wine-form-body input:not([type='range']),
 .wine-form-body select,
+.wine-form-body textarea {
+  touch-action: manipulation;
+}
+
+.wine-form-body textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.wine-form-body input:not([type='range']),
+.wine-form-body select,
 .wine-form-body textarea,
 .auth-form input,
 .account-profile-form input {
@@ -4210,7 +4221,6 @@ html.keyboard-open .wine-form-modal .modal-actions {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding-bottom: 0.35rem;
   scroll-padding-top: 0.5rem;
