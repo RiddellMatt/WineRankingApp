@@ -215,7 +215,7 @@ export default function App() {
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [favoriteFilter, setFavoriteFilter] = useState(false)
   const [priceFilter, setPriceFilter] = useState<PriceFilterRange | null>(null)
-  const [sortKey, setSortKey] = useState<SortKey>('rating')
+  const [sortKey, setSortKey] = useState<SortKey>('addedAt')
   const [cellarSegment, setCellarSegment] = useState<CellarSegment>('tried')
   const [formMode, setFormMode] = useState<'tried' | 'wishlist'>('tried')
   const [formOpen, setFormOpen] = useState(false)
