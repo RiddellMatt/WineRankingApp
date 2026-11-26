@@ -85,6 +85,8 @@
 	<string>Choose menu and wine label photos for scanning.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take photos of wine labels and menus to scan into your cellar.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Decanti uses your location when you tap Use current location, to tag where you drank a wine.</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-5228268438882570~1709768455</string>
 	<key>SKAdNetworkItems</key>
