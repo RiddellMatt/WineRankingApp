@@ -70,7 +70,7 @@ import {
   XpFeedbackToasts,
   type XpFeedbackToastItem,
 } from './components/XpFeedbackToasts'
-import { computePlayerXpDelta } from './lib/playerXpFeedback'
+import { computePlayerXpDelta, decideXpCellarFeedback } from './lib/playerXpFeedback'
 import { RankingPreferenceModal } from './components/RankingPreferenceModal'
 import { UserGuide } from './components/UserGuide'
 import {
@@ -255,6 +255,7 @@ export default function App() {
   const [progressSynced, setProgressSynced] = useState(false)
   const badgeCellarBaselineRef = useRef<Wine[] | null>(null)
   const xpFeedbackReadyRef = useRef(false)
+  const pendingXpRef = useRef<{ previous: BadgeInput; next: BadgeInput } | null>(null)
   const winesRef = useRef(wines)
   const importInputRef = useRef<HTMLInputElement>(null)
   const contentRef = useRef<HTMLElement>(null)
@@ -699,6 +700,9 @@ export default function App() {
     progressSyncedRef.current = false
     setProgressSynced(false)
     badgeCellarBaselineRef.current = null
+    xpFeedbackReadyRef.current = false
+    pendingXpRef.current = null
+    setXpToastItems([])
     // A signed-in cellar load sets this false, then true when the fetch finishes.
     // Clearing it here for an offline cellar leaves it false, because that load
     // is synchronous and already ran in an earlier effect.
@@ -761,21 +765,35 @@ export default function App() {
   ])
 
   useEffect(() => {
-    if (!badgeReady) return
+    // progressSynced state lags the ref. On the commit that signs in, state is
+    // still true from the signed-out session while the ref is already false.
+    // Arming that frame stores the empty cellar, and the real cellar then
+    // looks like a fresh points award.
+    const action = decideXpCellarFeedback({
+      badgeReady,
+      progressSynced: progressSyncedRef.current,
+      feedbackArmed: xpFeedbackReadyRef.current,
+      baseline: badgeCellarBaselineRef.current,
+      wines,
+    })
+    if (action === 'wait') return
 
     badgeFriendCountRef.current = friendCount
+    if (action === 'ignore') return
 
-    if (badgeCellarBaselineRef.current === null) {
+    if (action === 'arm') {
       badgeCellarBaselineRef.current = wines
       ensureBadgeHydrated()
       xpFeedbackReadyRef.current = true
+      const pending = pendingXpRef.current
+      pendingXpRef.current = null
+      if (pending) pushXpFeedback(pending.previous, pending.next)
       return
     }
 
-    if (badgeCellarBaselineRef.current === wines) return
-
     const previousWines = badgeCellarBaselineRef.current
     badgeCellarBaselineRef.current = wines
+    if (!previousWines) return
 
     ensureBadgeHydrated({ seedIfMissing: false })
     const previousInput = buildBadgeInput(previousWines, badgeFriendCountRef.current)
@@ -1179,7 +1197,14 @@ export default function App() {
     const previousInput = buildBadgeInput(previousWines, badgeFriendCountRef.current)
     const nextInput = buildBadgeInput(nextWines, friendCount)
     applyBadgeProgressChangeRef.current(previousInput, nextInput)
-    pushXpFeedback(previousInput, nextInput)
+    if (xpFeedbackReadyRef.current) {
+      pushXpFeedback(previousInput, nextInput)
+    } else {
+      const pending = pendingXpRef.current
+      pendingXpRef.current = pending
+        ? { previous: pending.previous, next: nextInput }
+        : { previous: previousInput, next: nextInput }
+    }
     if (cloudUser) {
       try {
         const wasQualified = profile?.referralStatus === 'qualified'
@@ -1187,6 +1212,9 @@ export default function App() {
         setWines((prev) => {
           const next = prev.map((w) => (w.id === wine.id ? synced : w))
           winesRef.current = next
+          // The save already announced these points. The server row is a new
+          // array, not a second award.
+          badgeCellarBaselineRef.current = next
           return next
         })
         if (wine.status !== 'wishlist' && wine.rating > 0) {
