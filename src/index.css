@@ -7087,13 +7087,6 @@ html.show-banner-ad .account-panel {
   background: var(--accent-soft);
 }
 
-.place-picker-credit {
-  margin: 0;
-  font-size: 0.72rem;
-  line-height: 1.35;
-  color: var(--text-faint);
-}
-
 .place-picker-results {
   list-style: none;
   margin: 0;

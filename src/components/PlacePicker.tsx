@@ -337,7 +337,6 @@ export function PlacePicker({ value, onChange, labelledBy, recentPlaces = [] }: 
           )}
         </ul>
       )}
-      <p className="place-picker-credit">Map places from OpenStreetMap</p>
     </div>
   )
 }
