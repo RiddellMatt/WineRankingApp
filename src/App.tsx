@@ -80,6 +80,7 @@ import {
 } from './lib/userGuide'
 import { APP_NAME_PRO, STORAGE_PREFIX } from './brand'
 import { bulkUpsertWines, deleteWine, fetchWines, upsertWine } from './lib/wineDb'
+import { findCellarDuplicate } from './lib/winePours'
 import { fetchFriendships, type FriendProfile } from './lib/friendsDb'
 import { formatWithFriendsNames, friendNameMapFromProfiles } from './lib/wineWithFriends'
 import { fetchCompletedJourneysForUsers } from './lib/journeyDb'
@@ -129,6 +130,7 @@ import {
   wineMatchesTagFilter,
 } from './lib/tastingTags'
 import {
+  friendWineToTriedDraft,
   friendWineToWishlist,
   isWishlistDuplicate,
   triedCount,
@@ -220,6 +222,7 @@ export default function App() {
   const [addWineChooserOpen, setAddWineChooserOpen] = useState(false)
   const [autoOpenScan, setAutoOpenScan] = useState(false)
   const [editing, setEditing] = useState<Wine | null>(null)
+  const [formCreate, setFormCreate] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileLoaded, setProfileLoaded] = useState(false)
   const [launchComplete, setLaunchComplete] = useState(() => !isNativeApp())
@@ -1075,6 +1078,7 @@ export default function App() {
     setCellarSegment('tried')
     setFormMode('tried')
     setEditing(wine)
+    setFormCreate(false)
     setFormOpen(true)
   }
 
@@ -1111,8 +1115,25 @@ export default function App() {
     setAddWineChooserOpen(false)
     setFormMode(destination)
     setEditing(null)
+    setFormCreate(false)
     setAutoOpenScan(openScan)
     setFormOpen(true)
+  }
+
+  function openTriedDraft(wine: Wine) {
+    if (atFreeLimit) {
+      goToAccount(true)
+      return
+    }
+    setFormMode('tried')
+    setEditing(wine)
+    setFormCreate(true)
+    setAutoOpenScan(false)
+    setFormOpen(true)
+  }
+
+  function wineIsInCellar(wine: Pick<Wine, 'name' | 'winery' | 'vintage'>): boolean {
+    return Boolean(findCellarDuplicate(wines, { ...wine, id: 'draft', status: 'tried' }))
   }
 
   async function applyRankingPreference(preference: RankingPreference) {
@@ -1219,6 +1240,7 @@ export default function App() {
     await persistWine(normalized)
     setFormOpen(false)
     setEditing(null)
+    setFormCreate(false)
     if (!savingWishlist && wasWishlist) {
       setCellarSegment('tried')
     }
@@ -1473,6 +1495,8 @@ export default function App() {
               qualifiedReferralCount={profile?.qualifiedReferralCount ?? 0}
               onViewCellar={viewFriendCellar}
               onSaveToWishlist={handleSaveWishlistFromFriend}
+              onAddToCellar={(wine) => openTriedDraft(friendWineToTriedDraft(wine))}
+              isInCellar={wineIsInCellar}
               isWishlistSaved={(wine) => isWishlistDuplicate(wines, wine)}
               savingWishlistKey={savingFriendWishlistKey}
               onFriendshipsChanged={handleFriendshipsChanged}
@@ -1495,6 +1519,8 @@ export default function App() {
             cloudConfigured={configured}
             onUpgrade={() => goToAccount(true)}
             onSaveWishlist={handleSaveWishlistFromMenu}
+            onAddToCellar={openTriedDraft}
+            isInCellar={wineIsInCellar}
             onAddWine={openAddWineChooser}
           />
         ) : view === 'insights' ? (
@@ -1704,11 +1730,13 @@ export default function App() {
                       }
                       setFormMode('tried')
                       setEditing(wine)
+                      setFormCreate(false)
                       setFormOpen(true)
                     }}
                     onEdit={() => {
                       setFormMode('wishlist')
                       setEditing(wine)
+                      setFormCreate(false)
                       setFormOpen(true)
                     }}
                     onDelete={() => handleDelete(wine)}
@@ -1729,6 +1757,7 @@ export default function App() {
                     onEdit={() => {
                       setFormMode('tried')
                       setEditing(wine)
+                      setFormCreate(false)
                       setFormOpen(true)
                     }}
                     onToggleFavorite={() => void handleToggleFavorite(wine)}
@@ -1843,8 +1872,10 @@ export default function App() {
           onClose={() => {
             setFormOpen(false)
             setEditing(null)
+            setFormCreate(false)
             setAutoOpenScan(false)
           }}
+          createNew={formCreate}
           rankingPreference={rankingPreference}
           pro={pro}
           signedIn={Boolean(cloudUser)}

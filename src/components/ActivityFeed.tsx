@@ -15,7 +15,7 @@ import {
   wineActivitySubtitle,
   wineActivityTitle,
 } from '../lib/activityFeed'
-import { activityWithFriendsClause } from '../lib/wineWithFriends'
+import { activityWithFriendsClause, viewerIsTagged } from '../lib/wineWithFriends'
 import { compositeScore } from '../lib/ranking'
 import { formatScoreOutOf, scoreColor } from '../lib/scoreScale'
 import { isWishlist, wishlistIdentityKey } from '../lib/wishlist'
@@ -39,6 +39,9 @@ interface Props {
   ) => void
   onSaveToWishlist?: (wine: Wine, friendName: string) => void | Promise<void>
   isWishlistSaved?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
+  /** Log a wine a friend tagged you on as one you tried. */
+  onAddToCellar?: (wine: Wine) => void
+  isInCellar?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
   savingWishlistKey?: string | null
   onToggleReaction?: (event: ActivityEvent, reaction: ReactionType) => void | Promise<void>
   togglingReactionKey?: string | null
@@ -54,6 +57,8 @@ export function ActivityFeed({
   onViewCellar,
   onSaveToWishlist,
   isWishlistSaved,
+  onAddToCellar,
+  isInCellar,
   savingWishlistKey = null,
   onToggleReaction,
   togglingReactionKey = null,
@@ -188,6 +193,9 @@ export function ActivityFeed({
         const shareAttribution = isOwn ? undefined : `${name}'s pick`
         const saved = canSave && (isWishlistSaved?.(wine) ?? false)
         const saving = canSave && savingWishlistKey === wishlistIdentityKey(wine)
+        const canAddToCellar =
+          !isOwn && event.type === 'logged' && viewerIsTagged(event.withFriends, viewerId) && Boolean(onAddToCellar)
+        const alreadyInCellar = canAddToCellar && (isInCellar?.(wine) ?? false)
         const canReact =
           reactionsEnabled && !isOwn && Boolean(onToggleReaction)
         const reactions = event.reactions
@@ -274,6 +282,16 @@ export function ActivityFeed({
                     onClick={() => onSaveToWishlist!(wine, name)}
                   >
                     {saved ? 'Saved to try ✓' : saving ? 'Saving…' : '♡ Save to try'}
+                  </button>
+                )}
+                {canAddToCellar && (
+                  <button
+                    type="button"
+                    className={`link-btn activity-save-btn ${alreadyInCellar ? 'saved' : ''}`}
+                    disabled={alreadyInCellar}
+                    onClick={() => onAddToCellar!(wine)}
+                  >
+                    {alreadyInCellar ? 'In your cellar' : 'Add to cellar'}
                   </button>
                 )}
                 {!isOwn && (

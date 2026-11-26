@@ -34,6 +34,8 @@ interface Props {
   rankingPreference: RankingPreference
   onViewCellar: (friendId: string, friendName: string, avatarUrl?: string) => void
   onSaveToWishlist?: (wine: Wine, friendName: string) => void | Promise<void>
+  onAddToCellar?: (wine: Wine) => void
+  isInCellar?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
   isWishlistSaved?: (wine: Pick<Wine, 'name' | 'winery' | 'vintage'>) => boolean
   savingWishlistKey?: string | null
   onFriendshipsChanged?: (friendCount: number) => void
@@ -82,6 +84,8 @@ export function FriendsPanel({
   rankingPreference,
   onViewCellar,
   onSaveToWishlist,
+  onAddToCellar,
+  isInCellar,
   isWishlistSaved,
   savingWishlistKey = null,
   onFriendshipsChanged,
@@ -356,6 +360,8 @@ export function FriendsPanel({
             reactionsEnabled={friendIds.length > 0}
             onViewCellar={onViewCellar}
             onSaveToWishlist={onSaveToWishlist}
+            onAddToCellar={onAddToCellar}
+            isInCellar={isInCellar}
             isWishlistSaved={isWishlistSaved}
             savingWishlistKey={savingWishlistKey}
             onToggleReaction={handleToggleReaction}

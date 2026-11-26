@@ -112,3 +112,75 @@ test('social activity stays a friend feed and leaves out your own logs', () => {
   const visible = feed.withoutOwnActivity([own, theirs], 'viewer')
   assert.deepEqual(visible.map((event) => event.id), ['theirs'])
 })
+
+test('a friend who tagged you can save that wine to their cellar', () => {
+  assert.equal(friends.viewerIsTagged([jordan], 'jordan'), true)
+  assert.equal(friends.viewerIsTagged([jordan], 'viewer'), false)
+  const wine = {
+    id: 'wine-1',
+    name: 'Barolo',
+    winery: 'Marchesi',
+    vintage: 2019,
+    type: 'Red',
+    varietal: 'Nebbiolo',
+    region: 'Piedmont',
+    price: null,
+    ratingEnjoyment: 4,
+    rating: 4,
+    notes: '',
+    purchasedAt: '',
+    taste: {},
+    status: 'tried',
+    triedOn: '2026-11-22',
+    addedAt: Date.now(),
+    withFriendIds: ['jordan'],
+  }
+  const event = {
+    id: 'event-1',
+    type: 'logged',
+    at: Date.now() - 60_000,
+    actor: alex,
+    wine,
+    withFriends: [jordan],
+  }
+  const tagged = renderToStaticMarkup(
+    createElement(activityFeed.ActivityFeed, {
+      events: [event],
+      viewerId: 'jordan',
+      rankingPreference: 'balanced',
+      emptyHint: 'No activity',
+      onViewCellar: () => {},
+      onSaveToWishlist: () => {},
+      onAddToCellar: () => {},
+    }),
+  )
+  assert.match(tagged, /Add to cellar/)
+  assert.match(tagged, /Save to try/)
+  assert.match(tagged, /with you/)
+
+  const bystander = renderToStaticMarkup(
+    createElement(activityFeed.ActivityFeed, {
+      events: [event],
+      viewerId: 'viewer',
+      rankingPreference: 'balanced',
+      emptyHint: 'No activity',
+      onViewCellar: () => {},
+      onAddToCellar: () => {},
+    }),
+  )
+  assert.equal(bystander.includes('Add to cellar'), false)
+
+  const already = renderToStaticMarkup(
+    createElement(activityFeed.ActivityFeed, {
+      events: [event],
+      viewerId: 'jordan',
+      rankingPreference: 'balanced',
+      emptyHint: 'No activity',
+      onViewCellar: () => {},
+      onAddToCellar: () => {},
+      isInCellar: () => true,
+    }),
+  )
+  assert.match(already, /In your cellar/)
+  assert.equal(already.includes('Add to cellar'), false)
+})

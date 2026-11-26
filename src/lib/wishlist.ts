@@ -1,6 +1,7 @@
 import type { MenuMatch } from '../menuMatch'
 import { normalizeMenuWineFields } from './menuWineParse'
 import { VARIETALS } from '../scanner'
+import { lookupTaste, type TasteLookup } from '../tasteData'
 import type { Wine, WineType } from '../types'
 import { normalizeWine } from './ranking'
 
@@ -58,6 +59,28 @@ export function friendWineToWishlist(wine: Wine, friendName?: string): Wine {
   })
 }
 
+/** Prefill a new tried wine from a bottle a friend tagged you on. Ratings stay yours to enter. */
+export function friendWineToTriedDraft(wine: Wine): Wine {
+  const { taste } = lookupTaste(wine.varietal ?? '', `${wine.name} ${wine.winery ?? ''}`, wine.type)
+  return normalizeWine({
+    name: wine.name,
+    winery: wine.winery ?? '',
+    vintage: wine.vintage,
+    type: wine.type,
+    varietal: wine.varietal ?? '',
+    region: wine.region ?? '',
+    price: wine.price,
+    status: 'tried',
+    ratingEnjoyment: 0,
+    ratingValue: null,
+    ratingBuyAgain: null,
+    taste,
+    tasteSource: 'typical',
+    notes: '',
+    addedAt: Date.now(),
+  })
+}
+
 function parseMenuPrice(raw: string | null): number | null {
   if (!raw) return null
   const n = parseFloat(raw.replace(/[^0-9.]/g, ''))
@@ -89,8 +112,13 @@ function inferWineTypeFromText(text: string): WineType {
   return 'Red'
 }
 
-/** Build a wishlist stub from a menu scan result line. */
-export function menuMatchToWishlist(match: MenuMatch): Wine {
+function menuMatchFields(match: MenuMatch): {
+  name: string
+  winery: string
+  vintage: number | null
+  price: number | null
+  type: WineType
+} {
   let winery = match.winery?.trim() ?? ''
   let wineName = match.wineName?.trim() ?? ''
 
@@ -111,14 +139,47 @@ export function menuMatchToWishlist(match: MenuMatch): Wine {
     })()
 
   const searchText = `${winery} ${wineName} ${match.line} ${match.description ?? ''}`
-  return normalizeWine({
+  return {
     name: wineName || match.line.trim(),
     winery,
     vintage,
     price: parseMenuPrice(match.price),
     type: inferWineTypeFromText(searchText),
+  }
+}
+
+/** Typical profile for a menu line, used on the scan card and when logging it as tried. */
+export function menuMatchTaste(match: MenuMatch): TasteLookup {
+  const stub = menuMatchFields(match)
+  return lookupTaste(
+    '',
+    `${stub.name} ${stub.winery} ${match.line} ${match.description ?? ''}`,
+    stub.type,
+  )
+}
+
+/** Build a wishlist stub from a menu scan result line. */
+export function menuMatchToWishlist(match: MenuMatch): Wine {
+  const fields = menuMatchFields(match)
+  return normalizeWine({
+    ...fields,
     status: 'wishlist',
     ratingEnjoyment: 0,
+    notes: '',
+    addedAt: Date.now(),
+  })
+}
+
+/** Prefill a tried wine from a menu line. The drinker still adds their own score. */
+export function menuMatchToTriedDraft(match: MenuMatch): Wine {
+  const fields = menuMatchFields(match)
+  return normalizeWine({
+    ...fields,
+    status: 'tried',
+    ratingEnjoyment: 0,
+    ratingValue: null,
+    taste: menuMatchTaste(match).taste,
+    tasteSource: 'typical',
     notes: '',
     addedAt: Date.now(),
   })
