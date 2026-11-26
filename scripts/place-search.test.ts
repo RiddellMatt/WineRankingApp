@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { createServer, type ViteDevServer } from 'vite'
 
 const server: ViteDevServer = await createServer({
@@ -9,6 +11,7 @@ const server: ViteDevServer = await createServer({
 })
 const places = await server.ssrLoadModule('/src/lib/placeSearch.ts')
 const geo = await server.ssrLoadModule('/src/lib/wineGeo.ts')
+const picker = await server.ssrLoadModule('/src/components/PlacePicker.tsx')
 
 test.after(async () => {
   await server.close()
@@ -136,4 +139,17 @@ test('a feature without coordinates is not a place you can tag', () => {
     }),
     null,
   )
+})
+
+test('the place box shows the saved place and no source label', () => {
+  const html = renderToStaticMarkup(
+    createElement(picker.PlacePicker, {
+      value: 'Paris, France',
+      onChange: () => {},
+      labelledBy: 'drink-place-label',
+    }),
+  )
+  assert.match(html, /value="Paris, France"/)
+  assert.equal(html.includes('OpenStreetMap'), false)
+  assert.equal(html.includes('Search to change'), false)
 })

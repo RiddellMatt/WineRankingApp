@@ -7008,38 +7008,56 @@ html.show-banner-ad .account-panel {
   width: 100%;
 }
 
-.region-picker {
+.region-picker,
+.place-picker {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.35rem;
+  min-width: 0;
 }
 
-.region-picker-search-label {
-  display: block;
-  font-size: 0.72rem;
+.combo-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.combo-field input {
+  width: 100%;
+  min-width: 0;
+  padding-right: 2rem;
+}
+
+.place-picker .combo-field input {
+  padding-left: 2.15rem;
+}
+
+.combo-field-pin {
+  position: absolute;
+  left: 0.7rem;
+  color: var(--gold);
+  pointer-events: none;
+}
+
+.combo-clear {
+  position: absolute;
+  right: 0.35rem;
+  border: none;
+  background: transparent;
   color: var(--text-faint);
-  margin-bottom: 0.25rem;
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+  cursor: pointer;
 }
 
-.region-picker-current {
-  margin: 0;
-  font-size: 0.92rem;
-  font-weight: 600;
+.combo-clear:hover {
+  color: var(--text);
 }
 
-.region-picker-browse {
-  align-self: flex-start;
-  padding: 0;
-  font-size: 0.82rem;
-}
-
-.region-picker-nested {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.region-picker-field {
-  margin: 0;
+.combo-status {
+  padding: 0.45rem 0.75rem 0.6rem;
 }
 
 .region-picker-results {
@@ -7064,85 +7082,9 @@ html.show-banner-ad .account-panel {
   cursor: pointer;
 }
 
+.region-picker-result.active,
 .region-picker-result:hover {
   background: var(--accent-soft);
-}
-
-.region-picker-empty {
-  padding: 0.55rem 0.75rem;
-  font-size: 0.85rem;
-  color: var(--text-dim);
-}
-
-.region-picker-custom {
-  margin: 0;
-}
-
-.region-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.4rem;
-}
-
-.region-suggestion-chip {
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
-  border-radius: 999px;
-  padding: 0.2rem 0.55rem;
-  font-size: 0.78rem;
-  cursor: pointer;
-}
-
-.region-suggestion-chip:hover {
-  border-color: var(--gold);
-  color: var(--gold);
-}
-
-.place-picker {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  min-width: 0;
-}
-
-.place-picker-hint,
-.place-picker-status,
-.place-picker-credit {
-  margin: 0;
-  font-size: 0.75rem;
-  line-height: 1.35;
-  color: var(--text-faint);
-}
-
-.place-picker-selected {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.55rem 0.45rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
-}
-
-.place-picker-pin {
-  flex-shrink: 0;
-  color: var(--gold);
-}
-
-.place-picker-selected-label {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.place-picker-clear {
-  flex-shrink: 0;
-  padding: 0;
-  font-size: 0.78rem;
 }
 
 .place-picker-results {

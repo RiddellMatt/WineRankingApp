@@ -100,3 +100,31 @@ export function searchWineRegions(query: string, limit = 24): string[] {
     .map(labelOf)
     .slice(0, limit)
 }
+
+export interface RegionComboboxOption {
+  label: string
+  /** Typed text with no catalog match, offered as its own row. */
+  custom: boolean
+}
+
+/** Options for the single region box. An empty query shows suggestions; typing filters the catalog. */
+export function regionComboboxOptions(query: string, suggestions: string[] = [], limit = 8): RegionComboboxOption[] {
+  const q = query.trim()
+  if (!q) {
+    const seen = new Set<string>()
+    const options: RegionComboboxOption[] = []
+    for (const suggestion of suggestions) {
+      const label = suggestion.trim()
+      const key = label.toLowerCase()
+      if (!label || seen.has(key)) continue
+      seen.add(key)
+      options.push({ label, custom: false })
+    }
+    return options.slice(0, limit)
+  }
+  const hits = searchWineRegions(q, limit)
+  const options = hits.map((label) => ({ label, custom: false }))
+  const exact = hits.some((label) => label.toLowerCase() === q.toLowerCase())
+  if (!exact && hits.length === 0) options.push({ label: q, custom: true })
+  return options
+}
