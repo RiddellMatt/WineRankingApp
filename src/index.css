@@ -4777,6 +4777,63 @@ html.app-scroll-locked.native-app .content {
   font-size: 1.05rem;
 }
 
+.insight-card-lead {
+  margin: -0.45rem 0 0.85rem;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.price-band-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.price-band-row {
+  display: grid;
+  grid-template-columns: 5.6rem minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.price-band-row.is-empty {
+  opacity: 0.55;
+}
+
+.price-band-label {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.price-band-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.05rem;
+  min-width: 3.4rem;
+}
+
+.price-band-score {
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--star);
+}
+
+.price-band-row.is-empty .price-band-score {
+  color: var(--text-faint);
+  font-weight: 600;
+}
+
+.price-band-count {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
 .insight-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

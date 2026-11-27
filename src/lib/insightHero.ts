@@ -13,7 +13,7 @@ export interface InsightHero {
   secondary: InsightTile
 }
 
-/** Bottle-price bands for the sweet-spot tile. The top band is open-ended. */
+/** Bottle-price bands. The top band is open-ended. Glass prices stay out of these. */
 const BOTTLE_BANDS: { label: string; min: number; max: number }[] = [
   { label: 'Under $15', min: 0, max: 15 },
   { label: '$15–25', min: 15, max: 25 },
@@ -21,6 +21,13 @@ const BOTTLE_BANDS: { label: string; min: number; max: number }[] = [
   { label: '$40–75', min: 40, max: 75 },
   { label: '$75+', min: 75, max: Number.POSITIVE_INFINITY },
 ]
+
+export interface BottlePriceBand {
+  label: string
+  count: number
+  /** Mean enjoyment. Null when the band has no rated bottles. */
+  avg: number | null
+}
 
 export const SWEET_SPOT_MIN_BOTTLES = 4
 export const SWEET_SPOT_MIN_IN_BAND = 2
@@ -37,30 +44,50 @@ export function formatUsualScore(value: number | null): string {
   return value.toFixed(1)
 }
 
-/**
- * The bottle-price band with the highest average enjoyment.
- * Needs a handful of priced bottles, and the winning band needs more than one.
- */
-export function bottleSweetSpot(wines: Wine[]): string | null {
-  const priced = wines.flatMap((wine) => {
+function pricedBottles(wines: Wine[]): { price: number; enjoyment: number }[] {
+  return wines.flatMap((wine) => {
     const price = resolveWinePrices(wine).bottlePrice
     const enjoyment = wineEnjoyment(wine)
     if (price == null || enjoyment <= 0) return []
     return [{ price, enjoyment }]
   })
-  if (priced.length < SWEET_SPOT_MIN_BOTTLES) return null
+}
+
+/** Every bottle-price band, including ones with a single bottle or none. */
+export function bottlePriceBands(wines: Wine[]): BottlePriceBand[] {
+  const priced = pricedBottles(wines)
+  return BOTTLE_BANDS.map((band) => {
+    const inBand = priced.filter((wine) => wine.price >= band.min && wine.price < band.max)
+    if (inBand.length === 0) return { label: band.label, count: 0, avg: null }
+    const mean = inBand.reduce((sum, wine) => sum + wine.enjoyment, 0) / inBand.length
+    return {
+      label: band.label,
+      count: inBand.length,
+      avg: Math.round(mean * 10) / 10,
+    }
+  })
+}
+
+/**
+ * The bottle-price band with the highest average enjoyment.
+ * Needs a handful of priced bottles, and the winning band needs more than one.
+ */
+export function bottleSweetSpot(wines: Wine[]): string | null {
+  const bands = bottlePriceBands(wines)
+  const pricedCount = bands.reduce((sum, band) => sum + band.count, 0)
+  if (pricedCount < SWEET_SPOT_MIN_BOTTLES) return null
 
   let best: { label: string; avg: number; count: number; min: number } | null = null
-  for (const band of BOTTLE_BANDS) {
-    const inBand = priced.filter((wine) => wine.price >= band.min && wine.price < band.max)
-    if (inBand.length < SWEET_SPOT_MIN_IN_BAND) continue
-    const avg = inBand.reduce((sum, wine) => sum + wine.enjoyment, 0) / inBand.length
+  for (let index = 0; index < bands.length; index += 1) {
+    const row = bands[index]
+    if (!row || row.count < SWEET_SPOT_MIN_IN_BAND || row.avg == null) continue
+    const min = BOTTLE_BANDS[index]?.min ?? 0
     const closer =
       !best ||
-      avg > best.avg + 1e-9 ||
-      (Math.abs(avg - best.avg) <= 1e-9 && inBand.length > best.count) ||
-      (Math.abs(avg - best.avg) <= 1e-9 && inBand.length === best.count && band.min < best.min)
-    if (closer) best = { label: band.label, avg, count: inBand.length, min: band.min }
+      row.avg > best.avg + 1e-9 ||
+      (Math.abs(row.avg - best.avg) <= 1e-9 && row.count > best.count) ||
+      (Math.abs(row.avg - best.avg) <= 1e-9 && row.count === best.count && min < best.min)
+    if (closer) best = { label: row.label, avg: row.avg, count: row.count, min }
   }
   return best?.label ?? null
 }

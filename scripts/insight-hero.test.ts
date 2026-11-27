@@ -71,6 +71,23 @@ test('usual score is enjoyment to one decimal', () => {
   assert.equal(tiles.usual.label, 'your usual score')
 })
 
+test('every bottle-price range shows an average, including a single bottle', () => {
+  const wines = [
+    wine({ id: 'a', name: 'A', price: 30, ratingEnjoyment: 8 }),
+    wine({ id: 'b', name: 'B', glassPrice: 12, ratingEnjoyment: 10 }),
+  ]
+  const bands = hero.bottlePriceBands(wines)
+  assert.deepEqual(
+    bands.map((band: { label: string }) => band.label),
+    ['Under $15', '$15–25', '$25–40', '$40–75', '$75+'],
+  )
+  const mid = bands.find((band: { label: string }) => band.label === '$25–40')
+  assert.equal(mid.count, 1)
+  assert.equal(mid.avg, 8)
+  assert.equal(bands.filter((band: { count: number }) => band.count === 0).length, 4)
+  assert.equal(bands.find((band: { label: string }) => band.label === 'Under $15').count, 0)
+})
+
 test('three priced bottles show favorites instead of a sweet spot', () => {
   const wines = [
     wine({ id: 'a', name: 'A', price: 30, ratingEnjoyment: 8, ratingBuyAgain: 5 }),

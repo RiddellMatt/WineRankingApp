@@ -1562,8 +1562,8 @@ export default function App() {
               </span>
               <h2>Your cellar, decoded</h2>
               <p>
-                Your usual score, the prices you actually like, best-value bottles, and your
-                taste by type, region, and varietal — all in {APP_NAME_PRO}.
+                Your usual score, how each bottle-price range rates, best-value bottles, and
+                your taste by type, region, and varietal — all in {APP_NAME_PRO}.
               </p>
               <div className="empty-actions">
                 <button className="btn primary" onClick={() => goToAccount(true)}>

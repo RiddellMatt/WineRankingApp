@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { buildInsightHero } from '../lib/insightHero'
+import { bottlePriceBands, buildInsightHero } from '../lib/insightHero'
 import { compositeScore } from '../lib/ranking'
 import { formatScore } from '../lib/scoreScale'
 import { formatInsightWinePrice, topInsightWines, type InsightsLeaderKind } from '../lib/insightsLeaders'
 import { InsightsLeadersModal } from './InsightsLeadersModal'
 import {
+  BottlePriceBands,
   RankedBreakdown,
   RatingColumnChart,
   TypeMixDonut,
@@ -69,6 +70,7 @@ export function Insights({ wines, rankingPreference }: Props) {
   )
 
   const hero = useMemo(() => buildInsightHero(wines), [wines])
+  const priceBands = useMemo(() => bottlePriceBands(wines), [wines])
 
   const leadersWines = useMemo(
     () => (leadersOpen ? topInsightWines(wines, leadersOpen, rankingPreference, 3) : []),
@@ -136,6 +138,12 @@ export function Insights({ wines, rankingPreference }: Props) {
           <TypeMixDonut data={insights.byType} total={typeTotal} />
         </section>
       </div>
+
+      <section className="insight-card">
+        <h3>By bottle price</h3>
+        <p className="insight-card-lead">Average enjoyment in each range, even from a single bottle.</p>
+        <BottlePriceBands bands={priceBands} />
+      </section>
 
       <div className="insight-grid insight-grid-breakdowns">
         <section className="insight-card">
