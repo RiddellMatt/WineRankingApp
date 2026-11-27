@@ -17,7 +17,7 @@
     <meta property="og:image" content="https://decantiwine.com/icons/pwa-512.png" />
     <link rel="stylesheet" href="./guides.css" />
   </head>
-  <body>
+  <body data-app-store="" data-play-store="">
     <header>
       <a href="./">Decanti</a>
     </header>
@@ -28,6 +28,8 @@
       <p>Rank the bottles you try, and keep the list with friends.</p>
       <a class="btn" id="open-web" href="./">Open Decanti</a>
       <a class="btn ghost" id="open-app" href="com.northline.decanti://invite">Open in the app</a>
+      <a class="btn ghost" id="open-app-store" hidden href="">Download for iPhone</a>
+      <a class="btn ghost" id="open-play-store" hidden href="">Get it on Google Play</a>
     </main>
     <script>
       (function () {
@@ -36,28 +38,12 @@
         var winery = params.get('winery')
         var vintage = params.get('vintage')
         var score = params.get('score')
-        var ref = params.get('ref') || ''
         if (wine) document.getElementById('wine-name').textContent = wine
         var meta = [vintage, winery].filter(Boolean).join(' · ')
         if (meta) document.getElementById('wine-meta').textContent = meta
         if (score) document.getElementById('wine-score').textContent = score
-        var web = new URL('./', location.href)
-        if (ref) web.searchParams.set('ref', ref)
-        document.getElementById('open-web').href = web.toString()
-        var scheme = 'com.northline.decanti://invite' + (ref ? '?ref=' + encodeURIComponent(ref) : '')
-        var openApp = document.getElementById('open-app')
-        if (/Android/i.test(navigator.userAgent)) {
-          var query = ref ? '?ref=' + encodeURIComponent(ref) : ''
-          openApp.href =
-            'intent://invite' +
-            query +
-            '#Intent;scheme=com.northline.decanti;package=com.northline.decanti;S.browser_fallback_url=' +
-            encodeURIComponent(web.toString()) +
-            ';end'
-        } else {
-          openApp.href = scheme
-        }
       })()
     </script>
+    <script src="./store-routing.js"></script>
   </body>
 </html>

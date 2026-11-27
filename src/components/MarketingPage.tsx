@@ -1,4 +1,5 @@
 import { APP_DESCRIPTION, APP_NAME, APP_STORE_URL, PLAY_STORE_URL, SITE_URL } from '../brand'
+import { storeLinksForPlatform, storePlatform } from '../lib/storeRouting'
 import { PRO_CONFIG } from '../config'
 import { DecantiLogo } from './DecantiLogo'
 
@@ -31,6 +32,12 @@ const FAQS = [
 export function MarketingPage({ onOpenApp }: Props) {
   const privacyHref = `${import.meta.env.BASE_URL}privacy.html`
   const termsHref = `${import.meta.env.BASE_URL}terms.html`
+  const storeLinks = storeLinksForPlatform(
+    storePlatform(typeof navigator === 'undefined' ? '' : navigator.userAgent, {
+      maxTouchPoints: typeof navigator === 'undefined' ? 0 : navigator.maxTouchPoints,
+    }),
+    { appStoreUrl: APP_STORE_URL, playStoreUrl: PLAY_STORE_URL },
+  )
 
   return (
     <div className="mkt">
@@ -53,13 +60,13 @@ export function MarketingPage({ onOpenApp }: Props) {
             <button type="button" className="btn primary" onClick={onOpenApp}>
               Open Decanti
             </button>
-            {APP_STORE_URL ? (
-              <a className="btn ghost" href={APP_STORE_URL}>
+            {storeLinks.appStoreUrl ? (
+              <a className="btn ghost" href={storeLinks.appStoreUrl}>
                 Download for iPhone
               </a>
             ) : null}
-            {PLAY_STORE_URL ? (
-              <a className="btn ghost" href={PLAY_STORE_URL}>
+            {storeLinks.playStoreUrl ? (
+              <a className="btn ghost" href={storeLinks.playStoreUrl}>
                 Get it on Google Play
               </a>
             ) : null}

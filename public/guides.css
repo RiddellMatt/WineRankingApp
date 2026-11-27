@@ -68,6 +68,10 @@ p {
   border: 1px solid #4a2834;
 }
 
+.btn[hidden] {
+  display: none;
+}
+
 footer {
   padding-bottom: 2.5rem;
   color: #c4a8b0;

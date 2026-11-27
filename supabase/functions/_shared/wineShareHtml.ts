@@ -1,3 +1,5 @@
+import { sharePageRoutingScript, SHARE_APP_STORE_URL, SHARE_PLAY_STORE_URL } from '../../../src/lib/storeRouting.ts'
+
 const DEFAULT_SITE = 'https://decantiwine.com/'
 
 export function escapeHtml(value: string): string {
@@ -16,6 +18,8 @@ export interface WineSharePage {
   imageUrl?: string | null
   referralCode?: string | null
   siteUrl?: string
+  appStoreUrl?: string
+  playStoreUrl?: string
 }
 
 /** Public preview page. Wine text is escaped. The open-in-app link is filled in by the page script. */
@@ -29,6 +33,9 @@ export function renderWineShareHtml(page: WineSharePage): string {
   const description = escapeHtml(`${page.wineName} — ${page.scoreLabel} on Decanti`)
   const image = page.imageUrl ? escapeHtml(page.imageUrl) : ''
   const ref = escapeHtml(page.referralCode?.trim() ?? '')
+  const appStoreUrl = escapeHtml(page.appStoreUrl ?? SHARE_APP_STORE_URL)
+  const playStoreUrl = escapeHtml(page.playStoreUrl ?? SHARE_PLAY_STORE_URL)
+  const routingScript = sharePageRoutingScript()
   const imageTag = image
     ? `<img class="card" src="${image}" alt="${name}">`
     : ''
@@ -56,10 +63,11 @@ export function renderWineShareHtml(page: WineSharePage): string {
     .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
     .btn { display: inline-block; background: #c41e3a; color: #fff; text-decoration: none; padding: 0.7rem 1rem; border-radius: 999px; font-family: Inter, system-ui, sans-serif; }
     .btn.ghost { background: transparent; color: #f7eef1; border: 1px solid #4a2834; }
+    .btn[hidden] { display: none; }
     p { line-height: 1.45; }
   </style>
 </head>
-<body data-ref="${ref}" data-site="${escapeHtml(site)}">
+<body data-ref="${ref}" data-site="${escapeHtml(site)}" data-app-store="${appStoreUrl}" data-play-store="${playStoreUrl}">
   <main>
     ${imageTag}
     <h1>${name}</h1>
@@ -69,26 +77,12 @@ export function renderWineShareHtml(page: WineSharePage): string {
     <div class="actions">
       <a class="btn" id="open-web" href="${escapeHtml(site)}">Open Decanti</a>
       <a class="btn ghost" id="open-app" href="com.northline.decanti://invite">Open in the app</a>
+      <a class="btn ghost" id="open-app-store" hidden href="">Download for iPhone</a>
+      <a class="btn ghost" id="open-play-store" hidden href="">Get it on Google Play</a>
     </div>
   </main>
   <script>
-    (function () {
-      var ref = document.body.getAttribute('data-ref') || ''
-      var site = document.body.getAttribute('data-site') || 'https://decantiwine.com/'
-      var web = new URL(site)
-      if (ref) web.searchParams.set('ref', ref)
-      var openWeb = document.getElementById('open-web')
-      if (openWeb) openWeb.setAttribute('href', web.toString())
-      var scheme = 'com.northline.decanti://invite' + (ref ? '?ref=' + encodeURIComponent(ref) : '')
-      var openApp = document.getElementById('open-app')
-      if (!openApp) return
-      if (/Android/i.test(navigator.userAgent)) {
-        var query = ref ? '?ref=' + encodeURIComponent(ref) : ''
-        openApp.setAttribute('href', 'intent://invite' + query + '#Intent;scheme=com.northline.decanti;package=com.northline.decanti;S.browser_fallback_url=' + encodeURIComponent(web.toString()) + ';end')
-      } else {
-        openApp.setAttribute('href', scheme)
-      }
-    })()
+${routingScript}
   </script>
 </body>
 </html>`
