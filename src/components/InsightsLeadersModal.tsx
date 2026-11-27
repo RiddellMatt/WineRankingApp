@@ -3,7 +3,7 @@ import { formatActivityTime } from '../lib/activityFeed'
 import { lockAppScroll } from '../lib/lockAppScroll'
 import { compositeScore } from '../lib/ranking'
 import { formatScoreOutOf } from '../lib/scoreScale'
-import type { InsightsLeaderKind } from '../lib/insightsLeaders'
+import { formatInsightWinePrice, type InsightsLeaderKind } from '../lib/insightsLeaders'
 import type { RankingPreference, Wine } from '../types'
 
 const TITLES: Record<InsightsLeaderKind, string> = {
@@ -48,7 +48,7 @@ export function InsightsLeadersModal({ kind, wines, rankingPreference, onClose }
                     <div className="insights-leader-copy">
                       <p className="insights-leader-name">{title}</p>
                       <p className="insights-leader-sub">
-                        {wine.price != null && wine.price > 0 ? `$${wine.price.toFixed(0)}` : '—'}
+                        {formatInsightWinePrice(wine, kind)}
                         {score > 0 ? ` · ${formatScoreOutOf(score)}` : ''}
                       </p>
                     </div>

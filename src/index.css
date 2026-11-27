@@ -3134,7 +3134,13 @@ button.tasting-tag-pill-btn.active {
 }
 
 .wine-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.05rem;
   font-size: 0.85rem;
+  line-height: 1.25;
+  text-align: right;
   color: var(--text-faint);
 }
 
@@ -4727,6 +4733,12 @@ html.app-scroll-locked.native-app .content {
 
 .insights .stats {
   grid-template-columns: repeat(4, 1fr);
+}
+
+.insights .stats > .stat:not(.stat-feature) .stat-value {
+  font-size: 1.35rem;
+  line-height: 1.2;
+  white-space: normal;
 }
 
 .insights .stat.stat-feature {

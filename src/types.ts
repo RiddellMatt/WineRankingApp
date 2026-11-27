@@ -47,6 +47,14 @@ export interface Wine {
   type: WineType
   varietal: string
   region: string
+  /** Optional price for a glass. */
+  glassPrice?: number | null
+  /** Optional price for a bottle. */
+  bottlePrice?: number | null
+  /**
+   * Primary price. Bottle when one is set, otherwise glass.
+   * Older saves used this as the only price, which is read as the bottle price.
+   */
   price: number | null
   /** How much you liked drinking it, from 0 to 10 in quarter steps. 0 means unset. */
   ratingEnjoyment: number

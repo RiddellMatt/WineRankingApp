@@ -33,6 +33,8 @@ create table public.wines (
   varietal text not null default '',
   region text not null default '',
   price numeric,
+  glass_price numeric(10, 2) check (glass_price is null or glass_price >= 0),
+  bottle_price numeric(10, 2) check (bottle_price is null or bottle_price >= 0),
   rating numeric not null,
   rating_enjoyment numeric,
   rating_value numeric,

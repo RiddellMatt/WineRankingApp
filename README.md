@@ -24,7 +24,7 @@ Rank, remember, and share every wine you've tried — with friends, a want-to-tr
 The app ships with a freemium model plus an affiliate revenue channel. All knobs live in `src/config.ts`:
 
 - **Free plan cap** — free users can log up to `FREE_WINE_LIMIT` (default 20) wines, then hit the upgrade paywall
-- **Decanti Pro** — unlocks unlimited wines, the Insights dashboard (total spend, best-value bottles, rating distribution, taste profile by type/region/varietal), and JSON export/import
+- **Decanti Pro** — unlocks unlimited wines, the Insights dashboard (usual score, sweet-spot price, best-value bottles, rating distribution, taste profile by type/region/varietal), and JSON export/import
   - Connect payments by creating a [Stripe Payment Link](https://dashboard.stripe.com/payment-links) and pasting it into `PRO_CONFIG.paymentUrl`
   - Until payments are connected, Pro can be activated with a support unlock code via Edge Functions — useful for testing, promos, and manual fulfillment
 - **Affiliate shop links** — every wine card has a 🛒 button that searches the wine on Wine-Searcher; set `SHOP_CONFIG.affiliateSuffix` to your affiliate tag so purchases earn commission

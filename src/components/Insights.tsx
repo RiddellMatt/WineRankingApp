@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
+import { buildInsightHero } from '../lib/insightHero'
 import { compositeScore } from '../lib/ranking'
 import { formatScore } from '../lib/scoreScale'
-import { topInsightWines, type InsightsLeaderKind } from '../lib/insightsLeaders'
+import { formatInsightWinePrice, topInsightWines, type InsightsLeaderKind } from '../lib/insightsLeaders'
 import { InsightsLeadersModal } from './InsightsLeadersModal'
 import {
   RankedBreakdown,
@@ -41,10 +42,6 @@ export function Insights({ wines, rankingPreference }: Props) {
   const [leadersOpen, setLeadersOpen] = useState<InsightsLeaderKind | null>(null)
 
   const insights = useMemo(() => {
-    const priced = wines.filter((w) => w.price != null && w.price > 0)
-    const totalSpend = priced.reduce((s, w) => s + (w.price ?? 0), 0)
-    const avgPrice = priced.length ? totalSpend / priced.length : 0
-
     const topValue = topInsightWines(wines, 'value', rankingPreference, 1)[0]
     const topSplurge = topInsightWines(wines, 'splurge', rankingPreference, 1)[0]
 
@@ -57,9 +54,6 @@ export function Insights({ wines, rankingPreference }: Props) {
     }
 
     return {
-      totalSpend,
-      avgPrice,
-      pricedCount: priced.length,
       bestValue: topValue,
       splurge: topSplurge,
       histogram,
@@ -73,6 +67,8 @@ export function Insights({ wines, rankingPreference }: Props) {
     () => insights.byType.reduce((s, d) => s + d.count, 0),
     [insights.byType],
   )
+
+  const hero = useMemo(() => buildInsightHero(wines), [wines])
 
   const leadersWines = useMemo(
     () => (leadersOpen ? topInsightWines(wines, leadersOpen, rankingPreference, 3) : []),
@@ -96,12 +92,12 @@ export function Insights({ wines, rankingPreference }: Props) {
 
       <section className="stats">
         <div className="stat">
-          <span className="stat-value">${insights.totalSpend.toFixed(0)}</span>
-          <span className="stat-label">total spend ({insights.pricedCount} priced)</span>
+          <span className="stat-value">{hero.usual.value}</span>
+          <span className="stat-label">{hero.usual.label}</span>
         </div>
         <div className="stat">
-          <span className="stat-value">${insights.avgPrice.toFixed(0)}</span>
-          <span className="stat-label">average bottle</span>
+          <span className="stat-value">{hero.secondary.value}</span>
+          <span className="stat-label">{hero.secondary.label}</span>
         </div>
         <button
           type="button"
@@ -112,7 +108,7 @@ export function Insights({ wines, rankingPreference }: Props) {
           <span className="stat-label">
             best value{' '}
             {insights.bestValue &&
-              `(${formatScore(compositeScore(insights.bestValue, rankingPreference))}/10 at $${insights.bestValue.price?.toFixed(0)})`}
+              `(${formatScore(compositeScore(insights.bestValue, rankingPreference))}/10 at ${formatInsightWinePrice(insights.bestValue, 'value')})`}
           </span>
         </button>
         <button
@@ -124,7 +120,7 @@ export function Insights({ wines, rankingPreference }: Props) {
           <span className="stat-label">
             biggest splurge{' '}
             {insights.splurge &&
-              `($${insights.splurge.price?.toFixed(0)} · ${formatScore(compositeScore(insights.splurge, rankingPreference))}/10)`}
+              `(${formatInsightWinePrice(insights.splurge, 'splurge')} · ${formatScore(compositeScore(insights.splurge, rankingPreference))}/10)`}
           </span>
         </button>
       </section>

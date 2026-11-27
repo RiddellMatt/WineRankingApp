@@ -56,6 +56,8 @@ export interface WineRow {
   varietal: string
   region: string
   price: number | null
+  glass_price?: number | null
+  bottle_price?: number | null
   rating: number
   rating_enjoyment?: number | null
   rating_value?: number | null

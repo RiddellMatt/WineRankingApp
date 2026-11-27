@@ -1,3 +1,4 @@
+import { formatWinePriceSummary } from '../lib/winePrice'
 import type { Wine } from '../types'
 import { formatWishlistDate } from '../lib/wishlist'
 import { ShopForWine } from './ShopForWine'
@@ -21,6 +22,7 @@ const TYPE_CLASS: Record<string, string> = {
 
 export function WishlistCard({ wine, onMarkTried, onEdit, onDelete }: Props) {
   const meta = [wine.varietal, wine.region].filter(Boolean).join(' · ')
+  const priceLabel = formatWinePriceSummary(wine)
 
   return (
     <li className="wishlist-card">
@@ -35,9 +37,7 @@ export function WishlistCard({ wine, onMarkTried, onEdit, onDelete }: Props) {
         {wine.winery && <p className="wine-winery">{wine.winery}</p>}
         {meta && <p className="wine-meta">{meta}</p>}
         <p className="wishlist-meta">
-          {wine.price != null && wine.price > 0 && (
-            <span className="wishlist-price">${wine.price.toFixed(0)}</span>
-          )}
+          {priceLabel && <span className="wishlist-price">{priceLabel}</span>}
           <span className="wishlist-saved">Saved {formatWishlistDate(wine.addedAt)}</span>
         </p>
         {wine.notes && <p className="wine-notes">“{wine.notes}”</p>}

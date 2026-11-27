@@ -7,6 +7,7 @@ import { applyCompositeRating, resolveRankingPreference, wineEnjoyment } from '.
 import { toTenPoint } from './scoreScale'
 import { normalizeTriedOn, normalizeWinePhotos } from './wineMoments'
 import { normalizePours } from './winePours'
+import { resolveWinePrices } from './winePrice'
 import { persistWinePhotos, removeWinePhotoFolder } from './winePhotos'
 import { prepareReferralForSession, retryReferralQualification } from './referrals'
 
@@ -36,7 +37,11 @@ export function wineFromRow(row: WineRow): Wine {
     type: row.type as WineType,
     varietal: row.varietal,
     region: row.region,
-    price: row.price != null ? Number(row.price) : null,
+    ...resolveWinePrices({
+      price: row.price != null ? Number(row.price) : null,
+      glassPrice: row.glass_price != null ? Number(row.glass_price) : null,
+      bottlePrice: row.bottle_price != null ? Number(row.bottle_price) : null,
+    }),
     ratingEnjoyment: enjoyment,
     ratingValue:
       row.rating_value != null && Number(row.rating_value) > 0
@@ -66,6 +71,7 @@ export function wineToRow(
   pref: RankingPreference = resolveRankingPreference(),
 ): Omit<WineRow, 'user_id'> & { user_id: string } {
   const normalized = applyCompositeRating(wine, pref)
+  const prices = resolveWinePrices(normalized)
   return {
     id: normalized.id,
     user_id: userId,
@@ -75,7 +81,9 @@ export function wineToRow(
     type: normalized.type,
     varietal: normalized.varietal,
     region: normalized.region,
-    price: normalized.price,
+    price: prices.price,
+    glass_price: prices.glassPrice,
+    bottle_price: prices.bottlePrice,
     rating: normalized.rating,
     rating_enjoyment: wineEnjoyment(normalized),
     rating_value: normalized.ratingValue ?? null,
