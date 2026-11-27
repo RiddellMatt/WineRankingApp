@@ -17,6 +17,7 @@ import type { RankingPreference, Wine } from '../types'
 import type { ShareWineCardInput } from '../lib/shareWineCard'
 import { ScanPourOverlay } from './ScanPourOverlay'
 import { ShareWineCardSheet } from './ShareWineCardSheet'
+import { IconChevron, IconWineList } from './icons/UiIcons'
 
 interface Props {
   wines: Wine[]
@@ -165,6 +166,20 @@ export function MenuScan({
         : `Reading menu… ${state.pct}%`
       : null
 
+  const showQuota = aiAvailable && state.phase === 'results' && state.remaining != null
+  const showFreeNote = aiAvailable && !pro && !showQuota
+  const showUpgrade = !aiAvailable && !pro && signedIn && freeRemaining <= 0
+  const showSignIn = !signedIn && cloudConfigured
+  const showOcrNote = !aiAvailable && pro && signedIn
+  const showStatus =
+    showFreeNote ||
+    showUpgrade ||
+    showSignIn ||
+    showQuota ||
+    ratedCount === 0 ||
+    showOcrNote ||
+    state.phase === 'failed'
+
   function matchKey(match: MenuMatch, index: number): string {
     return `${match.line}|${match.price ?? ''}|${index}`
   }
@@ -197,52 +212,25 @@ export function MenuScan({
         previewUrl={aiPreviewUrl}
         progress={state.phase === 'scanning' && state.mode === 'ai' ? state.pct : undefined}
       />
-      <section className="menu-scan-hero">
-        <h2 className="menu-scan-section-title">Scan a menu</h2>
-        <p className="menu-scan-section-lead">Point your camera at the wine list</p>
-        {aiAvailable ? (
-          <p>
-            Photo the wine list — we&apos;ll rank picks against your cellar.
-            {!pro && (
-              <>
-                {' '}
-                {freeRemaining} free AI scan{freeRemaining === 1 ? '' : 's'} left. Pro includes{' '}
-                {MENU_SCAN_CONFIG.monthlyLimit} a month.
-              </>
-            )}
-          </p>
-        ) : (
-          <p>
-            Snap the list to see what matches your taste.
-            {!pro && signedIn && freeRemaining <= 0 && (
-              <>
-                {' '}
-                <button type="button" className="link-btn" onClick={onUpgrade}>
-                  Upgrade
-                </button>{' '}
-                for more AI menu scans.
-              </>
-            )}
-            {!signedIn && cloudConfigured && <> Sign in to use AI menu scan.</>}
-          </p>
-        )}
-        {aiAvailable && state.phase === 'results' && state.remaining != null && (
-          <p className="menu-scan-quota">
-            {state.remaining} AI scan{state.remaining === 1 ? '' : 's'} left this month
-          </p>
-        )}
-        {ratedCount === 0 && (
-          <p className="menu-scan-warning">Rate a few wines first for picks tailored to you.</p>
-        )}
-        {!aiAvailable && pro && signedIn && (
-          <p className="menu-scan-note">Using on-device OCR — connect Supabase for AI menu scan.</p>
-        )}
+      <section className="scan-hub-scan" aria-labelledby="scan-hub-menu-title">
         <button
-          className="btn primary"
+          type="button"
+          className="scan-hub-row"
           disabled={state.phase === 'scanning'}
           onClick={() => inputRef.current?.click()}
         >
-          {state.phase === 'scanning' ? scanningLabel : aiAvailable ? '✨ Scan with AI' : '📷 Scan a menu'}
+          <span className="scan-hub-icon scan-hub-icon-muted" aria-hidden="true">
+            <IconWineList />
+          </span>
+          <span className="scan-hub-row-copy">
+            <span className="scan-hub-row-title" id="scan-hub-menu-title">
+              Scan a menu
+            </span>
+            <span className="scan-hub-row-detail">
+              {scanningLabel ?? 'Rank the list against your cellar'}
+            </span>
+          </span>
+          <IconChevron className="scan-hub-row-chevron" size={16} />
         </button>
         <input
           ref={inputRef}
@@ -255,7 +243,37 @@ export function MenuScan({
             e.target.value = ''
           }}
         />
-        {state.phase === 'failed' && <p className="form-error">{state.message}</p>}
+        {showStatus && (
+          <div className="menu-scan-status">
+            {showFreeNote && (
+              <p className="menu-scan-note">
+                {freeRemaining} free AI scan{freeRemaining === 1 ? '' : 's'} left. Pro includes{' '}
+                {MENU_SCAN_CONFIG.monthlyLimit} a month.
+              </p>
+            )}
+            {showUpgrade && (
+              <p className="menu-scan-note">
+                <button type="button" className="link-btn" onClick={onUpgrade}>
+                  Upgrade
+                </button>{' '}
+                for more AI menu scans.
+              </p>
+            )}
+            {showSignIn && <p className="menu-scan-note">Sign in to use AI menu scan.</p>}
+            {showQuota && state.phase === 'results' && (
+              <p className="menu-scan-quota">
+                {state.remaining} AI scan{state.remaining === 1 ? '' : 's'} left this month
+              </p>
+            )}
+            {ratedCount === 0 && (
+              <p className="menu-scan-warning">Rate a few wines first for picks tailored to you.</p>
+            )}
+            {showOcrNote && (
+              <p className="menu-scan-note">Using on-device OCR — connect Supabase for AI menu scan.</p>
+            )}
+            {state.phase === 'failed' && <p className="form-error">{state.message}</p>}
+          </div>
+        )}
       </section>
 
       {state.phase === 'results' && (

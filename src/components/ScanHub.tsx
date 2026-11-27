@@ -1,4 +1,5 @@
 import { MenuScan } from './MenuScan'
+import { IconWineBottle } from './icons/UiIcons'
 import type { RankingPreference, Wine } from '../types'
 
 interface Props {
@@ -31,8 +32,15 @@ export function ScanHub({
   return (
     <div className="scan-hub">
       <section className="scan-hub-add" aria-labelledby="scan-hub-add-title">
-        <h2 id="scan-hub-add-title">Add a bottle</h2>
-        <p className="scan-hub-add-lead">Cellar or wishlist — enter details or scan a label.</p>
+        <div className="scan-hub-add-head">
+          <span className="scan-hub-icon" aria-hidden="true">
+            <IconWineBottle />
+          </span>
+          <div className="scan-hub-add-copy">
+            <h2 id="scan-hub-add-title">Add a bottle</h2>
+            <p className="scan-hub-add-lead">Cellar or wishlist</p>
+          </div>
+        </div>
         <button type="button" className="btn primary scan-hub-add-btn" onClick={onAddWine}>
           Add wine
         </button>

@@ -324,6 +324,67 @@ export function IconUser({ className = 'ui-icon', size = defaultSize }: IconProp
   )
 }
 
+/** Burgundy bottle: sloping shoulder, bowed sides, label line. */
+export function IconWineBottle({ className = 'ui-icon', size = defaultSize }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M9.9 1.5h4.2V2.8h-.8v4.6c.25 3 3.6 4.4 4.05 7.2.55 2.8-.65 5.3-2.2 6.65-.9.95-5.4.95-6.3 0-1.55-1.35-2.75-3.85-2.2-6.65C7.1 11.8 10.45 10.4 10.7 7.4V2.8h-.8V1.5z" />
+      <path d="M9.4 16.2h5.2" />
+    </svg>
+  )
+}
+
+/** Wine-list card for menu scan. */
+export function IconWineList({ className = 'ui-icon', size = defaultSize }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="5" y="3.5" width="14" height="17" rx="2" />
+      <path d="M8.5 8h7M8.5 12h7M8.5 16h4.5" />
+    </svg>
+  )
+}
+
+export function IconChevron({ className = 'ui-icon', size = defaultSize }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  )
+}
+
 export function IconHeart({
   className = 'ui-icon',
   size = 16,

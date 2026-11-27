@@ -671,33 +671,135 @@ textarea::placeholder {
 }
 
 .scan-hub-add {
-  margin-bottom: 1.75rem;
-  padding: 1.1rem 1.15rem;
-  border-radius: var(--radius);
+  margin-bottom: 0.15rem;
+  padding: 1rem 0.9rem 0.9rem;
+  border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--bg-soft);
 }
 
-.scan-hub-add-lead {
-  margin: 0.35rem 0 1rem;
-  font-size: 0.92rem;
-  color: var(--text-dim);
+.scan-hub-add-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.scan-hub-add-btn {
-  width: 100%;
+.scan-hub-add-copy {
+  min-width: 0;
 }
 
-.menu-scan-section-title {
-  font-family: var(--font-display);
+.scan-hub-add h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
-.menu-scan-section-lead {
-  margin: 0.35rem 0 0.75rem;
+.scan-hub-add-lead {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.3;
   color: var(--text-dim);
-  font-size: 0.92rem;
+}
+
+.btn.primary.scan-hub-add-btn {
+  width: 100%;
+  margin-top: 0.9rem;
+  box-shadow: none;
+}
+
+.btn.primary.scan-hub-add-btn:hover {
+  box-shadow: none;
+}
+
+.scan-hub-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 9px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid transparent;
+}
+
+.scan-hub-icon-muted {
+  background: var(--bg);
+  color: var(--text-dim);
+  border-color: var(--border);
+}
+
+.scan-hub-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 3.25rem;
+  margin: 0;
+  padding: 0.7rem 0.15rem;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+}
+
+.scan-hub-row:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.scan-hub-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.scan-hub-row:disabled {
+  cursor: default;
+}
+
+.scan-hub-row-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.scan-hub-row-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.scan-hub-row-detail {
+  font-size: 0.82rem;
+  line-height: 1.3;
+  color: var(--text-dim);
+}
+
+.scan-hub-row-chevron {
+  flex-shrink: 0;
+  color: var(--text-faint);
+}
+
+.menu-scan-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0.2rem 0.9rem;
+}
+
+.menu-scan-status p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  text-align: left;
 }
 
 .cellar-empty {
@@ -2910,27 +3012,7 @@ button.tasting-tag-pill-btn.active {
 
 /* ── Menu sommelier ─────────────────────────────────── */
 
-.menu-scan-hero {
-  text-align: center;
-  padding: 2.6rem 1rem;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: var(--radius);
-  margin-bottom: 1rem;
-}
-
-.menu-scan-hero h2 {
-  font-family: var(--font-display);
-  margin: 0 0 0.4rem;
-}
-
-.menu-scan-hero p {
-  color: var(--text-dim);
-  max-width: 34rem;
-  margin: 0 auto 1.3rem;
-}
-
-.menu-scan-warning {
+.menu-scan-status .menu-scan-warning {
   color: var(--star);
   font-size: 0.88rem;
 }
@@ -2939,7 +3021,11 @@ button.tasting-tag-pill-btn.active {
 .menu-scan-note {
   color: var(--text-dim);
   font-size: 0.85rem;
-  margin: -0.6rem auto 1rem;
+  margin: 0;
+}
+
+.menu-scan-status .form-error {
+  margin: 0;
 }
 
 .menu-results {
