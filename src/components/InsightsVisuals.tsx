@@ -1,3 +1,4 @@
+import type { BottlePriceBand } from '../lib/insightHero'
 import { formatScoreAverage } from '../lib/scoreScale'
 
 export interface GroupDatum {
@@ -94,6 +95,31 @@ export function RatingColumnChart({
         )
       })}
     </div>
+  )
+}
+
+export function BottlePriceBands({ bands }: { bands: BottlePriceBand[] }) {
+  return (
+    <ol className="price-band-list" aria-label="Average enjoyment by bottle price">
+      {bands.map((band) => {
+        const width = band.avg == null ? 0 : Math.max((band.avg / 10) * 100, 6)
+        const countLabel = band.count === 1 ? '1 bottle' : `${band.count} bottles`
+        return (
+          <li className={`price-band-row${band.count === 0 ? ' is-empty' : ''}`} key={band.label}>
+            <span className="price-band-label">{band.label}</span>
+            <div className="insight-ranked-track" aria-hidden="true">
+              {width > 0 && <div className="insight-ranked-fill" style={{ width: `${width}%` }} />}
+            </div>
+            <span className="price-band-meta">
+              <span className="price-band-score">
+                {band.avg == null ? '—' : formatScoreAverage(band.avg)}
+              </span>
+              <span className="price-band-count">{countLabel}</span>
+            </span>
+          </li>
+        )
+      })}
+    </ol>
   )
 }
 

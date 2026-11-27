@@ -124,6 +124,7 @@ import {
   resolveRankingPreference,
   saveLocalRankingPreference,
 } from './lib/ranking'
+import { sortPrice } from './lib/winePrice'
 import {
   filterTagsForCellar,
   tastingTagLabel,
@@ -168,7 +169,7 @@ function sortWines(list: Wine[], sortKey: SortKey, rankingPreference: RankingPre
       case 'vintage':
         return (b.vintage ?? 0) - (a.vintage ?? 0)
       case 'price':
-        return (b.price ?? -1) - (a.price ?? -1)
+        return sortPrice(b) - sortPrice(a)
       case 'addedAt':
         return b.addedAt - a.addedAt
       default:
@@ -1561,8 +1562,8 @@ export default function App() {
               </span>
               <h2>Your cellar, decoded</h2>
               <p>
-                Total spend, best-value bottles, rating distribution, and your taste profile by
-                type, region, and varietal — all in {APP_NAME_PRO}.
+                Your usual score, how each bottle-price range rates, best-value bottles, and
+                your taste by type, region, and varietal — all in {APP_NAME_PRO}.
               </p>
               <div className="empty-actions">
                 <button className="btn primary" onClick={() => goToAccount(true)}>

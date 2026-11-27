@@ -27,6 +27,7 @@ import { TastingTagsInput } from './TastingTagsInput'
 import { TriedOnField } from './TriedOnField'
 import { DuplicateWineDialog } from './DuplicateWineDialog'
 import { findCellarDuplicate, normalizePours, type Pour } from '../lib/winePours'
+import { resolveWinePrices } from '../lib/winePrice'
 import { isoDateFromLocal, normalizeTriedOn } from '../lib/wineMoments'
 import { WinePhotoField } from './WinePhotoField'
 import { VarietalSelect } from './VarietalSelect'
@@ -84,7 +85,13 @@ export function WineForm({
   const [type, setType] = useState<WineType>(initial?.type ?? 'Red')
   const [varietal, setVarietal] = useState(initial?.varietal ?? '')
   const [region, setRegion] = useState(initial?.region ?? '')
-  const [price, setPrice] = useState(initial?.price?.toString() ?? '')
+  const initialPrices = resolveWinePrices(initial ?? {})
+  const [glassPrice, setGlassPrice] = useState(
+    initialPrices.glassPrice != null ? String(initialPrices.glassPrice) : '',
+  )
+  const [bottlePrice, setBottlePrice] = useState(
+    initialPrices.bottlePrice != null ? String(initialPrices.bottlePrice) : '',
+  )
   const [purchasedAt, setPurchasedAt] = useState(initial?.purchasedAt ?? '')
   const [triedOn, setTriedOn] = useState<string | null>(initial?.triedOn ?? null)
   const [pours, setPours] = useState<Pour[]>(() => normalizePours(initial?.pours))
@@ -199,7 +206,13 @@ export function WineForm({
     if (focusNextTextField(e.target, e.currentTarget)) e.preventDefault()
   }
 
-  const parsedPrice = price ? Number(price) : null
+  function parseOptionalPrice(raw: string): number | null {
+    const trimmed = raw.trim()
+    if (!trimmed) return null
+    const value = Number(trimmed)
+    if (!Number.isFinite(value) || value <= 0) return null
+    return value
+  }
 
   const recentDrinkPlaces = useMemo(() => {
     const seen = new Set<string>()
@@ -402,7 +415,10 @@ export function WineForm({
         type,
         varietal: varietal.trim(),
         region: region.trim(),
-        price: parsedPrice,
+        ...resolveWinePrices({
+          glassPrice: parseOptionalPrice(glassPrice),
+          bottlePrice: parseOptionalPrice(bottlePrice),
+        }),
         ratingEnjoyment: wishlistForm ? 0 : ratingEnjoyment,
         ratingValue: !wishlistForm && ratingValue > 0 ? ratingValue : null,
         ratingBuyAgain: !wishlistForm ? (initial?.ratingBuyAgain ?? null) : null,
@@ -626,7 +642,7 @@ export function WineForm({
             <span>Varietal</span>
             <VarietalSelect value={varietal} wineType={type} onChange={setVarietal} />
           </label>
-          <label className="field">
+          <label className="field span-2">
             <span>Region</span>
             <RegionPicker
               value={region}
@@ -647,18 +663,34 @@ export function WineForm({
             )}
           </label>
           <label className="field">
-            <span>Price ($)</span>
+            <span>Glass price ($)</span>
             <input
               type="number"
               inputMode="decimal"
               min="0"
               step="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="e.g. 45"
+              value={glassPrice}
+              onChange={(e) => setGlassPrice(e.target.value)}
+              placeholder="Optional"
               enterKeyHint="next"
+              aria-label="Glass price in dollars"
             />
           </label>
+          <label className="field">
+            <span>Bottle price ($)</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              value={bottlePrice}
+              onChange={(e) => setBottlePrice(e.target.value)}
+              placeholder="Optional"
+              enterKeyHint="next"
+              aria-label="Bottle price in dollars"
+            />
+          </label>
+          <p className="form-rating-hint field span-2">Both optional. Log a glass, a bottle, or both.</p>
           <div className="field span-2">
             <span id="drink-place-label">Where you drank it</span>
             <PlacePicker

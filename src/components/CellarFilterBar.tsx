@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { WINE_TYPES, type SortKey, type WineType, type Wine } from '../types'
 import type { TastingTagDef } from '../lib/tastingTags'
 import { tastingTagLabel } from '../lib/tastingTags'
+import { listedPrices } from '../lib/winePrice'
 import { CellarSortMenu, type CellarSortOption } from './CellarSortMenu'
 
 export interface PriceBounds {
@@ -257,7 +258,8 @@ export function CellarFilterBar({
                 onChange={(e) => applyPriceRange(priceLo, Number(e.target.value))}
               />
               <p className="cellar-filter-price-note">
-                Wines without a price are hidden while a price range is set.
+                A wine matches when its glass or bottle price is in range. Wines with neither
+                price are hidden.
               </p>
               <button
                 type="button"
@@ -340,9 +342,7 @@ export function CellarFilterBar({
 }
 
 export function priceBoundsFromWines(wines: Wine[]): PriceBounds | null {
-  const prices = wines
-    .map((w) => w.price)
-    .filter((p): p is number => p != null && p > 0)
+  const prices = wines.flatMap((wine) => listedPrices(wine))
   if (prices.length === 0) return null
   const min = Math.floor(Math.min(...prices))
   let max = Math.ceil(Math.max(...prices))
@@ -356,7 +356,7 @@ export function wineMatchesPriceFilter(
   bounds: PriceBounds | null,
 ): boolean {
   if (!isPriceFilterActive(filter, bounds) || !filter) return true
-  const p = wine.price
-  if (p == null || p <= 0) return false
-  return p >= filter.min && p <= filter.max
+  const prices = listedPrices(wine)
+  if (prices.length === 0) return false
+  return prices.some((price) => price >= filter.min && price <= filter.max)
 }

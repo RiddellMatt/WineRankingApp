@@ -12,6 +12,21 @@ import { ShopForWine } from './ShopForWine'
 import { WinePhotoStrip } from './WinePhotoStrip'
 import { formatTriedOn } from '../lib/wineMoments'
 import { tastingMoments, timesTried } from '../lib/winePours'
+import { formatDollars, winePriceParts } from '../lib/winePrice'
+
+function WinePriceLines({ wine }: { wine: Wine }) {
+  const parts = winePriceParts(wine)
+  if (parts.length === 0) return null
+  return (
+    <span className="wine-price">
+      {parts.map((part) => (
+        <span key={part.serving}>
+          {formatDollars(part.amount)} {part.serving}
+        </span>
+      ))}
+    </span>
+  )
+}
 
 function WineScore({
   score,
@@ -214,7 +229,7 @@ export function WineCard({
           taste={wine.ratingEnjoyment}
           value={wine.ratingValue}
         />
-        {wine.price != null && <span className="wine-price">${wine.price.toFixed(0)}</span>}
+        <WinePriceLines wine={wine} />
         {readOnly ? (
           <div className="wine-readonly-actions">
             <ShareWineButton wine={wine} score={score} attribution={shareAttribution} />

@@ -3,6 +3,7 @@ import { STORAGE_PREFIX } from '../brand'
 import { normalizeTriedOn, normalizeWinePhotos } from './wineMoments'
 import { snapScore, toTenPoint } from './scoreScale'
 import { normalizePours } from './winePours'
+import { resolveWinePrices } from './winePrice'
 
 export const RANKING_PREFERENCE_OPTIONS: {
   value: RankingPreference
@@ -119,7 +120,7 @@ export function normalizeWine(raw: Partial<Wine>): Wine {
     type: raw.type ?? 'Red',
     varietal: raw.varietal ?? '',
     region: raw.region ?? '',
-    price: raw.price ?? null,
+    ...resolveWinePrices(raw),
     ratingEnjoyment: enjoyment,
     ratingValue:
       raw.ratingValue != null && raw.ratingValue > 0 ? toTenPoint(raw.ratingValue, scale) : null,
