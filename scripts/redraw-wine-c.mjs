@@ -1,7 +1,8 @@
 /**
- * Replace the two splash droplets with one lumpy slosh.
- * The wine already in the glass stays. The new pour is a few soft breaks
- * joined into the top of that pool, not a single smooth curve.
+ * Replace the two splash droplets with one small flat splash.
+ * The wine already in the glass stays and is the letter. The new splash is
+ * about the size of those two droplets, with no outline, and only closes
+ * the gap at the top of the pool.
  *
  * Coordinates are authored on the 2000px light canvas.
  */
@@ -11,12 +12,11 @@ import { fileURLToPath } from 'node:url'
 
 const brand = join(dirname(fileURLToPath(import.meta.url)), '../public/brand')
 
-const LUMPS = [
-  `M 742 990 C 718 905, 748 820, 820 772 C 900 720, 890 810, 830 860 C 785 900, 768 960, 752 998 Z`,
-  `M 800 790 C 768 762, 798 708, 858 698 C 912 688, 908 752, 852 778 Z`,
-  `M 848 762 C 878 728, 942 722, 962 758 C 978 788, 922 802, 872 778 Z`,
-  `M 935 758 C 962 736, 998 752, 986 780 C 974 802, 942 792, 928 770 Z`,
-]
+const SPLASH = `
+  <ellipse cx="806" cy="736" rx="18" ry="24" fill="#fff"/>
+  <ellipse cx="834" cy="708" rx="20" ry="18" fill="#fff"/>
+  <ellipse cx="812" cy="786" rx="18" ry="44" fill="#fff"/>
+`
 
 function luminance(r, g, b) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
@@ -37,11 +37,10 @@ function isLine(r, g, b, bg, lightBg) {
 }
 
 async function raster(width, height, scale, originX, originY) {
-  const body = LUMPS.map((d) => `<path d="${d}" fill="#fff"/>`).join('')
   const svg = `<?xml version="1.0"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
   <g transform="translate(${originX} ${originY}) scale(${scale})">
-    ${body}
+    ${SPLASH}
   </g>
 </svg>`
   return sharp(Buffer.from(svg)).ensureAlpha().raw().toBuffer()
@@ -79,7 +78,7 @@ async function redraw(file, { scale, originX = 0, originY = 0 }) {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const [dx, dy] = toDesign(x, y, scale, originX, originY)
-      if (!(dy > 648 && dy < 758 && dx > 720 && dx < 1060)) continue
+      if (!(dy > 648 && dy < 762 && dx > 760 && dx < 920)) continue
       const i = (y * width + x) * 4
       px[i] = bg[0]
       px[i + 1] = bg[1]
