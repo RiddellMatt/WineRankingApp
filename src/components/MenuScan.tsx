@@ -10,8 +10,13 @@ import { TasteDisplay } from './TasteProfile'
 import { matchMenu, matchParsedMenuWines, type MenuMatch } from '../menuMatch'
 import { ShopForWine } from './ShopForWine'
 import { MenuScanError, scanMenuWithAi } from '../lib/menuScanApi'
+import { menuMatchShareInput } from '../lib/menuShare'
+import { FREE_MENU_SCANS } from '../../supabase/functions/_shared/scanQuota'
+import { MENU_SCAN_CONFIG } from '../config'
 import type { RankingPreference, Wine } from '../types'
+import type { ShareWineCardInput } from '../lib/shareWineCard'
 import { ScanPourOverlay } from './ScanPourOverlay'
+import { ShareWineCardSheet } from './ShareWineCardSheet'
 
 interface Props {
   wines: Wine[]
@@ -55,8 +60,10 @@ export function MenuScan({
   const [savingKey, setSavingKey] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [aiPreviewUrl, setAiPreviewUrl] = useState<string | null>(null)
+  const [freeRemaining, setFreeRemaining] = useState(FREE_MENU_SCANS)
+  const [shareInput, setShareInput] = useState<ShareWineCardInput | null>(null)
   const ratedCount = wines.length
-  const aiAvailable = pro && signedIn && cloudConfigured
+  const aiAvailable = signedIn && cloudConfigured && (pro || freeRemaining > 0)
 
   async function runBasicScan(file: File) {
     setState({ phase: 'scanning', pct: 0, mode: 'basic' })
@@ -82,6 +89,7 @@ export function MenuScan({
       const { wines: parsed, remaining } = await scanMenuWithAi(file)
       setState({ phase: 'scanning', pct: 85, mode: 'ai' })
       const matches = matchParsedMenuWines(parsed, wines, rankingPreference)
+      if (!pro) setFreeRemaining(remaining)
       if (matches.length === 0) {
         setState({
           phase: 'failed',
@@ -94,10 +102,11 @@ export function MenuScan({
     } catch (err) {
       if (err instanceof MenuScanError) {
         if (err.code === 'pro_required') {
+          setFreeRemaining(0)
           onUpgrade()
           setState({
             phase: 'failed',
-            message: 'Menu scan is a Pro feature. Upgrade in Account.',
+            message: err.message || 'Menu scan is a Pro feature. Upgrade in Account.',
           })
           return
         }
@@ -192,20 +201,29 @@ export function MenuScan({
         <h2 className="menu-scan-section-title">Scan a menu</h2>
         <p className="menu-scan-section-lead">Point your camera at the wine list</p>
         {aiAvailable ? (
-          <p>Photo the wine list — we&apos;ll rank picks against your cellar.</p>
+          <p>
+            Photo the wine list — we&apos;ll rank picks against your cellar.
+            {!pro && (
+              <>
+                {' '}
+                {freeRemaining} free AI scan{freeRemaining === 1 ? '' : 's'} left. Pro includes{' '}
+                {MENU_SCAN_CONFIG.monthlyLimit} a month.
+              </>
+            )}
+          </p>
         ) : (
           <p>
             Snap the list to see what matches your taste.
-            {!pro && (
+            {!pro && signedIn && freeRemaining <= 0 && (
               <>
                 {' '}
                 <button type="button" className="link-btn" onClick={onUpgrade}>
                   Upgrade
                 </button>{' '}
-                for AI menu scan.
+                for more AI menu scans.
               </>
             )}
-            {pro && !signedIn && <> Sign in to use AI menu scan.</>}
+            {!signedIn && cloudConfigured && <> Sign in to use AI menu scan.</>}
           </p>
         )}
         {aiAvailable && state.phase === 'results' && state.remaining != null && (
@@ -293,6 +311,15 @@ export function MenuScan({
                   >
                     {saved ? 'Saved to try ✓' : saving ? 'Saving…' : pro ? '♡ Save to try' : '♡ Save to try · Pro'}
                   </button>
+                  {i === 0 && (
+                    <button
+                      type="button"
+                      className="btn ghost small menu-save-btn"
+                      onClick={() => setShareInput(menuMatchShareInput(m))}
+                    >
+                      Share this pick
+                    </button>
+                  )}
                   <ShopForWine
                     target={{
                       name: m.wineName || m.line,
@@ -310,6 +337,11 @@ export function MenuScan({
           })}
         </ol>
       )}
+      <ShareWineCardSheet
+        open={shareInput != null}
+        input={shareInput}
+        onClose={() => setShareInput(null)}
+      />
     </div>
   )
 }

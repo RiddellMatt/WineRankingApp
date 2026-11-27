@@ -11,6 +11,7 @@ apply from: "../capacitor-cordova-android-plugins/cordova.variables.gradle"
 dependencies {
     implementation project(':capacitor-community-admob')
     implementation project(':capacitor-community-app-icon')
+    implementation project(':capacitor-community-in-app-review')
     implementation project(':capacitor-community-media')
     implementation project(':capacitor-action-sheet')
     implementation project(':capacitor-app')

@@ -28,7 +28,15 @@ export default defineConfig(({ mode }) => {
               includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
               workbox: {
                 // The Android sign-in return page must stay this file, not the app shell.
-                navigateFallbackDenylist: [/^\/login-callback\.html$/],
+                navigateFallbackDenylist: [
+                  /^\/login-callback\.html$/,
+                  /^\/share\.html$/,
+                  /^\/wine-journal\.html$/,
+                  /^\/restaurant-wine-list\.html$/,
+                  /^\/cellar-tracker\.html$/,
+                  /^\/privacy\.html$/,
+                  /^\/terms\.html$/,
+                ],
               },
               manifest: {
                 name: 'Decanti',

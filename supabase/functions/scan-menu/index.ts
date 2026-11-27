@@ -3,6 +3,7 @@ import { corsHeaders, jsonResponse } from '../_shared/cors.ts'
 import { rankModelsForScan, saveVisionSamples } from '../_shared/geminiModelHealth.ts'
 import { callGeminiVision, type VisionAttemptSample } from '../_shared/geminiVision.ts'
 import { recordScanEvent } from '../_shared/scanMetrics.ts'
+import { FREE_MENU_SCANS } from '../_shared/scanQuota.ts'
 import { assertProAndScanQuota, ScanPreflightError } from '../_shared/scanPreflight.ts'
 import { deleteScanUpload, resolveScanImageFromBody } from '../_shared/scanImage.ts'
 
@@ -130,6 +131,7 @@ Deno.serve(async (req) => {
     const preflightStart = Date.now()
 
     let quotaCount = 0
+    let quotaLimit = MONTHLY_LIMIT
     let imageBase64: string
     let mimeType: string
     let cleanupPath: string | undefined
@@ -143,10 +145,12 @@ Deno.serve(async (req) => {
           MONTHLY_LIMIT,
           'pro_required',
           'quota_exceeded',
+          FREE_MENU_SCANS,
         ),
         resolveScanImageFromBody(admin, user.id, body),
       ])
       quotaCount = quota.count
+      quotaLimit = quota.limit
       imageBase64 = resolved.imageBase64
       mimeType = resolved.mimeType
       cleanupPath = resolved.cleanupPath
@@ -160,7 +164,11 @@ Deno.serve(async (req) => {
         await flushMetrics('error')
         if (e.code === 'pro_required') {
           return jsonResponse(
-            { error: 'AI menu scan is a Pro feature.', code: 'pro_required' },
+            {
+              error: `You've used your ${FREE_MENU_SCANS} free AI menu scans. Decanti Pro includes ${MONTHLY_LIMIT} a month.`,
+              code: 'pro_required',
+              remaining: 0,
+            },
             403,
           )
         }
@@ -262,7 +270,7 @@ Deno.serve(async (req) => {
 
     await admin.from('menu_scan_usage').insert({ user_id: user.id })
 
-    const remaining = MONTHLY_LIMIT - quotaCount - 1
+    const remaining = Math.max(0, quotaLimit - quotaCount - 1)
     await flushMetrics(status)
 
     return jsonResponse({ wines, remaining })

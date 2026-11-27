@@ -14,7 +14,7 @@ const FAQS = [
   },
   {
     question: 'Is Decanti free?',
-    answer: `Decanti is free to start. ${APP_NAME} Pro is ${PRO_CONFIG.priceLabel} and adds a larger cellar, label and menu scans, and insights.`,
+    answer: `Decanti is free to start, including two AI menu scans. ${APP_NAME} Pro is ${PRO_CONFIG.priceLabel} and adds a larger cellar, label scans, more menu scans, and insights.`,
   },
   {
     question: 'Can I use Decanti on iPhone or Android?',
@@ -105,6 +105,16 @@ export function MarketingPage({ onOpenApp }: Props) {
           <button type="button" className="btn primary" onClick={onOpenApp}>
             Open Decanti
           </button>
+        </section>
+
+        <section className="mkt-section" aria-labelledby="mkt-guides">
+          <h2 id="mkt-guides">Ways to use it</h2>
+          <p>A few pages for the jobs Decanti is built for.</p>
+          <p className="mkt-guides">
+            <a href={`${import.meta.env.BASE_URL}wine-journal.html`}>Wine journal</a>
+            <a href={`${import.meta.env.BASE_URL}restaurant-wine-list.html`}>Restaurant wine list</a>
+            <a href={`${import.meta.env.BASE_URL}cellar-tracker.html`}>Cellar tracker</a>
+          </p>
         </section>
 
         <section className="mkt-section" aria-labelledby="mkt-faq">
