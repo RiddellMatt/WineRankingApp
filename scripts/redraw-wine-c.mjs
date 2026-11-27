@@ -1,8 +1,7 @@
 /**
- * Reshape the Decanti pour so it reads as a C.
- * The speckled wine already in the glass stays. A bite comes out of its
- * right side, and the old droplets become one uneven splash that continues
- * the top of that curve over the rim.
+ * Replace the two splash droplets with one lumpy slosh.
+ * The wine already in the glass stays. The new pour is a few soft breaks
+ * joined into the top of that pool, not a single smooth curve.
  *
  * Coordinates are authored on the 2000px light canvas.
  */
@@ -12,15 +11,12 @@ import { fileURLToPath } from 'node:url'
 
 const brand = join(dirname(fileURLToPath(import.meta.url)), '../public/brand')
 
-const POUR = `M 798 1022
-  C 734 1004, 712 926, 728 846
-  C 742 772, 796 730, 858 714
-  C 918 698, 970 728, 946 770
-  C 924 804, 870 812, 828 844
-  C 784 878, 776 926, 810 974
-  C 838 1010, 896 1000, 932 966
-  C 956 942, 920 1016, 862 1024
-  C 820 1030, 798 1022, 798 1022 Z`
+const LUMPS = [
+  `M 742 990 C 718 905, 748 820, 820 772 C 900 720, 890 810, 830 860 C 785 900, 768 960, 752 998 Z`,
+  `M 800 790 C 768 762, 798 708, 858 698 C 912 688, 908 752, 852 778 Z`,
+  `M 848 762 C 878 728, 942 722, 962 758 C 978 788, 922 802, 872 778 Z`,
+  `M 935 758 C 962 736, 998 752, 986 780 C 974 802, 942 792, 928 770 Z`,
+]
 
 function luminance(r, g, b) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
@@ -40,11 +36,12 @@ function isLine(r, g, b, bg, lightBg) {
   return r > 170 && g > 155 && b > 145
 }
 
-async function raster(width, height, scale, originX, originY, strokeWidth) {
+async function raster(width, height, scale, originX, originY) {
+  const body = LUMPS.map((d) => `<path d="${d}" fill="#fff"/>`).join('')
   const svg = `<?xml version="1.0"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
   <g transform="translate(${originX} ${originY}) scale(${scale})">
-    <path d="${POUR}" fill="${strokeWidth ? 'none' : '#fff'}" stroke="${strokeWidth ? '#fff' : 'none'}" stroke-width="${strokeWidth || 0}" stroke-linejoin="round" stroke-linecap="round"/>
+    ${body}
   </g>
 </svg>`
   return sharp(Buffer.from(svg)).ensureAlpha().raw().toBuffer()
@@ -71,22 +68,18 @@ async function redraw(file, { scale, originX = 0, originY = 0 }) {
   const wine = (counts.size ? [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0] : '188,90,71')
     .split(',')
     .map(Number)
-  const outline = lightBg ? [20, 20, 20] : [248, 244, 240]
   const speckle = [
     Math.min(255, Math.round(wine[0] + (255 - wine[0]) * 0.62)),
     Math.min(255, Math.round(wine[1] + (255 - wine[1]) * 0.7)),
     Math.min(255, Math.round(wine[2] + (255 - wine[2]) * 0.7)),
   ]
 
-  const fill = await raster(width, height, scale, originX, originY, 0)
-  const halo = await raster(width, height, scale, originX, originY, 12)
-
-  const inside = (x, y) => fill[(y * width + x) * 4 + 3] > 128
+  const fill = await raster(width, height, scale, originX, originY)
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const [dx, dy] = toDesign(x, y, scale, originX, originY)
-      if (!(dy > 640 && dy < 762 && dx > 740 && dx < 1040)) continue
+      if (!(dy > 648 && dy < 758 && dx > 720 && dx < 1060)) continue
       const i = (y * width + x) * 4
       px[i] = bg[0]
       px[i + 1] = bg[1]
@@ -96,21 +89,13 @@ async function redraw(file, { scale, originX = 0, originY = 0 }) {
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const [dx, dy] = toDesign(x, y, scale, originX, originY)
       const i = (y * width + x) * 4
+      if (fill[i + 3] < 110) continue
       if (isLine(px[i], px[i + 1], px[i + 2], bg, lightBg)) continue
-      const inPour = inside(x, y)
-      const wasWine = isWine(px[i], px[i + 1], px[i + 2], bg)
-      if (wasWine && inPour) continue
-      if (wasWine && !inPour) {
-        px[i] = bg[0]
-        px[i + 1] = bg[1]
-        px[i + 2] = bg[2]
-        continue
-      }
-      if (!inPour || dy > 1070) continue
+      if (isWine(px[i], px[i + 1], px[i + 2], bg)) continue
       const dist = Math.hypot(px[i] - bg[0], px[i + 1] - bg[1], px[i + 2] - bg[2])
-      if (dist > 48) continue
+      if (dist > 42) continue
+      const [dx, dy] = toDesign(x, y, scale, originX, originY)
       const speck = Math.abs(Math.sin(dx * 12.9898 + dy * 78.233) * 43758.5453) % 1 < 0.012
       const color = speck ? speckle : wine
       px[i] = color[0]
@@ -119,24 +104,8 @@ async function redraw(file, { scale, originX = 0, originY = 0 }) {
     }
   }
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const [, dy] = toDesign(x, y, scale, originX, originY)
-      if (dy > 772) continue
-      const i = (y * width + x) * 4
-      if (fill[i + 3] > 180) continue
-      if (halo[i + 3] < 80) continue
-      if (isLine(px[i], px[i + 1], px[i + 2], bg, lightBg)) continue
-      const dist = Math.hypot(px[i] - bg[0], px[i + 1] - bg[1], px[i + 2] - bg[2])
-      if (dist > 50) continue
-      px[i] = outline[0]
-      px[i + 1] = outline[1]
-      px[i + 2] = outline[2]
-    }
-  }
-
   await sharp(px, { raw: { width, height, channels: 4 } }).png().toFile(src)
-  console.log(file, 'wine', wine.join(','), 'outline', outline.join(','))
+  console.log(file, 'wine', wine.join(','))
 }
 
 async function writeRedFromLight() {
