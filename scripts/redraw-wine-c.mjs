@@ -1,7 +1,6 @@
 /**
- * Keep the hand-drawn splash droplets. A short uneven stream leaves the
- * lower droplet and meets the wine already in the glass. That wine stays
- * the letter. The upper droplet stays as drawn.
+ * The wine in the glass lifts as one sheet, rides up over the rim, and
+ * thins into a crest. The drawn droplets go away. The pool stays.
  *
  * Coordinates are authored on the 2000px light canvas.
  */
@@ -11,15 +10,39 @@ import { fileURLToPath } from 'node:url'
 
 const brand = join(dirname(fileURLToPath(import.meta.url)), '../public/brand')
 
-function tailBand(dy) {
-  if (dy < 740 || dy > 828) return null
-  const t = Math.max(0, (dy - 752) / 78)
-  const cx = 810 - t * 18 + Math.sin(t * 2.2) * 2
-  const half = 11 + t * 4
-  return [
-    Math.round(cx - half + Math.sin(dy * 0.57) * 1.3),
-    Math.round(cx + half + Math.sin(dy * 0.38 + 0.8) * 1.3),
-  ]
+const spine = [
+  [808, 870],
+  [792, 828],
+  [798, 788],
+  [824, 748],
+  [852, 718],
+  [870, 692],
+  [882, 668],
+]
+const widths = [
+  [80, 870],
+  [74, 828],
+  [62, 788],
+  [46, 748],
+  [30, 718],
+  [16, 692],
+  [3, 668],
+]
+
+function lerp(a, b, t) {
+  return a + (b - a) * t
+}
+
+function sample(y, arr) {
+  for (let i = 0; i < arr.length - 1; i++) {
+    const a = arr[i]
+    const b = arr[i + 1]
+    if (y <= a[1] && y >= b[1]) {
+      const t = (a[1] - y) / (a[1] - b[1] || 1)
+      return lerp(a[0], b[0], t)
+    }
+  }
+  return null
 }
 
 function luminance(r, g, b) {
@@ -70,24 +93,35 @@ async function redraw(file, { scale, originX = 0, originY = 0 }) {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const [dx, dy] = toDesign(x, y, scale, originX, originY)
-      const band = tailBand(dy)
-      if (!band) continue
-      const [left, right] = band
+      if (!(dy > 640 && dy < 756 && dx > 750 && dx < 960)) continue
+      const i = (y * width + x) * 4
+      px[i] = bg[0]
+      px[i + 1] = bg[1]
+      px[i + 2] = bg[2]
+    }
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const [dx, dy] = toDesign(x, y, scale, originX, originY)
+      const center = sample(dy, spine)
+      const span = sample(dy, widths)
+      if (center == null || span == null) continue
+      const lip = dy < 710 ? Math.sin(dy * 0.45) * 2 : 0
+      const left = center - span * 0.42
+      const right = center + span * 0.58 + lip
       if (dx < left || dx > right) continue
       const i = (y * width + x) * 4
       const r = px[i]
       const g = px[i + 1]
       const b = px[i + 2]
-      const line = isLine(r, g, b, bg, lightBg)
+      if (isLine(r, g, b, bg, lightBg)) continue
       if (isWine(r, g, b, bg)) continue
-      if (dy >= 763 && line) continue
       const dist = Math.hypot(r - bg[0], g - bg[1], b - bg[2])
-      if (dy < 752) {
-        if (!line) continue
-      } else if (dist > 32 && !line) continue
+      if (dist > 50) continue
       const fleck =
-        (Math.abs(dx - 804) <= 1 && Math.abs(dy - 786) <= 1) ||
-        (Math.abs(dx - 794) <= 1 && Math.abs(dy - 808) <= 1)
+        (Math.abs(dx - 832) <= 1 && Math.abs(dy - 790) <= 1) ||
+        (Math.abs(dx - 850) <= 1 && Math.abs(dy - 740) <= 1)
       const color = fleck ? speckle : wine
       px[i] = color[0]
       px[i + 1] = color[1]
