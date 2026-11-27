@@ -43,6 +43,7 @@
                 <data android:scheme="com.northline.decanti" android:host="checkout-cancel" />
                 <data android:scheme="com.northline.decanti" android:host="account" />
                 <data android:scheme="com.northline.decanti" android:host="friends" />
+                <data android:scheme="com.northline.decanti" android:host="invite" />
             </intent-filter>
         </activity-alias>
 
@@ -67,6 +68,7 @@
                 <data android:scheme="com.northline.decanti" android:host="checkout-cancel" />
                 <data android:scheme="com.northline.decanti" android:host="account" />
                 <data android:scheme="com.northline.decanti" android:host="friends" />
+                <data android:scheme="com.northline.decanti" android:host="invite" />
             </intent-filter>
         </activity-alias>
 

@@ -31,6 +31,18 @@ test('invite links carry the code on the site origin', () => {
   )
 })
 
+test('app and web links both yield the invite code', () => {
+  assert.equal(
+    referrals.referralCodeFromUrl('com.northline.decanti://invite?ref=k7h2-m9qx'),
+    'K7H2M9QX',
+  )
+  assert.equal(
+    referrals.referralCodeFromUrl('https://decantiwine.com/share.html?wine=Barolo&ref=ab12cd'),
+    'AB12CD',
+  )
+  assert.equal(referrals.referralCodeFromUrl('https://decantiwine.com/'), null)
+})
+
 test('invite Pro lasts until pro_until, and a paid flag still wins', () => {
   assert.equal(referrals.hasProAccess(false, new Date(NOW + DAY).toISOString(), NOW), true)
   assert.equal(referrals.hasProAccess(false, new Date(NOW - DAY).toISOString(), NOW), false)

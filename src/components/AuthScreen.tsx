@@ -10,6 +10,7 @@ import {
   clearRememberedReferralCode,
   loadRememberedReferralCode,
   normalizeReferralCode,
+  REFERRAL_CAPTURED_EVENT,
   rememberReferralCode,
 } from '../lib/referrals'
 
@@ -31,6 +32,17 @@ export function AuthScreen() {
   useEffect(() => {
     if (user) setBusy(false)
   }, [user])
+
+  useEffect(() => {
+    function onReferral() {
+      const code = loadRememberedReferralCode()
+      if (!code) return
+      setReferralCode(code)
+      setMode('signup')
+    }
+    window.addEventListener(REFERRAL_CAPTURED_EVENT, onReferral)
+    return () => window.removeEventListener(REFERRAL_CAPTURED_EVENT, onReferral)
+  }, [])
 
   useEffect(() => {
     function onOAuthSuccess() {

@@ -110,6 +110,10 @@ import {
 import type { BadgeInput } from './lib/badges'
 import { fetchMyProfile, updateRankingPreference, type UserProfile } from './lib/profileDb'
 import { prepareReferralForSession } from './lib/referrals'
+import { becameTopWine } from './lib/sharePrompt'
+import { maybeRequestStoreReview } from './lib/storeReview'
+import type { ShareWineCardInput } from './lib/shareWineCard'
+import { ShareWineCardSheet } from './components/ShareWineCardSheet'
 import { discardLocalProgressIfReset } from './lib/progressReset'
 import { setActiveProgressUser } from './lib/progressStorage'
 import { isSupabaseConfigured } from './lib/supabase'
@@ -240,6 +244,8 @@ export default function App() {
   const [savingFriendWishlistKey, setSavingFriendWishlistKey] = useState<string | null>(null)
   const [friendCount, setFriendCount] = useState(0)
   const [referralNotice, setReferralNotice] = useState('')
+  const [topShare, setTopShare] = useState<ShareWineCardInput | null>(null)
+  const topShareRef = useRef<ShareWineCardInput | null>(null)
   const [friendCountLoaded, setFriendCountLoaded] = useState(false)
   const [friendNameById, setFriendNameById] = useState(() => new Map<string, string>())
   const [friendsRequestedTab, setFriendsRequestedTab] = useState<'feed' | 'manage' | null>(null)
@@ -502,6 +508,13 @@ export default function App() {
         saveCompletedJourneysLocal(nextCompleted)
         setCompletedJourneys(nextCompleted)
         pushJourneyCompletions(newJourneys)
+        window.setTimeout(() => {
+          if (topShareRef.current) return
+          void maybeRequestStoreReview({
+            ratedCount: triedCount(next.wines),
+            journeyCompleted: true,
+          })
+        }, 900)
       }
 
       const nextWithJourneys: BadgeInput = {
@@ -1266,8 +1279,27 @@ export default function App() {
       { ...wine, status: savingWishlist ? 'wishlist' : 'tried' },
       rankingPreference,
     )
+    const promptShare = !savingWishlist && becameTopWine(wines, normalized, rankingPreference)
+    const shareInput: ShareWineCardInput | null = promptShare
+      ? { wine: normalized, score: normalized.rating }
+      : null
+    if (shareInput) topShareRef.current = shareInput
     await persistWine(normalized)
     setFormOpen(false)
+    if (shareInput) {
+      setTopShare(shareInput)
+    } else if (!savingWishlist) {
+      const nextList = wines.some((item) => item.id === normalized.id)
+        ? wines.map((item) => (item.id === normalized.id ? normalized : item))
+        : [...wines, normalized]
+      window.setTimeout(() => {
+        if (topShareRef.current) return
+        void maybeRequestStoreReview({
+          ratedCount: triedCount(nextList),
+          journeyCompleted: false,
+        })
+      }, 900)
+    }
     setEditing(null)
     setFormCreate(false)
     if (!savingWishlist && wasWishlist) {
@@ -1930,6 +1962,15 @@ export default function App() {
           onWishlist={() => guideScan('wishlist')}
         />
       )}
+
+      <ShareWineCardSheet
+        open={topShare != null}
+        input={topShare}
+        onClose={() => {
+          topShareRef.current = null
+          setTopShare(null)
+        }}
+      />
 
       <BadgeUnlockToasts items={badgeToastItems} onDismiss={dismissBadgeToast} />
       <XpFeedbackToasts items={xpToastItems} onDismiss={dismissXpToast} />

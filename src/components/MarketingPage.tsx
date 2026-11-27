@@ -1,4 +1,5 @@
 import { APP_DESCRIPTION, APP_NAME, APP_STORE_URL, PLAY_STORE_URL, SITE_URL } from '../brand'
+import { storeLinksForPlatform, storePlatform } from '../lib/storeRouting'
 import { PRO_CONFIG } from '../config'
 import { DecantiLogo } from './DecantiLogo'
 
@@ -14,7 +15,7 @@ const FAQS = [
   },
   {
     question: 'Is Decanti free?',
-    answer: `Decanti is free to start. ${APP_NAME} Pro is ${PRO_CONFIG.priceLabel} and adds a larger cellar, label and menu scans, and insights.`,
+    answer: `Decanti is free to start, including two AI menu scans. ${APP_NAME} Pro is ${PRO_CONFIG.priceLabel} and adds a larger cellar, label scans, more menu scans, and insights.`,
   },
   {
     question: 'Can I use Decanti on iPhone or Android?',
@@ -31,6 +32,12 @@ const FAQS = [
 export function MarketingPage({ onOpenApp }: Props) {
   const privacyHref = `${import.meta.env.BASE_URL}privacy.html`
   const termsHref = `${import.meta.env.BASE_URL}terms.html`
+  const storeLinks = storeLinksForPlatform(
+    storePlatform(typeof navigator === 'undefined' ? '' : navigator.userAgent, {
+      maxTouchPoints: typeof navigator === 'undefined' ? 0 : navigator.maxTouchPoints,
+    }),
+    { appStoreUrl: APP_STORE_URL, playStoreUrl: PLAY_STORE_URL },
+  )
 
   return (
     <div className="mkt">
@@ -53,13 +60,13 @@ export function MarketingPage({ onOpenApp }: Props) {
             <button type="button" className="btn primary" onClick={onOpenApp}>
               Open Decanti
             </button>
-            {APP_STORE_URL ? (
-              <a className="btn ghost" href={APP_STORE_URL}>
+            {storeLinks.appStoreUrl ? (
+              <a className="btn ghost" href={storeLinks.appStoreUrl}>
                 Download for iPhone
               </a>
             ) : null}
-            {PLAY_STORE_URL ? (
-              <a className="btn ghost" href={PLAY_STORE_URL}>
+            {storeLinks.playStoreUrl ? (
+              <a className="btn ghost" href={storeLinks.playStoreUrl}>
                 Get it on Google Play
               </a>
             ) : null}
@@ -105,6 +112,16 @@ export function MarketingPage({ onOpenApp }: Props) {
           <button type="button" className="btn primary" onClick={onOpenApp}>
             Open Decanti
           </button>
+        </section>
+
+        <section className="mkt-section" aria-labelledby="mkt-guides">
+          <h2 id="mkt-guides">Ways to use it</h2>
+          <p>A few pages for the jobs Decanti is built for.</p>
+          <p className="mkt-guides">
+            <a href={`${import.meta.env.BASE_URL}wine-journal.html`}>Wine journal</a>
+            <a href={`${import.meta.env.BASE_URL}restaurant-wine-list.html`}>Restaurant wine list</a>
+            <a href={`${import.meta.env.BASE_URL}cellar-tracker.html`}>Cellar tracker</a>
+          </p>
         </section>
 
         <section className="mkt-section" aria-labelledby="mkt-faq">

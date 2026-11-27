@@ -8,11 +8,18 @@ import { hasTaste, lookupTaste } from '../tasteData'
 import { TASTE_AXES, type TasteProfile, type Wine } from '../types'
 import { SCORE_MAX, SCORE_STOPS, formatScoreOutOf, scoreRgb } from './scoreScale'
 
+/** Printed on the card. Instagram drops caption links, so the domain has to be in the image. */
+export const SHARE_CARD_FOOTER = 'decantiwine.com'
+
 export interface ShareWineCardInput {
   wine: Wine
   score: number
   /** e.g. "From Alex's cellar" — shown under the wine details. */
   attribution?: string
+  /** Replaces the "/10" label. Menu matches use "85 match". */
+  scoreLabel?: string
+  /** Bar scale. Wine scores are out of 10. Menu matches are out of 100. */
+  scoreMax?: number
 }
 
 const COLORS = {
@@ -84,6 +91,7 @@ function drawScoreBar(
   width: number,
   height: number,
   score: number,
+  scoreMax: number,
 ) {
   const radius = height / 2
   ctx.save()
@@ -97,10 +105,11 @@ function drawScoreBar(
   }
   ctx.fillStyle = gradient
   ctx.fillRect(x, y, width, height)
-  const rest = Math.max(0, 1 - score / SCORE_MAX)
+  const filled = scoreMax > 0 ? Math.min(1, Math.max(0, score / scoreMax)) : 0
+  const rest = 1 - filled
   if (rest > 0) {
     ctx.fillStyle = 'rgba(18, 8, 12, 0.62)'
-    ctx.fillRect(x + width * (score / SCORE_MAX), y, width * rest, height)
+    ctx.fillRect(x + width * filled, y, width * rest, height)
   }
   ctx.restore()
 }
@@ -334,11 +343,13 @@ export async function renderShareWineCard(
   y += s(layout, 36)
   const barH = s(layout, 18)
   const barW = Math.min(s(layout, 280), maxText * 0.62)
-  drawScoreBar(ctx, textX, y, barW, barH, score)
+  const scoreMax = input.scoreMax && input.scoreMax > 0 ? input.scoreMax : SCORE_MAX
+  const scoreLabel = input.scoreLabel ?? formatScoreOutOf(score)
+  drawScoreBar(ctx, textX, y, barW, barH, score, scoreMax)
   ctx.font = `700 ${s(layout, 48)}px Inter, system-ui, sans-serif`
-  const rgb = scoreRgb(score)
+  const rgb = scoreRgb(scoreMax === SCORE_MAX ? score : (score / scoreMax) * SCORE_MAX)
   ctx.fillStyle = `rgb(${rgb.r} ${rgb.g} ${rgb.b})`
-  ctx.fillText(formatScoreOutOf(score), textX + barW + s(layout, 18), y + barH)
+  ctx.fillText(scoreLabel, textX + barW + s(layout, 18), y + barH)
 
   const tasteSection = resolveShareTaste(wine, layout.maxTasteRows)
   if (tasteSection) {
@@ -370,7 +381,7 @@ export async function renderShareWineCard(
   ctx.font = `500 ${s(layout, 24)}px Inter, system-ui, sans-serif`
   ctx.fillStyle = COLORS.textMuted
   ctx.textAlign = 'center'
-  ctx.fillText(`Shared from ${APP_NAME}`, cardW / 2, cardH - s(layout, 72))
+  ctx.fillText(SHARE_CARD_FOOTER, cardW / 2, cardH - s(layout, 72))
   ctx.textAlign = 'left'
 
   return new Promise((resolve, reject) => {

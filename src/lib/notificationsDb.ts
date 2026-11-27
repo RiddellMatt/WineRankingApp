@@ -15,6 +15,7 @@ export type NotificationType =
   | 'friend_journey_complete'
   | 'wine_with_friend'
   | 'referral_qualified'
+  | 'referral_joined'
 
 export interface ReactionNotificationPayload {
   reaction_type: ReactionType
@@ -115,6 +116,8 @@ export function notificationMessage(n: AppNotification): string {
       const p = n.payload as WineWithFriendPayload
       return `${name} tried ${p.wine_name} with you`
     }
+    case 'referral_joined':
+      return `${name} joined with your invite. You'll both get a month of Pro when they rate a wine.`
     case 'referral_qualified': {
       const role = (n.payload as { role?: string }).role
       if (role === 'invited') {
@@ -132,6 +135,7 @@ export function notificationFriendsTab(n: AppNotification): 'feed' | 'manage' {
     case 'friend_request':
     case 'friend_accepted':
     case 'referral_qualified':
+    case 'referral_joined':
       return 'manage'
     default:
       return 'feed'

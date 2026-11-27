@@ -13,6 +13,7 @@ export const SITE_URL = 'https://decantiwine.com/'
 /**
  * Public store listings. Leave empty until the listing returns a real page.
  * A 404 download link hurts both visitors and search results.
+ * public/share.html copies these into data-app-store and data-play-store.
  */
 export const APP_STORE_URL = ''
 export const PLAY_STORE_URL = ''

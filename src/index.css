@@ -6622,6 +6622,10 @@ html.show-banner-ad .account-panel {
   font-weight: 600;
 }
 
+.passport-social-share {
+  margin: 0 0 0.85rem;
+}
+
 .passport-friend-avatar-btn {
   padding: 0;
   border: none;
@@ -8009,6 +8013,17 @@ html.native-ios-tab-bar .ad-banner-probe {
 
 .mkt-faq p {
   margin: 0.55rem 0 0.2rem;
+}
+
+.mkt-guides {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+}
+
+.mkt-guides a {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .mkt-foot {

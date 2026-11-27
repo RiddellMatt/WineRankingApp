@@ -1,4 +1,5 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { resolveScanAllowance } from './scanQuota.ts'
 
 export class ScanPreflightError extends Error {
   code: string
@@ -12,6 +13,7 @@ export class ScanPreflightError extends Error {
 
 export interface ScanQuotaResult {
   count: number
+  limit: number
 }
 
 export async function assertProAndScanQuota(
@@ -21,6 +23,7 @@ export async function assertProAndScanQuota(
   monthlyLimit: number,
   proRequiredCode: string,
   quotaExceededCode: string,
+  freeAllowance = 0,
 ): Promise<ScanQuotaResult> {
   const full = await admin
     .from('profiles')
@@ -41,9 +44,7 @@ export async function assertProAndScanQuota(
 
   const until = profile?.pro_until ? Date.parse(profile.pro_until) : Number.NaN
   const invitePro = Number.isFinite(until) && until > Date.now()
-  if (!profile?.is_pro && !invitePro) {
-    throw new ScanPreflightError('Pro required', proRequiredCode)
-  }
+  const isPro = Boolean(profile?.is_pro) || invitePro
 
   const monthStart = new Date()
   monthStart.setUTCDate(1)
@@ -58,9 +59,20 @@ export async function assertProAndScanQuota(
   if (countError) {
     throw new Error(countError.message)
   }
-  if ((count ?? 0) >= monthlyLimit) {
-    throw new ScanPreflightError('Quota exceeded', quotaExceededCode)
+
+  const used = count ?? 0
+  const allowance = resolveScanAllowance({
+    isPro,
+    used,
+    monthlyLimit,
+    freeAllowance,
+  })
+  if (!allowance.allowed) {
+    throw new ScanPreflightError(
+      allowance.code === 'quota_exceeded' ? 'Quota exceeded' : 'Pro required',
+      allowance.code === 'quota_exceeded' ? quotaExceededCode : proRequiredCode,
+    )
   }
 
-  return { count: count ?? 0 }
+  return { count: used, limit: allowance.limit }
 }
