@@ -1,8 +1,7 @@
 /**
- * Replace the two splash droplets with one small flat splash.
- * The wine already in the glass stays and is the letter. The new splash is
- * about the size of those two droplets, with no outline, and only closes
- * the gap at the top of the pool.
+ * Keep the hand-drawn splash droplets. A short uneven stream leaves the
+ * lower droplet and meets the wine already in the glass. That wine stays
+ * the letter. The upper droplet stays as drawn.
  *
  * Coordinates are authored on the 2000px light canvas.
  */
@@ -12,11 +11,16 @@ import { fileURLToPath } from 'node:url'
 
 const brand = join(dirname(fileURLToPath(import.meta.url)), '../public/brand')
 
-const SPLASH = `
-  <ellipse cx="806" cy="736" rx="18" ry="24" fill="#fff"/>
-  <ellipse cx="834" cy="708" rx="20" ry="18" fill="#fff"/>
-  <ellipse cx="812" cy="786" rx="18" ry="44" fill="#fff"/>
-`
+function tailBand(dy) {
+  if (dy < 740 || dy > 828) return null
+  const t = Math.max(0, (dy - 752) / 78)
+  const cx = 810 - t * 18 + Math.sin(t * 2.2) * 2
+  const half = 11 + t * 4
+  return [
+    Math.round(cx - half + Math.sin(dy * 0.57) * 1.3),
+    Math.round(cx + half + Math.sin(dy * 0.38 + 0.8) * 1.3),
+  ]
+}
 
 function luminance(r, g, b) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
@@ -34,16 +38,6 @@ function isLine(r, g, b, bg, lightBg) {
   if (dist < 40) return false
   if (lightBg) return r < 90 && g < 90 && b < 90
   return r > 170 && g > 155 && b > 145
-}
-
-async function raster(width, height, scale, originX, originY) {
-  const svg = `<?xml version="1.0"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-  <g transform="translate(${originX} ${originY}) scale(${scale})">
-    ${SPLASH}
-  </g>
-</svg>`
-  return sharp(Buffer.from(svg)).ensureAlpha().raw().toBuffer()
 }
 
 function toDesign(ix, iy, scale, originX, originY) {
@@ -73,30 +67,28 @@ async function redraw(file, { scale, originX = 0, originY = 0 }) {
     Math.min(255, Math.round(wine[2] + (255 - wine[2]) * 0.7)),
   ]
 
-  const fill = await raster(width, height, scale, originX, originY)
-
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const [dx, dy] = toDesign(x, y, scale, originX, originY)
-      if (!(dy > 648 && dy < 762 && dx > 760 && dx < 920)) continue
+      const band = tailBand(dy)
+      if (!band) continue
+      const [left, right] = band
+      if (dx < left || dx > right) continue
       const i = (y * width + x) * 4
-      px[i] = bg[0]
-      px[i + 1] = bg[1]
-      px[i + 2] = bg[2]
-    }
-  }
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const i = (y * width + x) * 4
-      if (fill[i + 3] < 110) continue
-      if (isLine(px[i], px[i + 1], px[i + 2], bg, lightBg)) continue
-      if (isWine(px[i], px[i + 1], px[i + 2], bg)) continue
-      const dist = Math.hypot(px[i] - bg[0], px[i + 1] - bg[1], px[i + 2] - bg[2])
-      if (dist > 42) continue
-      const [dx, dy] = toDesign(x, y, scale, originX, originY)
-      const speck = Math.abs(Math.sin(dx * 12.9898 + dy * 78.233) * 43758.5453) % 1 < 0.012
-      const color = speck ? speckle : wine
+      const r = px[i]
+      const g = px[i + 1]
+      const b = px[i + 2]
+      const line = isLine(r, g, b, bg, lightBg)
+      if (isWine(r, g, b, bg)) continue
+      if (dy >= 763 && line) continue
+      const dist = Math.hypot(r - bg[0], g - bg[1], b - bg[2])
+      if (dy < 752) {
+        if (!line) continue
+      } else if (dist > 32 && !line) continue
+      const fleck =
+        (Math.abs(dx - 804) <= 1 && Math.abs(dy - 786) <= 1) ||
+        (Math.abs(dx - 794) <= 1 && Math.abs(dy - 808) <= 1)
+      const color = fleck ? speckle : wine
       px[i] = color[0]
       px[i + 1] = color[1]
       px[i + 2] = color[2]
