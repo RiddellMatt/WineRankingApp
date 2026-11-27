@@ -59,6 +59,11 @@ test('the bar is red at 1, yellow at 5, green at 7, and darker green at 10', () 
   assert.ok(ten.l < seven.l, '10 should be darker than 7')
 })
 
+test('an unrated bottle stays unranked even if value was scored', () => {
+  assert.equal(ranking.compositeScore({ ratingEnjoyment: 0, ratingValue: 8 }, 'balanced'), 0)
+  assert.equal(ranking.compositeScore({ ratingEnjoyment: 0, ratingValue: null }, 'taste_first'), 0)
+})
+
 test('overall is the ranking blend, snapped to a quarter', () => {
   const score = ranking.compositeScore(
     { ratingEnjoyment: 8, ratingValue: 6 },

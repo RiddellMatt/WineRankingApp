@@ -5,6 +5,7 @@ import {
   searchMapPlaces,
   type MapPlace,
 } from '../lib/placeSearch'
+import { buildPlaceMenu, type PlaceMenuItem } from '../lib/placePickerMenu'
 import { IconMapPin } from './icons/UiIcons'
 
 interface Props {
@@ -13,11 +14,6 @@ interface Props {
   labelledBy: string
   recentPlaces?: string[]
 }
-
-type MenuItem =
-  | { kind: 'locate' }
-  | { kind: 'recent'; label: string }
-  | { kind: 'place'; place: MapPlace }
 
 function isAbort(err: unknown): boolean {
   return err instanceof DOMException
@@ -28,6 +24,8 @@ function isAbort(err: unknown): boolean {
 export function PlacePicker({ value, onChange, labelledBy, recentPlaces = [] }: Props) {
   const listId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
+  const textRef = useRef(value)
+  const committedRef = useRef(value)
   const [text, setText] = useState(value)
   const [open, setOpen] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -40,9 +38,18 @@ export function PlacePicker({ value, onChange, labelledBy, recentPlaces = [] }: 
   const [bias, setBias] = useState<{ lat: number; lng: number } | null>(null)
   const locateGen = useRef(0)
   const locatingRef = useRef(false)
+  const pickingRef = useRef(false)
+
+  function setTyped(next: string) {
+    textRef.current = next
+    setText(next)
+  }
 
   useEffect(() => {
-    if (!dirty) setText(value)
+    if (!dirty && value !== committedRef.current) {
+      committedRef.current = value
+      setTyped(value)
+    }
   }, [value, dirty])
 
   useEffect(() => {
@@ -70,13 +77,13 @@ export function PlacePicker({ value, onChange, labelledBy, recentPlaces = [] }: 
           setResults(places)
           setActive(0)
           setSearching(false)
-          setStatus(places.length === 0 ? 'No matching places. Try a city, restaurant, or winery.' : '')
+          setStatus(places.length === 0 ? 'No matching places. You can still save what you typed.' : '')
         })
         .catch((err: unknown) => {
           if (controller.signal.aborted || isAbort(err)) return
           setResults([])
           setSearching(false)
-          setStatus("Couldn't load map places. Check your connection.")
+          setStatus("Couldn't load map places. You can still save what you typed.")
         })
     }, 320)
 
@@ -86,56 +93,64 @@ export function PlacePicker({ value, onChange, labelledBy, recentPlaces = [] }: 
     }
   }, [text, open, dirty, bias])
 
-  const recent = recentPlaces
-    .map((place) => place.trim())
-    .filter((place, index, all) => {
-      if (!place) return false
-      if (place.toLowerCase() === value.trim().toLowerCase()) return false
-      return all.findIndex((item) => item.toLowerCase() === place.toLowerCase()) === index
-    })
-    .filter((place) => {
-      const q = dirty ? text.trim().toLowerCase() : ''
-      if (q.length === 0 || q.length >= 2) return q.length === 0 || place.toLowerCase().includes(q)
-      return place.toLowerCase().includes(q)
-    })
-    .slice(0, 4)
-
-  const showResults = dirty && text.trim().length >= 2
-  const choices: MenuItem[] = showResults
-    ? results.map((place) => ({ kind: 'place' as const, place }))
-    : recent.map((label) => ({ kind: 'recent' as const, label }))
-  const items: MenuItem[] = [...choices, { kind: 'locate' }]
+  const items = buildPlaceMenu({
+    text,
+    dirty,
+    value,
+    recentPlaces,
+    results,
+  })
 
   function commit(label: string) {
-    onChange(label)
-    setText(label)
+    const next = label.trim()
+    committedRef.current = next
+    textRef.current = next
+    onChange(next)
+    setText(next)
     setDirty(false)
     setResults([])
     setStatus('')
     setSearching(false)
     setOpen(false)
     setActive(0)
-    requestAnimationFrame(() => inputRef.current?.select())
+    setArmed(false)
+  }
+
+  function acceptTyped() {
+    if (locatingRef.current) return
+    const next = textRef.current.trim()
+    if (next !== committedRef.current.trim()) commit(next)
+    else {
+      setText(next)
+      setDirty(false)
+      setOpen(false)
+      setResults([])
+      setStatus('')
+      setSearching(false)
+    }
   }
 
   function clearValue() {
-    onChange('')
-    setText('')
-    setDirty(false)
-    setResults([])
-    setStatus('')
+    commit('')
     setOpen(true)
-    setActive(0)
     inputRef.current?.focus()
   }
 
-  function chooseItem(item: MenuItem) {
+  function chooseItem(item: PlaceMenuItem) {
     if (item.kind === 'locate') {
       void tagCurrentLocation()
       return
     }
-    if (item.kind === 'recent') commit(item.label)
-    else commit(item.place.label)
+    commit(item.label)
+  }
+
+  function pickItem(item: PlaceMenuItem) {
+    if (pickingRef.current) return
+    pickingRef.current = true
+    chooseItem(item)
+    window.setTimeout(() => {
+      pickingRef.current = false
+    }, 0)
   }
 
   async function tagCurrentLocation() {
@@ -184,16 +199,24 @@ export function PlacePicker({ value, onChange, labelledBy, recentPlaces = [] }: 
       return
     }
     if (e.key === 'Escape') {
+      if (!open && !dirty) return
       e.preventDefault()
       e.stopPropagation()
-      setText(value)
+      setTyped(committedRef.current)
       setDirty(false)
       setResults([])
       setStatus('')
       setOpen(false)
       return
     }
-    if (e.key !== 'Enter' || !open || items.length === 0) return
+    if (e.key !== 'Enter' || !open) return
+    if (dirty && !armed) {
+      e.preventDefault()
+      e.stopPropagation()
+      commit(text)
+      return
+    }
+    if (items.length === 0) return
     const item = items[Math.min(active, items.length - 1)]
     if (!item || (!dirty && !armed && item.kind !== 'locate')) return
     e.preventDefault()
@@ -204,7 +227,7 @@ export function PlacePicker({ value, onChange, labelledBy, recentPlaces = [] }: 
   const listOpen = open && (items.length > 0 || Boolean(status))
 
   return (
-    <div className="place-picker">
+    <div className="place-picker" data-combobox-open={listOpen ? 'true' : undefined}>
       <div className="combo-field">
         <IconMapPin className="combo-field-pin" />
         <input
@@ -226,7 +249,7 @@ export function PlacePicker({ value, onChange, labelledBy, recentPlaces = [] }: 
           onPointerDown={(e) => {
             if (document.activeElement !== inputRef.current || open) return
             e.preventDefault()
-            setText(value)
+            setTyped(committedRef.current)
             setDirty(false)
             setOpen(true)
             setActive(0)
@@ -234,27 +257,30 @@ export function PlacePicker({ value, onChange, labelledBy, recentPlaces = [] }: 
             inputRef.current?.select()
           }}
           onFocus={() => {
-            setDirty(false)
             setOpen(true)
             setActive(0)
             setArmed(false)
-            setText((current) => (current.trim() === '' && value.trim() !== '' ? current : value))
-            requestAnimationFrame(() => inputRef.current?.select())
+            if (!dirty) setTyped(committedRef.current)
           }}
           onBlur={() => {
-            setOpen(false)
-            setText(value)
-            setDirty(false)
-            setResults([])
-            if (!locatingRef.current) setStatus('')
+            if (locatingRef.current) {
+              setOpen(true)
+              return
+            }
+            acceptTyped()
           }}
           onChange={(e) => {
             const next = e.target.value
-            setText(next)
+            setTyped(next)
             setDirty(true)
             setOpen(true)
             setActive(0)
-            if (!next.trim()) onChange('')
+            setArmed(false)
+            if (!next.trim()) {
+              commit('')
+              setDirty(false)
+              setOpen(true)
+            }
           }}
           onKeyDown={onSearchKeyDown}
         />
@@ -285,12 +311,36 @@ export function PlacePicker({ value, onChange, labelledBy, recentPlaces = [] }: 
                     aria-selected={selected}
                     className={`place-picker-result${selected ? ' active' : ''}`}
                     disabled={locating}
-                    onPointerDown={(e) => e.preventDefault()}
-                    onClick={() => chooseItem(item)}
+                    onPointerDown={(e) => {
+                      e.preventDefault()
+                      pickItem(item)
+                    }}
+                    onClick={() => pickItem(item)}
                   >
                     <span className="place-picker-result-title">
                       {locating ? 'Finding your location…' : 'Use current location'}
                     </span>
+                  </button>
+                </li>
+              )
+            }
+            if (item.kind === 'custom') {
+              return (
+                <li key={`custom-${item.label}`}>
+                  <button
+                    type="button"
+                    id={`${listId}-opt-${index}`}
+                    role="option"
+                    aria-selected={selected}
+                    className={`place-picker-result${selected ? ' active' : ''}`}
+                    onPointerDown={(e) => {
+                      e.preventDefault()
+                      pickItem(item)
+                    }}
+                    onClick={() => pickItem(item)}
+                  >
+                    <span className="place-picker-result-title">Use “{item.label}”</span>
+                    <span className="place-picker-result-sub">Save this place</span>
                   </button>
                 </li>
               )
@@ -304,8 +354,11 @@ export function PlacePicker({ value, onChange, labelledBy, recentPlaces = [] }: 
                     role="option"
                     aria-selected={selected}
                     className={`place-picker-result${selected ? ' active' : ''}`}
-                    onPointerDown={(e) => e.preventDefault()}
-                    onClick={() => chooseItem(item)}
+                    onPointerDown={(e) => {
+                      e.preventDefault()
+                      pickItem(item)
+                    }}
+                    onClick={() => pickItem(item)}
                   >
                     <span className="place-picker-result-title">{item.label}</span>
                     <span className="place-picker-result-sub">Recent</span>
@@ -314,23 +367,26 @@ export function PlacePicker({ value, onChange, labelledBy, recentPlaces = [] }: 
               )
             }
             return (
-              <li key={item.place.id}>
+              <li key={item.id}>
                 <button
                   type="button"
                   id={`${listId}-opt-${index}`}
                   role="option"
                   aria-selected={selected}
                   className={`place-picker-result${selected ? ' active' : ''}`}
-                  onPointerDown={(e) => e.preventDefault()}
-                  onClick={() => chooseItem(item)}
+                  onPointerDown={(e) => {
+                    e.preventDefault()
+                    pickItem(item)
+                  }}
+                  onClick={() => pickItem(item)}
                 >
-                  <span className="place-picker-result-title">{item.place.title}</span>
-                  {item.place.subtitle && <span className="place-picker-result-sub">{item.place.subtitle}</span>}
+                  <span className="place-picker-result-title">{item.title}</span>
+                  {item.subtitle && <span className="place-picker-result-sub">{item.subtitle}</span>}
                 </button>
               </li>
             )
           })}
-          {status && showResults && results.length === 0 && (
+          {status && (
             <li className="place-picker-result-sub combo-status" role="status">
               {status}
             </li>
