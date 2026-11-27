@@ -6125,13 +6125,17 @@ html.show-banner-ad .account-panel {
 
   .wine-side {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    /* The score, "$150 bottle", and the four action icons do not fit
+       one row. A shrinking score column was painting "8.25/10" over
+       the price, so the price takes the line under the score. */
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      'overall price actions'
-      'parts parts parts';
+      'overall actions'
+      'price price'
+      'parts parts';
     align-items: center;
-    column-gap: 0.45rem;
-    row-gap: 0.28rem;
+    column-gap: 0.75rem;
+    row-gap: 0.35rem;
     width: 100%;
   }
 
@@ -6142,6 +6146,11 @@ html.show-banner-ad .account-panel {
   .wine-rating-overall {
     grid-area: overall;
     justify-self: start;
+    min-width: max-content;
+  }
+
+  .wine-rating-overall .score-readout {
+    flex-shrink: 0;
   }
 
   .rating-breakdown {
@@ -6152,6 +6161,9 @@ html.show-banner-ad .account-panel {
 
   .wine-price {
     grid-area: price;
+    justify-self: start;
+    align-items: flex-start;
+    text-align: left;
   }
 
   .wine-actions,
