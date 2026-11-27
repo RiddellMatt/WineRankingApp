@@ -1,7 +1,7 @@
 import { App } from '@capacitor/app'
 import { getSupabase } from '../lib/supabase'
 import { hideNativeSplashOnce, initLaunchEpoch } from '../lib/nativeSplash'
-import { isNativeApp } from '../lib/platform'
+import { isNativeApp, nativePlatform } from '../lib/platform'
 import { initAppIcon } from '../lib/appIcon'
 import { loadStoredTheme, THEME_META } from '../lib/themes'
 import { completeOAuthFromUrl, listenForOAuthBrowserDismiss } from '../lib/mobileOAuth'
@@ -35,6 +35,10 @@ export async function initNativeShell(): Promise<void> {
   initLaunchEpoch()
   document.documentElement.classList.add('native-app')
   document.body.classList.add('native-app')
+  if (nativePlatform() === 'ios') {
+    document.documentElement.classList.add('native-ios')
+    document.body.classList.add('native-ios')
+  }
 
   try {
     const theme = loadStoredTheme()

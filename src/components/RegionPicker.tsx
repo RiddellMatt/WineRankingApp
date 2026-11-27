@@ -10,34 +10,54 @@ interface Props {
 export function RegionPicker({ value, onChange, suggestionChips = [] }: Props) {
   const listId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
+  const textRef = useRef(value)
+  const committedRef = useRef(value)
   const [text, setText] = useState(value)
   const [open, setOpen] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [active, setActive] = useState(0)
   const [armed, setArmed] = useState(false)
 
+  function setTyped(next: string) {
+    textRef.current = next
+    setText(next)
+  }
+
   useEffect(() => {
-    if (!dirty) setText(value)
+    if (!dirty && value !== committedRef.current) {
+      committedRef.current = value
+      setTyped(value)
+    }
   }, [value, dirty])
 
   const options = open ? regionComboboxOptions(dirty ? text : '', suggestionChips) : []
   const listOpen = open && options.length > 0
 
   function commit(label: string) {
-    onChange(label)
-    setText(label)
+    const next = label.trim()
+    committedRef.current = next
+    textRef.current = next
+    onChange(next)
+    setText(next)
     setDirty(false)
     setOpen(false)
     setActive(0)
-    requestAnimationFrame(() => inputRef.current?.select())
+    setArmed(false)
+  }
+
+  function acceptTyped() {
+    const next = textRef.current.trim()
+    if (next !== committedRef.current.trim()) commit(next)
+    else {
+      setText(next)
+      setDirty(false)
+      setOpen(false)
+    }
   }
 
   function clearValue() {
-    onChange('')
-    setText('')
-    setDirty(false)
+    commit('')
     setOpen(true)
-    setActive(0)
     inputRef.current?.focus()
   }
 
@@ -58,9 +78,10 @@ export function RegionPicker({ value, onChange, suggestionChips = [] }: Props) {
       return
     }
     if (e.key === 'Escape') {
+      if (!open && !dirty) return
       e.preventDefault()
       e.stopPropagation()
-      setText(value)
+      setTyped(committedRef.current)
       setDirty(false)
       setOpen(false)
       return
@@ -73,7 +94,7 @@ export function RegionPicker({ value, onChange, suggestionChips = [] }: Props) {
   }
 
   return (
-    <div className="region-picker">
+    <div className="region-picker" data-combobox-open={listOpen ? 'true' : undefined}>
       <div className="combo-field">
         <input
           ref={inputRef}
@@ -92,7 +113,7 @@ export function RegionPicker({ value, onChange, suggestionChips = [] }: Props) {
           onPointerDown={(e) => {
             if (document.activeElement !== inputRef.current || open) return
             e.preventDefault()
-            setText(value)
+            setTyped(committedRef.current)
             setDirty(false)
             setOpen(true)
             setActive(0)
@@ -100,25 +121,23 @@ export function RegionPicker({ value, onChange, suggestionChips = [] }: Props) {
             inputRef.current?.select()
           }}
           onFocus={() => {
-            setDirty(false)
             setOpen(true)
             setActive(0)
             setArmed(false)
-            setText((current) => (current.trim() === '' && value.trim() !== '' ? current : value))
-            requestAnimationFrame(() => inputRef.current?.select())
+            if (!dirty) setTyped(committedRef.current)
           }}
-          onBlur={() => {
-            setOpen(false)
-            setText(value)
-            setDirty(false)
-          }}
+          onBlur={acceptTyped}
           onChange={(e) => {
             const next = e.target.value
-            setText(next)
+            setTyped(next)
             setDirty(true)
             setOpen(true)
             setActive(0)
-            if (!next.trim()) onChange('')
+            setArmed(false)
+            if (!next.trim()) {
+              commit('')
+              setOpen(true)
+            }
           }}
           onKeyDown={onKeyDown}
         />
@@ -144,7 +163,10 @@ export function RegionPicker({ value, onChange, suggestionChips = [] }: Props) {
                 role="option"
                 aria-selected={index === active}
                 className={`region-picker-result${index === active ? ' active' : ''}`}
-                onPointerDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  commit(option.label)
+                }}
                 onClick={() => commit(option.label)}
               >
                 {option.custom ? `Use “${option.label}”` : option.label}

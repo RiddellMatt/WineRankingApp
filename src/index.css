@@ -4250,6 +4250,16 @@ textarea {
   margin: 0.8rem 0 0;
 }
 
+.wine-form-modal .form-error {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--danger) 16%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--danger) 55%, transparent);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -4284,8 +4294,13 @@ html.keyboard-open .wine-form-backdrop {
 }
 
 /* The save row sits where a keyboard-dismiss tap lands, and it eats the few
-   visible rows. Bring it back once the keyboard is gone. */
-html.keyboard-open .wine-form-modal .modal-actions {
+   visible rows. Bring the buttons back once the keyboard is gone. A validation
+   message stays up so it is visible without scrolling the form. */
+html.keyboard-open .wine-form-modal .modal-actions:not(:has(.form-error)) {
+  display: none;
+}
+
+html.keyboard-open .wine-form-modal .modal-actions-buttons {
   display: none;
 }
 
@@ -4325,9 +4340,19 @@ html.keyboard-open .wine-form-modal .modal-actions {
 }
 
 .wine-form-modal .modal-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
   margin-top: 0.85rem;
   padding-top: 0.85rem;
   border-top: 1px solid var(--border);
+}
+
+.modal-actions-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
 }
 
 .stamp-wines-modal {
@@ -6368,6 +6393,14 @@ html.show-banner-ad .account-panel {
     flex-direction: column-reverse;
   }
 
+  .wine-form-modal .modal-actions {
+    flex-direction: column;
+  }
+
+  .wine-form-modal .modal-actions-buttons {
+    flex-direction: column-reverse;
+  }
+
   .modal-actions .btn {
     width: 100%;
   }
@@ -7743,6 +7776,14 @@ html.native-app body {
   max-width: 100%;
   height: 100dvh;
   padding: 0;
+}
+
+/* The iOS keyboard plugin writes a short body height. If that pixel value
+   sticks after the keyboard closes, the webview's dark backdrop shows as a
+   black band. dvh tracks the visible screen and wins over that inline height. */
+html.native-ios body {
+  height: 100dvh !important;
+  min-height: 100dvh !important;
 }
 
 html.native-app .header,

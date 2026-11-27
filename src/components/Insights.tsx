@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { bottlePriceBands, buildInsightHero } from '../lib/insightHero'
-import { compositeScore } from '../lib/ranking'
+import { compositeScore, wineEnjoyment } from '../lib/ranking'
 import { formatScore } from '../lib/scoreScale'
 import { formatInsightWinePrice, topInsightWines, type InsightsLeaderKind } from '../lib/insightsLeaders'
 import { InsightsLeadersModal } from './InsightsLeadersModal'
@@ -30,11 +30,17 @@ function groupBy(
     groups.set(k, [...(groups.get(k) ?? []), w])
   }
   return [...groups.entries()]
-    .map(([label, ws]) => ({
-      label,
-      count: ws.length,
-      avg: ws.reduce((s, w) => s + compositeScore(w, rankingPreference), 0) / ws.length,
-    }))
+    .map(([label, ws]) => {
+      const rated = ws.filter((w) => wineEnjoyment(w) > 0)
+      return {
+        label,
+        count: ws.length,
+        avg:
+          rated.length === 0
+            ? 0
+            : rated.reduce((s, w) => s + compositeScore(w, rankingPreference), 0) / rated.length,
+      }
+    })
     .sort((a, b) => b.count - a.count)
     .slice(0, 6)
 }

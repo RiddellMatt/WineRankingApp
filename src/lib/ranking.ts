@@ -57,6 +57,8 @@ export function compositeScore(
   pref: RankingPreference = 'balanced',
 ): number {
   const enjoyment = wineEnjoyment(wine)
+  // A saved bottle can wait for a score. Zero enjoyment is unrated, not a 0.
+  if (enjoyment <= 0) return 0
   const value = wineValueScore(wine)
   if (value == null) return snapScore(enjoyment)
   const weights = getScoreWeights(pref)

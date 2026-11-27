@@ -65,7 +65,7 @@ export function topInsightWines(
       .slice(0, limit)
   }
 
-  const cohort = valueCohort(wines)
+  const cohort = valueCohort(wines.filter((wine) => wineEnjoyment(wine) > 0))
   return [...cohort.wines]
     .sort(
       (a, b) =>

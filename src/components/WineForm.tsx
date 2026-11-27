@@ -18,6 +18,7 @@ import {
   dismissKeyboard,
   focusNextTextField,
   isTextField,
+  releaseKeyboardFrameSoon,
   shouldDismissKeyboardOnScroll,
 } from '../lib/keyboardInset'
 import { canonicalVarietal, isListedVarietal, typeForVarietal, varietalFitsType } from '../lib/wineVarietals'
@@ -124,7 +125,8 @@ export function WineForm({
   const [aiPreviewUrl, setAiPreviewUrl] = useState<string | null>(null)
   const scanInputRef = useRef<HTMLInputElement>(null)
   const formBodyRef = useRef<HTMLDivElement>(null)
-  const ignoreCloseUntil = useRef(0)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const cancelArmed = useRef(false)
   const aiScanBaselineRef = useRef<LabelScanBaseline | null>(null)
   const aiAvailable = pro && signedIn && cloudConfigured
   const triedCellar = useMemo(() => triedWines(cellarWines), [cellarWines])
@@ -139,18 +141,15 @@ export function WineForm({
     return () => timers.forEach((timer) => window.clearTimeout(timer))
   }, [scanState])
 
-  function armCloseGuard() {
-    ignoreCloseUntil.current = Date.now() + 650
-  }
-
-  function closeBlocked(): boolean {
-    return Date.now() < ignoreCloseUntil.current
-  }
-
-  function requestClose() {
-    if (closeBlocked()) return
+  function finishClose() {
+    dismissKeyboard()
+    releaseKeyboardFrameSoon()
     onClose()
   }
+
+  useEffect(() => {
+    return () => releaseKeyboardFrameSoon()
+  }, [])
 
   useEffect(() => {
     if (!autoOpenScan || initial) return
@@ -260,7 +259,10 @@ export function WineForm({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key !== 'Escape') return
+      dismissKeyboard()
+      releaseKeyboardFrameSoon()
+      onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -392,18 +394,28 @@ export function WineForm({
     }
   }
 
+  function reportError(message: string) {
+    setError(message)
+    window.requestAnimationFrame(() => {
+      const body = formBodyRef.current
+      if (!body) return
+      if (!name.trim()) {
+        body.scrollTo({ top: 0 })
+        nameInputRef.current?.focus()
+        return
+      }
+      body.scrollTo({ top: body.scrollHeight })
+    })
+  }
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!name.trim()) {
-      setError('Give the wine a name.')
-      return
-    }
-    if (!wishlistForm && ratingEnjoyment === 0) {
-      setError('Add an enjoyment rating.')
+      reportError('Give the wine a name.')
       return
     }
     if (containsBlockedPhrase(notes)) {
-      setError(CONTENT_REJECTED_MESSAGE)
+      reportError(CONTENT_REJECTED_MESSAGE)
       return
     }
     const wine = applyCompositeRating(
@@ -520,9 +532,6 @@ export function WineForm({
         className="modal wine-form-modal"
         onSubmit={handleSubmit}
         onKeyDown={onFormKeyDown}
-        onBlur={(e) => {
-          if (isTextField(e.target)) armCloseGuard()
-        }}
       >
         <div className="modal-header">
           <div className="modal-header-titles">
@@ -531,7 +540,7 @@ export function WineForm({
               <p className="modal-destination-hint">{destinationHint}</p>
             )}
           </div>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
+          <button type="button" className="icon-btn" onClick={finishClose} aria-label="Close">
             ✕
           </button>
         </div>
@@ -541,14 +550,12 @@ export function WineForm({
           ref={formBodyRef}
           onScroll={() => {
             if (!shouldDismissKeyboardOnScroll()) return
-            armCloseGuard()
             dismissKeyboard()
           }}
           onPointerDown={(e) => {
             if (!(e.target instanceof Element)) return
             if (e.target.closest('input, textarea, select, button, a, label')) return
             if (!isTextField(document.activeElement)) return
-            armCloseGuard()
             dismissKeyboard()
           }}
         >
@@ -591,11 +598,18 @@ export function WineForm({
           <label className="field span-2">
             <span>Wine name *</span>
             <input
+              ref={nameInputRef}
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value)
+                if (e.target.value.trim()) {
+                  setError((current) => (current === 'Give the wine a name.' ? '' : current))
+                }
+              }}
               placeholder="e.g. Barolo Riserva"
               enterKeyHint="next"
               autoComplete="off"
+              aria-invalid={error === 'Give the wine a name.' || undefined}
             />
           </label>
           <label className="field">
@@ -706,7 +720,9 @@ export function WineForm({
           <div className="form-ratings">
             <div className="form-rating">
               <label>Enjoyment</label>
-              <p className="form-rating-hint">How much did you like it? Drag, or tap the score to type.</p>
+              <p className="form-rating-hint">
+                How much did you like it? Optional. Save the bottle now and rate it later.
+              </p>
               <ScoreSlider value={ratingEnjoyment} onChange={setRatingEnjoyment} label="Enjoyment" />
             </div>
             <div className="form-rating">
@@ -847,16 +863,45 @@ export function WineForm({
           </label>
         </div>
 
-        {error && <p className="form-error">{error}</p>}
         </div>
 
         <div className="modal-actions">
-          <button type="button" className="btn ghost" onClick={requestClose}>
-            Cancel
-          </button>
-          <button type="submit" className="btn primary">
-            {submitLabel}
-          </button>
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          <div className="modal-actions-buttons">
+            <button
+              type="button"
+              className="btn ghost"
+              onPointerDown={(e) => {
+                // Keep the field focused so its blur cannot swallow this tap.
+                e.preventDefault()
+                cancelArmed.current = true
+              }}
+              onPointerUp={() => {
+                if (!cancelArmed.current) return
+                cancelArmed.current = false
+                finishClose()
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return
+                e.preventDefault()
+                finishClose()
+              }}
+              onClick={() => {
+                if (!cancelArmed.current) return
+                cancelArmed.current = false
+                finishClose()
+              }}
+            >
+              Cancel
+            </button>
+            <button type="submit" className="btn primary">
+              {submitLabel}
+            </button>
+          </div>
         </div>
       </form>
       {duplicate && (

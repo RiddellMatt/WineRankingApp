@@ -69,11 +69,39 @@ function findScroller(el: HTMLElement): HTMLElement | null {
 }
 
 let suppressScrollDismiss = 0
+let suppressScrollDismissUntil = 0
+
+function holdScrollDismiss(ms: number) {
+  suppressScrollDismissUntil = Math.max(suppressScrollDismissUntil, Date.now() + ms)
+}
 
 /** True when a finger-scroll should put the keyboard away so the rest of the form is visible. */
 export function shouldDismissKeyboardOnScroll(): boolean {
   if (suppressScrollDismiss > 0) return false
+  if (Date.now() < suppressScrollDismissUntil) return false
+  // An open place or region list is still being edited. Scrolling to reach a
+  // suggestion must not blur the field and throw away the text.
+  if (document.querySelector('[data-combobox-open="true"]')) return false
   return keyboardOverlap() > 0 || document.documentElement.classList.contains('keyboard-open')
+}
+
+/**
+ * Drop a body height the iOS keyboard plugin set while the keyboard was open.
+ * If that pixel height sticks after the keyboard is gone, the webview's dark
+ * backdrop shows through as a black band above the tab bar.
+ */
+export function releaseKeyboardFrame(): void {
+  nativeReported = 0
+  if (document.body.style.height) document.body.style.height = ''
+  publish()
+}
+
+/** Clear a stuck keyboard frame now and again after the plugin's delayed resize. */
+export function releaseKeyboardFrameSoon(): void {
+  releaseKeyboardFrame()
+  window.setTimeout(releaseKeyboardFrame, 80)
+  window.setTimeout(releaseKeyboardFrame, 400)
+  window.setTimeout(releaseKeyboardFrame, 900)
 }
 
 /** Slide the focused field (and its label) into the band above the keyboard. */
@@ -81,6 +109,8 @@ export function revealFocusedField(): void {
   const el = document.activeElement
   if (!isField(el)) return
   suppressScrollDismiss += 1
+  // scrollTop can notify the form after this function returns, especially on iOS.
+  holdScrollDismiss(500)
   const label = el.closest('label')
   const target = label instanceof HTMLElement ? label : el
   const scroller = findScroller(el)
@@ -93,17 +123,18 @@ export function revealFocusedField(): void {
   let delta = 0
   if (rect.bottom > viewBottom) delta = rect.bottom - viewBottom
   else if (rect.top < viewTop) delta = rect.top - viewTop
-  if (Math.abs(delta) < 1) {
-    queueMicrotask(() => {
+  const releaseSuppress = () => {
+    window.requestAnimationFrame(() => {
       suppressScrollDismiss = Math.max(0, suppressScrollDismiss - 1)
     })
+  }
+  if (Math.abs(delta) < 1) {
+    releaseSuppress()
     return
   }
   if (scroller) scroller.scrollTop += delta
   else window.scrollBy(0, delta)
-  queueMicrotask(() => {
-    suppressScrollDismiss = Math.max(0, suppressScrollDismiss - 1)
-  })
+  releaseSuppress()
 }
 
 /** Close the software keyboard. A finished scan should leave the fields visible, not covered. */
@@ -186,15 +217,20 @@ export function installKeyboardInset(): void {
       onGeometry()
     })
     void Keyboard.addListener('keyboardDidShow', (info) => {
+      // A late show after the field is already gone leaves the body short and
+      // paints the webview's dark backdrop over the Add screen.
+      if (!isField(document.activeElement)) {
+        releaseKeyboardFrameSoon()
+        return
+      }
       nativeReported = info.keyboardHeight
       onGeometry()
       window.setTimeout(revealFocusedField, 50)
     })
     const hide = () => {
-      nativeReported = 0
       const active = document.activeElement
       if (isField(active)) active.blur()
-      publish()
+      releaseKeyboardFrameSoon()
       releaseInset()
     }
     void Keyboard.addListener('keyboardWillHide', hide)

@@ -122,6 +122,7 @@ import {
   compareByRank,
   compositeScore,
   favoriteRatingValue,
+  wineEnjoyment,
   isWineFavorite,
   needsRankingPreferenceSetup,
   normalizeWine,
@@ -1064,10 +1065,15 @@ export default function App() {
 
   const stats = useMemo(() => {
     if (cellarTried.length === 0) return null
+    const rated = cellarTried.filter((w) => wineEnjoyment(w) > 0)
     const avg =
-      cellarTried.reduce((sum, w) => sum + compositeScore(w, rankingPreference), 0) /
-      cellarTried.length
-    const best = [...cellarTried].sort((a, b) => compareByRank(a, b, rankingPreference))[0]
+      rated.length === 0
+        ? null
+        : rated.reduce((sum, w) => sum + compositeScore(w, rankingPreference), 0) / rated.length
+    const best =
+      rated.length === 0
+        ? null
+        : [...rated].sort((a, b) => compareByRank(a, b, rankingPreference))[0]
     return { count: cellarTried.length, avg, best }
   }, [cellarTried, rankingPreference])
 
@@ -1652,13 +1658,16 @@ export default function App() {
                   onClick={goToInsightsTab}
                   aria-label="View average rating in insights"
                 >
-                  <span className="stat-value">{stats.avg.toFixed(1)}/10</span>
+                  <span className="stat-value">{stats.avg == null ? '—' : `${stats.avg.toFixed(1)}/10`}</span>
                   <span className="stat-label">average rating</span>
                 </button>
+                {stats.best ? (
                 <button
                   type="button"
                   className="stat stat-link stat-span-2"
-                  onClick={() => openCellarWine(stats.best)}
+                  onClick={() => {
+                    if (stats.best) openCellarWine(stats.best)
+                  }}
                   aria-label={`Open ${stats.best.name}`}
                 >
                   <span className="stat-value stat-best" title={stats.best.name}>
@@ -1666,6 +1675,12 @@ export default function App() {
                   </span>
                   <span className="stat-label">current favorite</span>
                 </button>
+                ) : (
+                <div className="stat stat-span-2">
+                  <span className="stat-value stat-best">—</span>
+                  <span className="stat-label">current favorite</span>
+                </div>
+                )}
               </section>
             )}
 
