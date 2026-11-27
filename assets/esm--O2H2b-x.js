@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/web-BefBtqih.js","assets/index-DGqme_p_.js","assets/rolldown-runtime-C0FnF6B9.js","assets/index-jEnD4a2d.css"])))=>i.map(i=>d[i]);
+import{a as e,c as t}from"./index-DGqme_p_.js";var n=t(`AppIcon`,{web:()=>e(()=>import(`./web-BefBtqih.js`).then(e=>new e.AppIconWeb),__vite__mapDeps([0,1,2,3]))});export{n as AppIcon};
