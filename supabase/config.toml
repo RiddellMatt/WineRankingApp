@@ -5,3 +5,7 @@ verify_jwt = false
 # Called from the app with the signed-in user's JWT. The function also checks that JWT.
 [functions.delete-account]
 verify_jwt = true
+
+# Public wine-card previews. Recipients are not signed in, and link crawlers send no JWT.
+[functions.wine-share]
+verify_jwt = false

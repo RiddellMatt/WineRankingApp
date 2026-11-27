@@ -81,7 +81,7 @@ export function ShareWineCardSheet({ open, input, onClose }: Props) {
     setBusy(true)
     try {
       await saveWineCardToPhotos(input!, saveFormat)
-      window.alert('Saved to Photos.')
+      window.alert('Saved to your photo library.')
       onClose()
     } catch (e) {
       window.alert((e as Error).message || 'Could not save to Photos.')
@@ -111,8 +111,8 @@ export function ShareWineCardSheet({ open, input, onClose }: Props) {
           Share this page
         </h2>
         <p className="share-sheet-lead">
-          Tap a destination — we&apos;ll size the card, then you&apos;ll get Apple&apos;s share sheet
-          to pick Instagram, Messages, or another app.
+          Tap a destination. We&apos;ll size the card, then open the share sheet so you can pick
+          Instagram, Messages, or another app.
         </p>
 
         <div className="share-destination-row" role="list">
@@ -139,7 +139,7 @@ export function ShareWineCardSheet({ open, input, onClose }: Props) {
             disabled={busy}
             onClick={() => void saveCurrentSize()}
           >
-            Save to Photos ({saveLabel})
+            Save image ({saveLabel})
           </button>
           <button type="button" className="link-btn share-sheet-cancel" disabled={busy} onClick={onClose}>
             Cancel

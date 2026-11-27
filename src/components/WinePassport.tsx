@@ -21,6 +21,7 @@ import { MonthlyChallengeCard } from './MonthlyChallengeCard'
 import { StampWinesModal } from './StampWinesModal'
 import { winesForPassportStamp } from '../lib/passportStampWines'
 import type { RankingPreference } from '../types'
+import { shareReferralInvite } from '../lib/referrals'
 
 interface Props {
   userId: string
@@ -29,6 +30,7 @@ interface Props {
   rankingPreference: RankingPreference
   viewerEmail?: string
   viewerAvatarUrl?: string
+  inviteCode?: string
   onViewCellar?: (friendId: string, friendName: string, avatarUrl?: string) => void
 }
 
@@ -123,6 +125,7 @@ export function WinePassport({
   rankingPreference,
   viewerEmail,
   viewerAvatarUrl,
+  inviteCode,
   onViewCellar,
 }: Props) {
   const [friendSnapshots, setFriendSnapshots] = useState<FriendCellarSnapshot[]>([])
@@ -261,7 +264,22 @@ export function WinePassport({
           {loading ? (
             <p className="auth-info">Loading…</p>
           ) : social ? (
-            <p className={`passport-social-message ${social.youLead ? 'leads' : ''}`}>{social.message}</p>
+            <>
+              <p className={`passport-social-message ${social.youLead ? 'leads' : ''}`}>{social.message}</p>
+              {inviteCode && (
+                <button
+                  type="button"
+                  className="btn ghost small passport-social-share"
+                  onClick={() => {
+                    void shareReferralInvite(inviteCode, social.message).catch((err: unknown) => {
+                      window.alert((err as Error).message || 'Could not share that.')
+                    })
+                  }}
+                >
+                  Share
+                </button>
+              )}
+            </>
           ) : (
             <p className="passport-empty">You&apos;re tied with friends.</p>
           )}

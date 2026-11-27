@@ -36,6 +36,28 @@ export function referralInviteUrl(code: string, origin = SITE_URL): string {
   return url.toString()
 }
 
+export const REFERRAL_CAPTURED_EVENT = 'decanti:referral-captured'
+
+/** Pull `ref` off a web URL or an app link such as `com.northline.decanti://invite?ref=`. */
+export function referralCodeFromUrl(url: string): string | null {
+  try {
+    return normalizeReferralCode(new URL(url).searchParams.get('ref'))
+  } catch {
+    return null
+  }
+}
+
+/** Remember an invite code from a link and tell the auth screen, which may already be open. */
+export function captureReferralFromUrl(url: string): boolean {
+  const code = referralCodeFromUrl(url)
+  if (!code) return false
+  rememberReferralCode(code)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(REFERRAL_CAPTURED_EVENT))
+  }
+  return true
+}
+
 export function hasProAccess(
   isPro: boolean | null | undefined,
   proUntil: string | null | undefined,
@@ -150,7 +172,8 @@ export function clearRememberedReferralCode(): void {
 
 export function captureReferralFromLocation(search = window.location.search): void {
   const ref = new URLSearchParams(search).get('ref')
-  if (ref) rememberReferralCode(ref)
+  if (!ref) return
+  captureReferralFromUrl(`https://decantiwine.com/?ref=${encodeURIComponent(ref)}`)
 }
 
 function isMissingReferralRpc(error: { code?: string; message?: string } | null): boolean {
@@ -204,13 +227,15 @@ export async function prepareReferralForSession(): Promise<void> {
   }
 }
 
-export function referralShareText(url: string): string {
+export function referralShareText(url: string, lead?: string): string {
+  const line = lead?.trim()
+  if (line) return `${line} ${url}`
   return `Rank wines with me on Decanti. Join with my invite and we both get a month of Pro after you rate a bottle. ${url}`
 }
 
-export async function shareReferralInvite(code: string): Promise<'shared' | 'copied'> {
+export async function shareReferralInvite(code: string, lead?: string): Promise<'shared' | 'copied'> {
   const url = referralInviteUrl(code)
-  const text = referralShareText(url)
+  const text = referralShareText(url, lead)
   if (isNativeApp()) {
     const { Share } = await import('@capacitor/share')
     await Share.share({

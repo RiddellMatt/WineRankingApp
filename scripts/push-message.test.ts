@@ -25,3 +25,15 @@ test('tagging a friend pushes unless that toggle is off', () => {
   assert.match(message.body, /Alex tried Gavi with you/)
   assert.match(message.deepLink, /friends\?tab=feed/)
 })
+
+test('a joined invite pushes to the friends tab before anyone rates a wine', () => {
+  assert.equal(shouldSendPushForType('referral_joined', enabled), true)
+  assert.equal(shouldSendPushForType('referral_joined', { ...enabled, friend_accepted: false }), false)
+  const message = buildPushMessage({
+    type: 'referral_joined',
+    payload: {},
+    actorName: 'Alex',
+  })
+  assert.match(message.body, /Alex joined with your invite/)
+  assert.match(message.deepLink, /friends\?tab=manage/)
+})

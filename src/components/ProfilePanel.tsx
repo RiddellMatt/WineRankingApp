@@ -219,6 +219,7 @@ export function ProfilePanel({
             rankingPreference={rankingPreference}
             viewerEmail={profile.email ?? email}
             viewerAvatarUrl={profile.avatarUrl}
+            inviteCode={profile.referralCode}
             onViewCellar={onViewFriendCellar}
           />
         </section>

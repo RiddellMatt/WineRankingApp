@@ -8,6 +8,7 @@ export type PushNotificationType =
   | 'friend_journey_complete'
   | 'wine_with_friend'
   | 'referral_qualified'
+  | 'referral_joined'
 
 export interface PushMessage {
   title: string
@@ -44,6 +45,7 @@ export function shouldSendPushForType(
       return prefs.friend_requests !== false
     case 'friend_accepted':
     case 'referral_qualified':
+    case 'referral_joined':
       return prefs.friend_accepted !== false
     case 'reaction':
       return prefs.reactions !== false
@@ -86,6 +88,12 @@ export function buildPushMessage(input: {
       return {
         title,
         body: `${actorName} accepted your friend request`,
+        deepLink: pushDeepLink('manage'),
+      }
+    case 'referral_joined':
+      return {
+        title,
+        body: `${actorName} joined with your invite. You'll both get a month of Pro when they rate a wine.`,
         deepLink: pushDeepLink('manage'),
       }
     case 'referral_qualified': {

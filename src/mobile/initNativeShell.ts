@@ -6,9 +6,11 @@ import { initAppIcon } from '../lib/appIcon'
 import { loadStoredTheme, THEME_META } from '../lib/themes'
 import { completeOAuthFromUrl, listenForOAuthBrowserDismiss } from '../lib/mobileOAuth'
 import { emitMobileDeepLinkEvent, parseMobileDeepLink } from '../lib/mobileDeepLinks'
+import { captureReferralFromUrl } from '../lib/referrals'
 import { StatusBar, Style } from '@capacitor/status-bar'
 
 async function handleDeepLink(url: string): Promise<void> {
+  captureReferralFromUrl(url)
   if (await completeOAuthFromUrl(url)) return
   const kind = parseMobileDeepLink(url)
   emitMobileDeepLinkEvent(kind, url)

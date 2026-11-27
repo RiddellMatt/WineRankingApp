@@ -373,7 +373,7 @@ export function FriendsPanel({
           <section className="friends-invite">
             <h2>Invite a friend</h2>
             <p className="friends-hint">
-              They enter your code when they sign up. After they rate a wine, you each get a month
+              Share your link. It fills in your code. After they rate a wine, you each get a month
               of Pro.
             </p>
             {inviteCode ? (

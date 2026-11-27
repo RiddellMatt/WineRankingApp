@@ -49,6 +49,7 @@ const ANDROID_VIEW_FILTER = `            <intent-filter>
                 <data android:scheme="${SCHEME}" android:host="checkout-cancel" />
                 <data android:scheme="${SCHEME}" android:host="account" />
                 <data android:scheme="${SCHEME}" android:host="friends" />
+                <data android:scheme="${SCHEME}" android:host="invite" />
             </intent-filter>`
 
 function patchAndroidManifest() {
@@ -71,6 +72,13 @@ function patchAndroidManifest() {
 
   if (!manifest.includes(`android:scheme="${SCHEME}"`)) {
     manifest = manifest.replace('</activity>', `${ANDROID_VIEW_FILTER}\n        </activity>`)
+  }
+
+  if (!manifest.includes('android:host="invite"')) {
+    manifest = manifest.replaceAll(
+      `<data android:scheme="${SCHEME}" android:host="friends" />`,
+      `<data android:scheme="${SCHEME}" android:host="friends" />\n                <data android:scheme="${SCHEME}" android:host="invite" />`,
+    )
   }
 
   if (manifest === before) {

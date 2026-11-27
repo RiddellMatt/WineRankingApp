@@ -3,7 +3,7 @@ import { requireUser } from '../_shared/auth.ts'
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts'
 
 /** Folders are `{userId}/{file}`. Postgres rows cascade from auth.users; these objects do not. */
-const BUCKETS = ['avatars', 'ai-scan-uploads']
+const BUCKETS = ['avatars', 'ai-scan-uploads', 'share-cards']
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
